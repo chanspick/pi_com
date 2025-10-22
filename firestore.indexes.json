@@ -1,0 +1,37 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "baseParts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "searchKeywords", "arrayConfig": "CONTAINS" }
+      ]
+    },
+    {
+      "collectionGroup": "baseParts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "category", "order": "ASCENDING" },
+        { "fieldPath": "referencePrice", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "baseParts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "socket", "order": "ASCENDING" },
+        { "fieldPath": "category", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

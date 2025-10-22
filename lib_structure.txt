@@ -1,0 +1,81 @@
+WAYNE 볼륨에 대한 폴더 경로의 목록입니다.
+볼륨 일련 번호는 E489-2200입니다.
+C:\USERS\PC\ANDROIDSTUDIOPROJECTS\PI_COM\LIB
+│  app.dart
+│  firebase_options.dart
+│  main.dart
+│  
+├─core
+│  ├─models
+│  │      user_model.dart
+│  │      
+│  └─router
+├─features
+│  ├─admin
+│  │  ├─data
+│  │  │  ├─datasources
+│  │  │  │      admin_datasource.dart
+│  │  │  │      
+│  │  │  └─repositories
+│  │  │          admin_repository.dart
+│  │  │          
+│  │  └─presentation
+│  │      ├─screens
+│  │      │      admin_dashboard.dart
+│  │      │      admin_login_page.dart
+│  │      │      listing_list_page.dart
+│  │      │      user_list_page.dart
+│  │      │      
+│  │      └─widgets
+│  │              admin_layout.dart
+│  │              data_table_widget.dart
+│  │              stat_card.dart
+│  │              
+│  ├─auth
+│  │  ├─data
+│  │  │  ├─datasources
+│  │  │  │      firestore_user_datasource.dart
+│  │  │  │      google_auth_datasource.dart
+│  │  │  │      
+│  │  │  └─repositories
+│  │  │          auth_repository.dart
+│  │  │          
+│  │  └─presentation
+│  │      ├─screens
+│  │      │      auth_screen.dart
+│  │      │      
+│  │      └─widgets
+│  ├─home
+│  │  └─presentation
+│  │      ├─screens
+│  │      │      home_screen.dart
+│  │      │      
+│  │      └─widgets
+│  │              circle_category.dart
+│  │              circle_menu_section.dart
+│  │              home_app_bar_actions.dart
+│  │              home_banner.dart
+│  │              home_search_bar.dart
+│  │              product_list_section.dart
+│  │              
+│  └─web_public
+│      └─presentation
+│          ├─screens
+│          │      about_page.dart
+│          │      landing_page.dart
+│          │      privacy_page.dart
+│          │      terms_page.dart
+│          │      
+│          └─widgets
+│                  web_navbar.dart
+│                  web_section.dart
+│                  
+└─shared
+    ├─utils
+    │      snackbar_helper.dart
+    │      
+    └─widgets
+            admin_guard.dart
+            app_footer.dart
+            auth_gate.dart
+            
