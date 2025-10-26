@@ -2,30 +2,61 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import '../../data/admin_auth_repository.dart';
 
-class AdminDashboard extends StatelessWidget {
+class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
 
   @override
+  State<AdminDashboard> createState() => _AdminDashboardState();
+}
+
+class _AdminDashboardState extends State<AdminDashboard> {
+  final _authRepo = AdminAuthRepository();
+  bool _isChecking = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkAdminAccess();
+  }
+
+  Future<void> _checkAdminAccess() async {
+    final (userModel, error) = await _authRepo.checkCurrentUserIsAdmin();
+    if (!mounted) return;
+
+    if (error.isNotEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error)),
+      );
+      context.go('/admin');
+      return;
+    }
+
+    setState(() => _isChecking = false);
+  }
+
+  Future<void> _handleLogout() async {
+    await _authRepo.signOut();
+    if (mounted) context.go('/admin');
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isChecking) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('관리자 대시보드'),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              if (context.mounted) {
-                if (kIsWeb) {
-                  context.go('/admin');
-                } else {
-                  Navigator.pushReplacementNamed(context, '/admin/login');
-                }
-              }
-            },
+            onPressed: _handleLogout,
           ),
         ],
       ),
@@ -54,37 +85,26 @@ class AdminDashboard extends StatelessWidget {
                     title: '판매 요청 관리',
                     icon: Icons.pending_actions,
                     color: Colors.orange,
-                    onTap: () {
-                      if (kIsWeb) {
-                        context.go('/admin/sell-requests');
-                      } else {
-                        Navigator.pushNamed(context, '/admin/sell-requests');
-                      }
-                    },
+                    onTap: () => context.go('/admin/sell-requests'),
                   ),
                   _AdminMenuCard(
                     title: '사용자 관리',
                     icon: Icons.people,
                     color: Colors.blue,
-                    onTap: () {
-                      if (kIsWeb) {
-                        context.go('/admin/users');
-                      } else {
-                        Navigator.pushNamed(context, '/admin/users');
-                      }
-                    },
+                    onTap: () => context.go('/admin/users'),
                   ),
                   _AdminMenuCard(
                     title: '매물 관리',
                     icon: Icons.inventory,
                     color: Colors.green,
-                    onTap: () {
-                      if (kIsWeb) {
-                        context.go('/admin/listings');
-                      } else {
-                        Navigator.pushNamed(context, '/admin/listings');
-                      }
-                    },
+                    onTap: () => context.go('/admin/listings'),
+                  ),
+                  // 🆕 DB 업데이트 메뉴 추가
+                  _AdminMenuCard(
+                    title: 'DB 업데이트',
+                    icon: Icons.cloud_upload,
+                    color: Colors.red,
+                    onTap: () => context.go('/admin/db-update'),
                   ),
                   _AdminMenuCard(
                     title: '통계',
@@ -135,11 +155,7 @@ class _AdminMenuCard extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                size: 48,
-                color: color,
-              ),
+              Icon(icon, size: 48, color: color),
               const SizedBox(height: 16),
               Text(
                 title,

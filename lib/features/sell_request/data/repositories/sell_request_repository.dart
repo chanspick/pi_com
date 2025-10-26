@@ -1,23 +1,26 @@
 // lib/features/sell_request/domain/repositories/sell_request_repository.dart
 
-import '../../../../core/models/sell_request_model.dart'; // ✅ 파일명은 맞음
+import '../../../../core/models/sell_request_model.dart';
 
 abstract class SellRequestRepository {
   // 사용자용
-  Future<void> createSellRequest(SellRequest sellRequest); // ✅ 수정
-  Future<SellRequest?> getSellRequest(String requestId); // ✅ 수정
-  Stream<List<SellRequest>> getUserSellRequestsStream(String userId); // ✅ 수정
+  Future<void> createSellRequest(SellRequest sellRequest);
+  Future<SellRequest?> getSellRequest(String requestId);
+  Stream<List<SellRequest>> getUserSellRequestsStream(String userId);
   Future<void> deleteSellRequest(String requestId);
 
   // Admin용
-  Stream<List<SellRequest>> getAllSellRequestsStream(); // ✅ 수정
-  Stream<List<SellRequest>> getSellRequestsByStatusStream( // ✅ 수정
+  Stream<List<SellRequest>> getAllSellRequestsStream();
+  Stream<List<SellRequest>> getSellRequestsByStatusStream(
       SellRequestStatus status,
       );
   Future<void> updateSellRequestStatus({
     required String requestId,
     required SellRequestStatus status,
     String? listingId,
-    String? adminNotes, // ✅ adminMemo → adminNotes (모델에 맞춤)
+    String? adminNotes,
   });
+
+  // Batch 작업
+  Future<void> createMultipleSellRequests(List<SellRequest> sellRequests);
 }

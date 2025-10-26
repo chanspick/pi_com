@@ -3,8 +3,7 @@
 import 'package:flutter/material.dart';
 import '../constants/routes.dart';
 import '../../features/notification/presentations/screens/notification_list_screen.dart';
-// 차후 추가 import
-// import '../../features/sell_request/presentation/screens/...';
+import '../../features/sell_request/presentation/screens/sell_request_screen.dart';
 
 /// 앱 내부용 Navigator Route Generator
 class AppRouter {
@@ -34,12 +33,8 @@ class AppRouter {
 
     // Sell Request (차후 구현)
       case Routes.sellRequest:
-      // TODO: SellRequestScreen 구현 후 추가
         return MaterialPageRoute(
-          builder: (_) => Scaffold(
-            appBar: AppBar(title: const Text('판매하기')),
-            body: const Center(child: Text('판매하기 화면 (구현 예정)')),
-          ),
+          builder: (_) => const SellRequestScreen(),
           settings: settings,
         );
 

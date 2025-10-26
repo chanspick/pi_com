@@ -21,7 +21,8 @@ import 'features/admin/presentation/screens/admin_login_page.dart';
 import 'features/admin/presentation/screens/admin_dashboard.dart';
 import 'features/admin/presentation/screens/user_list_page.dart';
 import 'features/admin/presentation/screens/listing_list_page.dart';
-import 'features/admin/presentation/screens/admin_sell_request_list_page.dart'; // 🆕 추가
+import 'features/admin/presentation/screens/admin_sell_request_list_page.dart';
+import 'features/admin/presentation/screens/db_update_screen.dart'; // 🆕 추가
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -93,10 +94,14 @@ class MyApp extends StatelessWidget {
         path: '/admin/listings',
         builder: (context, state) => const ListingListPage(),
       ),
-      // 🆕 판매 요청 관리
       GoRoute(
         path: '/admin/sell-requests',
         builder: (context, state) => const AdminSellRequestListPage(),
+      ),
+      // 🆕 DB 업데이트 추가
+      GoRoute(
+        path: '/admin/db-update',
+        builder: (context, state) => const DbUpdateScreen(),
       ),
     ],
   );

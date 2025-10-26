@@ -55,4 +55,11 @@ class SellRequestRepositoryImpl implements SellRequestRepository {
       adminNotes: adminNotes,
     );
   }
+
+  @override
+  Future<void> createMultipleSellRequests(
+      List<SellRequest> sellRequests,
+      ) async {
+    return await _dataSource.createMultipleSellRequests(sellRequests);
+  }
 }

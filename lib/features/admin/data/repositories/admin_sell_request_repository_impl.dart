@@ -1,5 +1,6 @@
 // lib/features/admin/data/repositories/admin_sell_request_repository_impl.dart
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/repositories/admin_sell_request_repository.dart';
 import '../datasources/admin_sell_request_datasource.dart';
 import '../datasources/admin_notification_datasource.dart';
@@ -20,16 +21,42 @@ class AdminSellRequestRepositoryImpl implements AdminSellRequestRepository {
     required String requestId,
     required int finalPrice,
     required int finalConditionScore,
-    // ❌ brand 파라미터 제거
     String? adminNotes,
   }) async {
+    // 1. 먼저 SellRequest 정보 조회 (판매자 ID 확인용)
+    final requestDoc = await FirebaseFirestore.instance
+        .collection('sellRequests')
+        .doc(requestId)
+        .get();
+
+    if (!requestDoc.exists) {
+      throw Exception('SellRequest를 찾을 수 없습니다.');
+    }
+
+    final sellRequest = SellRequest.fromFirestore(requestDoc);
+
+    // 2. 승인 처리 (DataSource)
     await _sellRequestDataSource.approveSellRequest(
       requestId: requestId,
       finalPrice: finalPrice,
       finalConditionScore: finalConditionScore,
-      // ❌ brand 제거
       adminNotes: adminNotes,
     );
+
+    // 3. 판매자에게 승인 알림 발송 ⭐⭐⭐
+    await _notificationDataSource.sendNotificationToUser(
+      userId: sellRequest.sellerId,
+      type: NotificationType.statusChanged,
+      title: '판매 요청이 승인되었습니다 🎉',
+      message: '${sellRequest.brand} ${sellRequest.modelName} 부품의 판매 요청이 승인되었습니다.\n'
+          '최종 판매 가격: ${finalPrice.toString().replaceAllMapped(
+        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+            (Match m) => '${m[1]},',
+      )}원',
+      relatedSellRequestId: requestId,
+    );
+
+    print('✅ 승인 알림 발송 완료: ${sellRequest.sellerId}');
   }
 
   @override
@@ -37,15 +64,40 @@ class AdminSellRequestRepositoryImpl implements AdminSellRequestRepository {
     required String requestId,
     required String rejectReason,
   }) async {
+    // 1. 먼저 SellRequest 정보 조회 (판매자 ID 확인용)
+    final requestDoc = await FirebaseFirestore.instance
+        .collection('sellRequests')
+        .doc(requestId)
+        .get();
+
+    if (!requestDoc.exists) {
+      throw Exception('SellRequest를 찾을 수 없습니다.');
+    }
+
+    final sellRequest = SellRequest.fromFirestore(requestDoc);
+
+    // 2. 반려 처리 (DataSource)
     await _sellRequestDataSource.rejectSellRequest(
       requestId: requestId,
       rejectReason: rejectReason,
     );
+
+    // 3. 판매자에게 반려 알림 발송 ⭐⭐⭐
+    await _notificationDataSource.sendNotificationToUser(
+      userId: sellRequest.sellerId,
+      type: NotificationType.statusChanged,
+      title: '판매 요청이 반려되었습니다',
+      message: '${sellRequest.brand} ${sellRequest.modelName} 부품의 판매 요청이 반려되었습니다.\n\n'
+          '반려 사유: $rejectReason\n\n'
+          '수정 후 다시 신청해주세요.',
+      relatedSellRequestId: requestId,
+    );
+
+    print('✅ 반려 알림 발송 완료: ${sellRequest.sellerId}');
   }
 
   @override
   Stream<List<SellRequest>> getPendingSellRequests() {
-    // 🆕 추가: DataSource에서 Stream 가져오기
     return _sellRequestDataSource.getPendingSellRequests();
   }
 
@@ -55,7 +107,7 @@ class AdminSellRequestRepositoryImpl implements AdminSellRequestRepository {
     required String title,
     required String message,
     String? relatedSellRequestId,
-    String? relatedListingId,  // 🆕 추가
+    String? relatedListingId,
   }) async {
     await _notificationDataSource.sendNotificationToUser(
       userId: userId,
@@ -63,7 +115,7 @@ class AdminSellRequestRepositoryImpl implements AdminSellRequestRepository {
       title: title,
       message: message,
       relatedSellRequestId: relatedSellRequestId,
-      relatedListingId: relatedListingId,  // 🆕 전달
+      relatedListingId: relatedListingId,
     );
   }
 }

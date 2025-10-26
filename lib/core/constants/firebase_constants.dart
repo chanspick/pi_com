@@ -6,9 +6,9 @@ class FirebaseConstants {
   // ===== Collections =====
   static const String usersCollection = 'users';
   static const String notificationsCollection = 'notifications';
-  static const String sellRequestsCollection = 'sellRequests';  // ✅ 한 번만!
+  static const String sellRequestsCollection = 'sell_requests';  // ✅ 한 번만!
   static const String listingsCollection = 'listings';
-  static const String basePartsCollection = 'baseParts';
+  static const String basePartsCollection = 'base_parts';
   static const String partsCollection = 'parts';
 
   // ===== Sub-collections =====

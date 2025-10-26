@@ -5,6 +5,7 @@ import '../../../../core/models/sell_request_model.dart';
 abstract class SellRequestRepository {
   // 사용자용
   Future<void> createSellRequest(SellRequest sellRequest);
+  Future<void> createMultipleSellRequests(List<SellRequest> sellRequests);
   Future<SellRequest?> getSellRequest(String requestId);
   Stream<List<SellRequest>> getUserSellRequestsStream(String userId);
   Future<void> deleteSellRequest(String requestId);

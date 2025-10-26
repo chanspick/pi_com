@@ -205,3 +205,31 @@ StateNotifierProvider<AdminActionController, AdminActionState>((ref) {
 
   return AdminActionController(approveUseCase, rejectUseCase);
 });
+
+/// 승인된 SellRequest Stream Provider
+final approvedSellRequestsStreamProvider = StreamProvider<List<SellRequest>>((ref) {
+  return FirebaseFirestore.instance
+      .collection('sellRequests')
+      .where('status', isEqualTo: SellRequestStatus.approved.name)
+      .orderBy('updatedAt', descending: true)
+      .snapshots()
+      .map((snapshot) {
+    return snapshot.docs
+        .map((doc) => SellRequest.fromFirestore(doc))
+        .toList();
+  });
+});
+
+/// 반려된 SellRequest Stream Provider
+final rejectedSellRequestsStreamProvider = StreamProvider<List<SellRequest>>((ref) {
+  return FirebaseFirestore.instance
+      .collection('sellRequests')
+      .where('status', isEqualTo: SellRequestStatus.rejected.name)
+      .orderBy('updatedAt', descending: true)
+      .snapshots()
+      .map((snapshot) {
+    return snapshot.docs
+        .map((doc) => SellRequest.fromFirestore(doc))
+        .toList();
+  });
+});

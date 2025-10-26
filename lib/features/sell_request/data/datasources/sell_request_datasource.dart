@@ -1,7 +1,7 @@
 // lib/features/sell_request/data/datasources/sell_request_datasource.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../../core/models/sell_request_model.dart'; // ✅ 그대로
+import '../../../../core/models/sell_request_model.dart';
 import '../../../../core/constants/firebase_constants.dart';
 
 class SellRequestDataSource {
@@ -17,7 +17,7 @@ class SellRequestDataSource {
     await _firestore
         .collection(FirebaseConstants.sellRequestsCollection)
         .doc(sellRequest.requestId)
-        .set(sellRequest.toMap()); // ✅ toFirestore() 아님, toMap()
+        .set(sellRequest.toMap());
   }
 
   /// SellRequest 조회 (ID)
@@ -26,7 +26,6 @@ class SellRequestDataSource {
         .collection(FirebaseConstants.sellRequestsCollection)
         .doc(requestId)
         .get();
-
     if (!doc.exists) return null;
     return SellRequest.fromFirestore(doc);
   }
@@ -35,7 +34,7 @@ class SellRequestDataSource {
   Stream<List<SellRequest>> getUserSellRequestsStream(String userId) {
     return _firestore
         .collection(FirebaseConstants.sellRequestsCollection)
-        .where('sellerId', isEqualTo: userId) // ✅ userId → sellerId
+        .where('sellerId', isEqualTo: userId)
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
@@ -83,7 +82,7 @@ class SellRequestDataSource {
     required String requestId,
     required SellRequestStatus status,
     String? listingId,
-    String? adminNotes, // ✅ adminMemo → adminNotes
+    String? adminNotes,
   }) async {
     final updates = <String, dynamic>{
       'status': status.name,
@@ -102,5 +101,26 @@ class SellRequestDataSource {
         .collection(FirebaseConstants.sellRequestsCollection)
         .doc(requestId)
         .update(updates);
+  }
+
+  // ==================== Batch 작업 ====================
+
+  /// 여러 SellRequest를 Batch로 생성 (트랜잭션)
+  /// 완제품 PC 판매 시 여러 부품을 한 번에 등록
+  Future<void> createMultipleSellRequests(
+      List<SellRequest> sellRequests,
+      ) async {
+    if (sellRequests.isEmpty) return;
+
+    final batch = _firestore.batch();
+
+    for (var sellRequest in sellRequests) {
+      final docRef = _firestore
+          .collection(FirebaseConstants.sellRequestsCollection)
+          .doc(sellRequest.requestId);
+      batch.set(docRef, sellRequest.toMap());
+    }
+
+    await batch.commit();
   }
 }
