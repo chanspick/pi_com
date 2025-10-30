@@ -1,5 +1,4 @@
-//lib/features/home/presentation/widgets/circle_menu_section.dart
-
+// lib/features/home/presentation/widgets/circle_menu_section.dart
 import 'package:flutter/material.dart';
 import 'circle_category.dart';
 import '../../../../core/constants/routes.dart';
@@ -9,14 +8,14 @@ class CircleMenuSection extends StatelessWidget {
 
   static final _menuItems = [
     {
-      'icon': Icons.settings,
+      'icon': Icons.shopping_cart_outlined,  // ✅ 아이콘 변경
       'label': '부품 샵',
-      'route': null, // 준비 중
+      'route': Routes.partShop,  // ✅ 새로 추가한 라우트 연결
     },
     {
-      'icon': Icons.store,
+      'icon': Icons.trending_up,  // ✅ 아이콘 변경
       'label': '부품 시세',
-      'route': null, // 준비 중
+      'route': Routes.partsCategory,  // ✅ 새로 추가한 라우트 연결
     },
     {
       'icon': Icons.desktop_mac,
@@ -31,7 +30,7 @@ class CircleMenuSection extends StatelessWidget {
     {
       'icon': Icons.desktop_windows,
       'label': '완제품 판매',
-      'route': null, // 준비 중
+      'route': Routes.sellFinishedPc, // ✅ 연결!
     },
   ];
 
@@ -50,7 +49,6 @@ class CircleMenuSection extends StatelessWidget {
             label: item['label']! as String,
             onTap: () {
               final route = item['route'] as String?;
-
               if (route != null) {
                 // 라우트가 있으면 이동
                 Navigator.of(context).pushNamed(route);

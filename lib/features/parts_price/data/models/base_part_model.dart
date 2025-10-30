@@ -1,17 +1,16 @@
-// lib/core/models/base_part_model.dart
-
+// lib/features/parts_price/data/models/base_part_model.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../domain/entities/base_part_entity.dart';
 
-class BasePart {
+class BasePartModel {
   final String basePartId;
   final String modelName;
   final String category;
-  // Cloud Function이 업데이트해 줄 가격 통계 필드
   final int lowestPrice;
   final double averagePrice;
   final int listingCount;
 
-  BasePart({
+  BasePartModel({
     required this.basePartId,
     required this.modelName,
     required this.category,
@@ -20,9 +19,9 @@ class BasePart {
     required this.listingCount,
   });
 
-  factory BasePart.fromFirestore(DocumentSnapshot doc) {
+  factory BasePartModel.fromFirestore(DocumentSnapshot doc) {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-    return BasePart(
+    return BasePartModel(
       basePartId: doc.id,
       modelName: data['modelName'] ?? '이름 없음',
       category: data['category'] ?? '',
@@ -32,10 +31,9 @@ class BasePart {
     );
   }
 
-  // === 추가: fromMap 팩토리 생성자 ===
-  factory BasePart.fromMap(Map<String, dynamic> data) {
-    return BasePart(
-      basePartId: data['basePartId'] ?? data['objectID'] ?? '',
+  factory BasePartModel.fromMap(Map<String, dynamic> data) {
+    return BasePartModel(
+      basePartId: data['basePartId'] ?? '',
       modelName: data['modelName'] ?? '이름 없음',
       category: data['category'] ?? '',
       lowestPrice: (data['lowestPrice'] as num?)?.toInt() ?? 0,
@@ -44,7 +42,6 @@ class BasePart {
     );
   }
 
-  // === 추가: toMap 메서드 (필요시 사용) ===
   Map<String, dynamic> toMap() {
     return {
       'basePartId': basePartId,
@@ -54,5 +51,29 @@ class BasePart {
       'averagePrice': averagePrice,
       'listingCount': listingCount,
     };
+  }
+
+  // Model → Entity 변환
+  BasePartEntity toEntity() {
+    return BasePartEntity(
+      basePartId: basePartId,
+      modelName: modelName,
+      category: category,
+      lowestPrice: lowestPrice,
+      averagePrice: averagePrice,
+      listingCount: listingCount,
+    );
+  }
+
+  // Entity → Model 변환
+  factory BasePartModel.fromEntity(BasePartEntity entity) {
+    return BasePartModel(
+      basePartId: entity.basePartId,
+      modelName: entity.modelName,
+      category: entity.category,
+      lowestPrice: entity.lowestPrice,
+      averagePrice: entity.averagePrice,
+      listingCount: entity.listingCount,
+    );
   }
 }

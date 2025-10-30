@@ -1,3 +1,6 @@
+// lib/core/models/part_model.dart
+
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 // ==================== 공용 유틸 ====================

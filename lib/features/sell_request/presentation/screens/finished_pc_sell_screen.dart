@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/models/base_part_model.dart';
 import 'sell_request_details_screen.dart';
+import 'part_search_screen.dart'; // ⭐️ [추가] 부품 검색 화면 임포트
 
 /// 부품 카테고리 enum
 enum PartCategory {
@@ -60,37 +61,23 @@ class _FinishedPcSellScreenState extends State<FinishedPcSellScreen> {
     PartCategory.pccase: null,
   };
 
-  /// 부품 검색 화면으로 이동 (카테고리별)
+  /// ⭐️ [수정] 부품 검색 화면으로 이동 (카테고리별)
   Future<void> _selectBasePartForCategory(PartCategory category) async {
-    // TODO: 실제 부품 검색 화면으로 교체 필요
-    // 현재는 더미 BasePart 반환
-    final dummyPart = BasePart(
-      basePartId: 'test-${category.name}-001',
-      modelName: '${category.displayName} 테스트 모델',
-      category: category.name,
-      lowestPrice: 100000,
-      averagePrice: 150000,
-      listingCount: 10,
+    // 실제 구현:
+    // TODO: PartSearchScreen이 category를 인자로 받도록 추후 확장
+    final selectedBasePart = await Navigator.push<BasePart>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const PartSearchScreen(),
+      ),
     );
 
-    setState(() {
-      _selectedComponents[category] = dummyPart;
-      debugPrint('✅ 선택됨: ${category.name} - ${dummyPart.modelName}');
-    });
-
-    // 실제 구현 예시:
-    // final selectedBasePart = await Navigator.push<BasePart>(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => PartSearchScreen(category: category.name),
-    //   ),
-    // );
-    //
-    // if (selectedBasePart != null) {
-    //   setState(() {
-    //     _selectedComponents[category] = selectedBasePart;
-    //   });
-    // }
+    if (selectedBasePart != null) {
+      setState(() {
+        _selectedComponents[category] = selectedBasePart;
+        debugPrint('✅ 선택됨: ${category.name} - ${selectedBasePart.modelName}');
+      });
+    }
   }
 
   /// 상세 정보 입력 화면으로 이동
