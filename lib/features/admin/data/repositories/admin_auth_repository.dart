@@ -1,7 +1,7 @@
 // lib/features/admin/data/admin_auth_repository.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../core/models/user_model.dart';
+import '../../../../core/models/user_model.dart';
 
 /// Admin 전용 인증 Repository
 class AdminAuthRepository {

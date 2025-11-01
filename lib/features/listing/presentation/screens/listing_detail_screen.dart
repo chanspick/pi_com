@@ -14,7 +14,7 @@ class ListingDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final listingAsync = ref.watch(listingStreamProvider(listingId));
+    final listingAsync = ref.watch(listingProvider(listingId));
 
     return Scaffold(
       appBar: AppBar(

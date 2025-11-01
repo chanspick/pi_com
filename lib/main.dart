@@ -20,16 +20,14 @@ void main() async {
   debugPrint('✅ Firebase initialized');
 
   // ===== App Check 초기화 =====
-  if (kDebugMode) {
+  if (kIsWeb) {
     await FirebaseAppCheck.instance.activate(
       providerWeb: ReCaptchaV3Provider('recaptcha-v3-site-key'),
     );
-    debugPrint('✅ Firebase App Check activated (DEBUG)');
+    debugPrint('✅ Firebase App Check activated (Web)');
   } else {
-    await FirebaseAppCheck.instance.activate(
-      providerWeb: ReCaptchaV3Provider('recaptcha-v3-site-key'),
-    );
-    debugPrint('✅ Firebase App Check activated (RELEASE)');
+    await FirebaseAppCheck.instance.activate();
+    debugPrint('✅ Firebase App Check activated (Android)');
   }
 
   // ===== Firestore 설정 =====

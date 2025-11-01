@@ -33,4 +33,6 @@ class Routes {
   static const String partsCategory = '/parts-category';
   static const String priceHistory = '/price-history';
   static const String partDetail = '/part-detail';
+  static const String cart = '/cart';
+  static const String checkout = '/checkout';
 }

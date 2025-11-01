@@ -1,13 +1,15 @@
 // lib/features/listing/domain/usecases/get_listings_usecase.dart
-import '../entities/listing_entity.dart';
-import '../repositories/listing_repository.dart';
+
+import 'package:pi_com/features/listing/domain/entities/listing_entity.dart';
+import 'package:pi_com/features/listing/domain/repositories/listing_repository.dart';
 
 class GetListingsUseCase {
   final ListingRepository repository;
 
-  GetListingsUseCase({required this.repository});
+  GetListingsUseCase(this.repository);
 
-  Stream<List<ListingEntity>> call({String? category, String? sortBy}) {
-    return repository.getListings(category: category, sortBy: sortBy);
+  // ✅ Stream → Future로 변경, ListingEntity 사용
+  Future<List<ListingEntity>> call({String? category, String? sortBy}) async {
+    return await repository.getListings(category: category, sortBy: sortBy);
   }
 }

@@ -13,6 +13,8 @@ import '../../features/listing/presentation/screens/listing_detail_screen.dart';
 import '../../features/parts_price/presentation/screens/part_category_screen.dart';
 import '../../features/parts_price/presentation/screens/price_history_screen.dart';
 import '../../features/parts_price/domain/entities/base_part_entity.dart';
+import '../../features/cart/presentation/screens/cart_screen.dart';
+import '../../features/checkout/presentation/screens/checkout_screen.dart';
 
 /// 앱 내부용 Navigator Route Generator
 class AppRouter {
@@ -86,6 +88,18 @@ class AppRouter {
         }
         return MaterialPageRoute(
           builder: (_) => PriceHistoryScreen(basePart: basePart),
+          settings: settings,
+        );
+
+      case Routes.cart:
+        return MaterialPageRoute(
+          builder: (_) => const CartScreen(),
+          settings: settings,
+        );
+
+      case Routes.checkout:
+        return MaterialPageRoute(
+          builder: (_) => const CheckoutScreen(),
           settings: settings,
         );
 

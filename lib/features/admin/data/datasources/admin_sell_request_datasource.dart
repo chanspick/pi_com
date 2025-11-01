@@ -145,4 +145,18 @@ class AdminSellRequestDataSource {
           .toList();
     });
   }
+
+  /// ID로 SellRequest 조회
+  Future<SellRequest?> getSellRequestById(String requestId) async {
+    final doc = await _firestore
+        .collection(FirebaseConstants.sellRequestsCollection)
+        .doc(requestId)
+        .get();
+
+    if (doc.exists) {
+      return SellRequest.fromFirestore(doc);
+    } else {
+      return null;
+    }
+  }
 }

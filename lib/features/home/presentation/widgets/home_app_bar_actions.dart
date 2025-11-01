@@ -22,9 +22,7 @@ class HomeAppBarActions extends ConsumerWidget {  // ✅ ConsumerWidget으로 �
         IconButton(
           icon: const Icon(Icons.shopping_bag_outlined),
           onPressed: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('장바구니 기능은 준비 중입니다.')),
-            );
+            Navigator.of(context).pushNamed('/cart');
           },
         ),
 

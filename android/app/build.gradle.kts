@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "app.picom.team.pi_com"
-    compileSdk = 35  // ⭐️ 최신 Android 14
+    compileSdk = 36  // ⭐️ 최신 Android 14
     ndkVersion = "27.0.12077973"
 
     compileOptions {

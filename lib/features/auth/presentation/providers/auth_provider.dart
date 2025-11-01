@@ -10,6 +10,11 @@ import '../../domain/usecases/sign_in_with_google.dart';  // ✅ 추가
 import '../../domain/usecases/sign_in_anonymously.dart';  // ✅ 추가
 import '../../domain/usecases/sign_out.dart';  // ✅ 추가
 
+import '../../data/datasources/user_remote_datasource.dart';
+import '../../data/repositories/user_repository_impl.dart';
+import '../../domain/repositories/user_repository.dart';
+import '../../domain/usecases/get_users.dart';
+
 /// ========================================
 /// Auth Repository Provider
 /// ========================================
@@ -40,6 +45,22 @@ final signInAnonymouslyUseCaseProvider = Provider<SignInAnonymously>((ref) {
 /// 로그아웃 Use Case
 final signOutUseCaseProvider = Provider<SignOut>((ref) {
   return SignOut(ref.watch(authRepositoryProvider));
+});
+
+final userRemoteDataSourceProvider = Provider<UserRemoteDataSource>((ref) {
+  return UserRemoteDataSourceImpl(firestore: ref.watch(firebaseFirestoreProvider));
+});
+
+final userRepositoryProvider = Provider<UserRepository>((ref) {
+  return UserRepositoryImpl(remoteDataSource: ref.watch(userRemoteDataSourceProvider));
+});
+
+final getUsersProvider = Provider<GetUsers>((ref) {
+  return GetUsers(ref.watch(userRepositoryProvider));
+});
+
+final usersStreamProvider = StreamProvider.autoDispose<List<UserModel>>((ref) {
+  return ref.watch(getUsersProvider).call();
 });
 
 /// ========================================

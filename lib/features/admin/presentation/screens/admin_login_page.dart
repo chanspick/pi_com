@@ -1,7 +1,7 @@
 // lib/features/admin/presentation/screens/admin_login_page.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/admin_auth_repository.dart';
+import '../../data/repositories/admin_auth_repository.dart';
 
 class AdminLoginPage extends StatefulWidget {
   const AdminLoginPage({super.key});

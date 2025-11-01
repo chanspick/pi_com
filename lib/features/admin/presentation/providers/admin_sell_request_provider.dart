@@ -13,6 +13,8 @@ import '../../domain/usecases/get_pending_sell_requests.dart';
 import '../../domain/usecases/send_notification_to_user.dart';
 import '../../../../core/models/sell_request_model.dart';
 
+import '../../domain/usecases/get_sell_request_by_id.dart';
+
 // ============================================
 // 🔹 DataSource Providers
 // ============================================
@@ -72,6 +74,12 @@ final getPendingSellRequestsProvider = Provider<GetPendingSellRequests>((ref) {
 final sendNotificationToUserProvider = Provider<SendNotificationToUser>((ref) {
   final repository = ref.watch(adminSellRequestRepositoryProvider);
   return SendNotificationToUser(repository);
+});
+
+/// ID로 SellRequest 조회 UseCase Provider
+final getSellRequestByIdProvider = Provider<GetSellRequestById>((ref) {
+  final repository = ref.watch(adminSellRequestRepositoryProvider);
+  return GetSellRequestById(repository);
 });
 
 // ============================================

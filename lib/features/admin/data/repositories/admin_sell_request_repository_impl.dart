@@ -102,6 +102,11 @@ class AdminSellRequestRepositoryImpl implements AdminSellRequestRepository {
   }
 
   @override
+  Future<SellRequest?> getSellRequestById(String requestId) {
+    return _sellRequestDataSource.getSellRequestById(requestId);
+  }
+
+  @override
   Future<void> sendNotificationToUser({
     required String userId,
     required String title,

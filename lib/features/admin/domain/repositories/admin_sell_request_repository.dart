@@ -21,6 +21,9 @@ abstract class AdminSellRequestRepository {
   /// 대기 중인 SellRequest 조회 (🆕 추가)
   Stream<List<SellRequest>> getPendingSellRequests();
 
+  /// ID로 SellRequest 조회
+  Future<SellRequest?> getSellRequestById(String requestId);
+
   /// 알림 전송
   Future<void> sendNotificationToUser({
     required String userId,

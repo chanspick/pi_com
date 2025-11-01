@@ -12,7 +12,7 @@ class ProductListSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // 최신 매물 가져오기 (최대 4개만)
     final listingsAsync = ref.watch(
-      listingsStreamProvider(
+      listingsFutureProvider(
         ListingQueryParams(category: null, sortBy: '최신순'),
       ),
     );
@@ -119,7 +119,7 @@ class ProductListSection extends ConsumerWidget {
                     TextButton(
                       onPressed: () {
                         // 재시도
-                        ref.invalidate(listingsStreamProvider);
+                        ref.invalidate(listingsFutureProvider(ListingQueryParams(category: null, sortBy: '최신순')));
                       },
                       child: const Text('다시 시도'),
                     ),

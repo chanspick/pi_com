@@ -84,12 +84,54 @@ class _AdminSellRequestListPageState
             onPressed: () => Navigator.pop(context),
             child: const Text('취소'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: ID로 조회 후 상세 다이얼로그 표시
+          Consumer(
+            builder: (context, ref, child) {
+              return ElevatedButton(
+                onPressed: () async {
+                  final requestId = controller.text.trim();
+                  if (requestId.isEmpty) {
+                    return;
+                  }
+                  Navigator.pop(context);
+                  final sellRequest = await ref.read(getSellRequestByIdProvider).call(requestId);
+                  if (sellRequest != null) {
+                    _showRequestDetailsDialog(context, sellRequest);
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('SellRequest를 찾을 수 없습니다.')),
+                    );
+                  }
+                },
+                child: const Text('조회'),
+              );
             },
-            child: const Text('조회'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRequestDetailsDialog(BuildContext context, SellRequest request) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('SellRequest 상세 정보'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Request ID: ${request.requestId}'),
+              Text('Brand: ${request.brand}'),
+              Text('Model: ${request.modelName}'),
+              Text('Status: ${request.status.name}'),
+              // Add more details as needed
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('닫기'),
           ),
         ],
       ),

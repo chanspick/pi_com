@@ -13,7 +13,7 @@ class PartShopScreen extends ConsumerWidget {
     final selectedSort = ref.watch(selectedSortProvider);
 
     final listingsAsync = ref.watch(
-      listingsStreamProvider(
+      listingsFutureProvider(
         ListingQueryParams(category: selectedCategory, sortBy: selectedSort),
       ),
     );
@@ -56,7 +56,7 @@ class PartShopScreen extends ConsumerWidget {
                 return RefreshIndicator(
                   onRefresh: () async {
                     // 새로고침 로직
-                    ref.invalidate(listingsStreamProvider);
+                    ref.invalidate(listingsFutureProvider(ListingQueryParams(category: selectedCategory, sortBy: selectedSort)));
                   },
                   child: GridView.builder(
                     padding: const EdgeInsets.all(16),
@@ -109,7 +109,7 @@ class PartShopScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       onPressed: () {
-                        ref.invalidate(listingsStreamProvider);
+                        ref.invalidate(listingsFutureProvider(ListingQueryParams(category: selectedCategory, sortBy: selectedSort)));
                       },
                       icon: const Icon(Icons.refresh),
                       label: const Text('다시 시도'),

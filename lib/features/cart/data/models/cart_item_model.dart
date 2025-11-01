@@ -1,6 +1,6 @@
-// lib/features/listing/data/models/cart_item_model.dart
+// lib/features/cart/data/models/cart_item_model.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/entities/cart_item_entity.dart';
+import 'package:pi_com/features/cart/domain/entities/cart_item_entity.dart';
 
 class CartItemModel {
   final String productId;

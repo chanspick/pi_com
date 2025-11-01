@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/listing_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../providers/listing_provider.dart';
+import '../../../cart/presentation/providers/cart_provider.dart';
+import '../providers/use_case_providers.dart';
+
 
 class ListingBottomBar extends ConsumerWidget {
   final ListingEntity listing;
@@ -13,8 +15,6 @@ class ListingBottomBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentUser = ref.watch(currentUserProvider);
-    final createCartItemUseCase = ref.watch(createCartItemUseCaseProvider);
-    final validatePurchaseUseCase = ref.watch(validatePurchaseUseCaseProvider);
 
     final bool isSold = listing.isSold;
     final bool isMyItem = currentUser?.uid == listing.sellerId;
@@ -62,7 +62,7 @@ class ListingBottomBar extends ConsumerWidget {
       WidgetRef ref,
       ListingEntity listing,
       String userId,
-      ) {
+      ) async { // async 키워드 추가
     try {
       // 구매 가능 여부 검증
       final validatePurchaseUseCase = ref.read(validatePurchaseUseCaseProvider);
@@ -72,27 +72,26 @@ class ListingBottomBar extends ConsumerWidget {
       final createCartItemUseCase = ref.read(createCartItemUseCaseProvider);
       final cartItem = createCartItemUseCase(listing);
 
+      // Firestore에 장바구니 아이템 저장
+      final cartRepository = ref.read(cartRepositoryProvider);
+      await cartRepository.addToCart(cartItem); // await을 사용하여 비동기 완료 대기
+
       // 장바구니 추가 성공 알림
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${listing.modelName}을(를) 장바구니에 담았습니다.'),
           action: SnackBarAction(
             label: '보기',
-            onPressed: () {
-              // TODO: 장바구니 화면으로 이동
-              // Navigator.push(context, MaterialPageRoute(builder: (_) => CartScreen()));
-            },
-          ),
+                          onPressed: () {
+                            Navigator.of(context).pushNamed('/cart');
+                          },          ),
           duration: const Duration(seconds: 3),
         ),
       );
-
-      // TODO: 실제로 Firestore에 장바구니 아이템 저장하는 로직 추가
-      // await cartRepository.addToCart(cartItem);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(e.toString()),
+          content: Text('오류: ${e.toString()}'), // 사용자에게 오류 메시지 표시
           backgroundColor: Colors.red,
         ),
       );

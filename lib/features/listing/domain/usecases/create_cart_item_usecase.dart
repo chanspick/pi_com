@@ -1,6 +1,6 @@
 // lib/features/listing/domain/usecases/create_cart_item_usecase.dart
 import '../entities/listing_entity.dart';
-import '../entities/cart_item_entity.dart';
+import 'package:pi_com/features/cart/domain/entities/cart_item_entity.dart';
 
 class CreateCartItemUseCase {
   CartItemEntity call(ListingEntity listing) {

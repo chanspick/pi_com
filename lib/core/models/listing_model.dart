@@ -1,6 +1,7 @@
 // lib/core/models/listing_model.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pi_com/features/listing/domain/entities/listing_entity.dart' as entity;
 
 enum ListingStatus { available, sold }
 
@@ -18,6 +19,7 @@ class Listing {
   final DateTime createdAt;
   final DateTime? soldAt;
   final List<String> imageUrls;
+  final String? category; // ✅ 추가
 
   Listing({
     required this.listingId,
@@ -33,6 +35,7 @@ class Listing {
     required this.createdAt,
     this.soldAt,
     required this.imageUrls,
+    this.category, // ✅ 추가
   });
 
   Map<String, dynamic> toMap() {
@@ -50,6 +53,7 @@ class Listing {
       'createdAt': Timestamp.fromDate(createdAt),
       'soldAt': soldAt != null ? Timestamp.fromDate(soldAt!) : null,
       'imageUrls': imageUrls,
+      'category': category, // ✅ 추가
     };
   }
 
@@ -71,6 +75,7 @@ class Listing {
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       soldAt: (data['soldAt'] as Timestamp?)?.toDate(),
       imageUrls: List<String>.from(data['imageUrls'] ?? []),
+      category: data['category'], // ✅ 추가
     );
   }
 
@@ -95,6 +100,7 @@ class Listing {
           ? (data['soldAt'] as Timestamp).toDate()
           : null,
       imageUrls: List<String>.from(data['imageUrls'] ?? []),
+      category: data['category'], // ✅ 추가
     );
   }
 
@@ -113,6 +119,7 @@ class Listing {
     DateTime? createdAt,
     DateTime? soldAt,
     List<String>? imageUrls,
+    String? category,
   }) {
     return Listing(
       listingId: listingId ?? this.listingId,
@@ -128,6 +135,23 @@ class Listing {
       createdAt: createdAt ?? this.createdAt,
       soldAt: soldAt ?? this.soldAt,
       imageUrls: imageUrls ?? this.imageUrls,
+      category: category ?? this.category,
+    );
+  }
+
+  entity.ListingEntity toEntity() {
+    return entity.ListingEntity(
+      listingId: listingId,
+      partId: partId,
+      sellerId: sellerId,
+      brand: brand,
+      modelName: modelName,
+      price: price,
+      conditionScore: conditionScore,
+      imageUrls: imageUrls,
+      status: status == ListingStatus.sold ? entity.ListingStatus.sold : entity.ListingStatus.active,
+      createdAt: createdAt,
+      category: category, // ✅ 추가
     );
   }
 }

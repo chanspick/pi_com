@@ -1,4 +1,5 @@
-// lib/features/listing/domain/entities/cart_item_entity.dart
+// lib/features/cart/domain/entities/cart_item_entity.dart
+
 class CartItemEntity {
   final String productId;
   final String productName;

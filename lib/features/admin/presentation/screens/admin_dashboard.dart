@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
-import '../../data/admin_auth_repository.dart';
+import '../../data/repositories/admin_auth_repository.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -98,13 +98,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     icon: Icons.inventory,
                     color: Colors.green,
                     onTap: () => context.go('/admin/listings'),
-                  ),
-                  // 🆕 DB 업데이트 메뉴 추가
-                  _AdminMenuCard(
-                    title: 'DB 업데이트',
-                    icon: Icons.cloud_upload,
-                    color: Colors.red,
-                    onTap: () => context.go('/admin/db-update'),
                   ),
                   _AdminMenuCard(
                     title: '통계',

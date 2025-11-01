@@ -1,7 +1,8 @@
 // lib/features/listing/data/repositories/listing_repository_impl.dart
-import '../../domain/entities/listing_entity.dart';
-import '../../domain/repositories/listing_repository.dart';
-import '../datasources/listing_remote_datasource.dart';
+
+import 'package:pi_com/features/listing/data/datasources/listing_remote_datasource.dart';
+import 'package:pi_com/features/listing/domain/entities/listing_entity.dart';
+import 'package:pi_com/features/listing/domain/repositories/listing_repository.dart';
 
 class ListingRepositoryImpl implements ListingRepository {
   final ListingRemoteDataSource remoteDataSource;
@@ -10,16 +11,14 @@ class ListingRepositoryImpl implements ListingRepository {
 
   @override
   Stream<ListingEntity> getListing(String listingId) {
-    return remoteDataSource
-        .getListing(listingId)
-        .map((model) => model.toEntity()); // Model → Entity 변환
+    return remoteDataSource.getListing(listingId).map((model) => model.toEntity());
   }
 
   @override
-  Stream<List<ListingEntity>> getListings({String? category, String? sortBy}) {
-    return remoteDataSource
-        .getListings(category: category, sortBy: sortBy)
-        .map((models) => models.map((m) => m.toEntity()).toList()); // Model → Entity 변환
+  // ✅ Stream → Future, Listing → ListingEntity
+  Future<List<ListingEntity>> getListings({String? category, String? sortBy}) async {
+    final models = await remoteDataSource.getListings(category: category, sortBy: sortBy);
+    return models.map((model) => model.toEntity()).toList();
   }
 
   @override
