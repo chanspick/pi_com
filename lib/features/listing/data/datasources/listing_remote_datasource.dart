@@ -10,6 +10,9 @@ abstract class ListingRemoteDataSource {
   // ✅ Stream → Future로 변경
   Future<List<ListingModel>> getListings({String? category, String? sortBy});
 
+  // basePartId로 필터링된 active listings만 가져오기
+  Future<List<ListingModel>> getListingsByBasePartId(String basePartId, {String? sortBy});
+
   Future<void> updateListingStatus(String listingId, ListingStatus status);
 }
 
@@ -64,6 +67,35 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
         return ListingModel.fromFirestore(doc);
       } catch (e) {
 
+        rethrow;
+      }
+    }).toList();
+  }
+
+  @override
+  Future<List<ListingModel>> getListingsByBasePartId(String basePartId, {String? sortBy}) async {
+    // active 상태이고 basePartId가 일치하는 매물만 가져오기
+    Query query = _firestore
+        .collection('listings')
+        .where('status', isEqualTo: 'active')
+        .where('basePartId', isEqualTo: basePartId);
+
+    // 정렬
+    if (sortBy == '낮은 가격순') {
+      query = query.orderBy('price', descending: false);
+    } else if (sortBy == '높은 가격순') {
+      query = query.orderBy('price', descending: true);
+    } else {
+      // 기본값: 최신순
+      query = query.orderBy('createdAt', descending: true);
+    }
+
+    final snapshot = await query.get();
+
+    return snapshot.docs.map((doc) {
+      try {
+        return ListingModel.fromFirestore(doc);
+      } catch (e) {
         rethrow;
       }
     }).toList();

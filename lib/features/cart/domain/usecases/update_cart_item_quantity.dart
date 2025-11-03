@@ -8,7 +8,7 @@ class UpdateCartItemQuantity {
 
   UpdateCartItemQuantity(this.repository);
 
-  Future<void> call(String productId, int quantity) {
-    return repository.updateCartItemQuantity(productId, quantity);
+  Future<void> call(String listingId, int quantity) {
+    return repository.updateCartItemQuantity(listingId, quantity);
   }
 }

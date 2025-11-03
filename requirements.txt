@@ -1,0 +1,594 @@
+# 파이컴퓨터 (PiCom) - 중고 컴퓨터 부품 거래 플랫폼
+# 프로젝트 요구사항 및 진행 상황
+# 최종 업데이트: 2025-11-04
+
+================================================================================
+📊 전체 진행 상황 요약
+================================================================================
+
+전체 프로젝트 진행률: 약 54%
+
+[Core Infrastructure] ✅ 95% 완료
+- Flutter + Firebase (Firestore, Auth, Storage, Functions, Hosting)
+- Riverpod 상태 관리
+- GoRouter (Web) + Navigator (Mobile) 듀얼 라우팅
+- Clean Architecture (Domain-Data-Presentation)
+
+[Epic 1: 핵심 거래 기능] 🟢 87% 완료
+[Epic 2: 시세 조회 시스템] 🟢 85% 완료 ⭐
+[Epic 3: 드래곤볼 기능] ⚪ 0% 완료
+[Epic 4: PC 추천 시스템] ⚪ 0% 완료
+[Epic 5: 완제품 거래] ⚪ 0% 완료
+
+================================================================================
+🎯 Epic 1: 핵심 거래 기능 (우선순위: 최고) - 87% 완료
+================================================================================
+
+## 1.1 회원 인증 시스템 ✅ 100% 완료
+- Google 로그인, 익명 로그인
+- Firebase Authentication 연동
+- Admin 권한 관리
+
+## 1.2 판매 요청 시스템 ✅ 100% 완료
+- SellRequest 모델 (shippingCostSellerRatio 포함)
+- 부품 검색 (Cloud Functions searchParts)
+- 이미지 업로드, 배송비 부담 비율 슬라이더
+
+## 1.3 Admin 관리 시스템 ✅ 100% 완료
+- 판매 요청 승인/반려
+- 자동 Listing 생성
+- 검색 키워드 일괄 추가
+- 전체 사용자 광고 알림 전송
+
+## 1.4 매물 리스팅 ✅ 90% 완료
+- Listing 모델 (basePartId, shippingCostSellerRatio)
+- 상세 페이지, 이미지 캐러셀
+- 장바구니/바로 구매 버튼
+- 찜 버튼 (실시간 동기화) ⭐
+- 가격 알림 버튼 ⭐
+
+## 1.5 검색 시스템 ✅ 100% 완료
+- Cloud Functions searchParts 구현
+- 카테고리별 검색 (9개 카테고리)
+- searchKeywords 기반 실시간 검색
+
+## 1.6 장바구니 시스템 ✅ 100% 완료
+- 판매자 검증 (한 판매자만 가능)
+- 배송비 자동 계산
+- 수량 조절, 장바구니 비우기
+
+## 1.7 알림 시스템 ✅ 100% 완료
+- 8개 타입 (statusChanged, paymentCompleted, listingSold, purchaseConfirmed, shipping, priceAlert, marketing, system)
+- NotificationHelper 유틸리티 클래스
+- 알림 화면 (읽음 처리, 관련 화면 이동)
+
+## 1.8 결제 시스템 ❌ 대기 중
+- PG사 연동 필요 (법인 설립 후)
+- Checkout 화면 구조만 존재
+
+## 1.9 마이페이지 ✅ 90% 완료
+- MyPage 대시보드 ✅
+- 판매 요청 내역 (상태별 배지, Admin 메모) ✅
+- 판매 내역 (sold listings) ✅
+- 구매 내역 (구조만, Transaction 컬렉션 대기) 🟡
+- 찜 목록 (FavoritesRepository, Grid UI) ✅
+- 가격 알림 목록 ⭐ NEW
+- 회원 정보 수정 (프로필, 전화번호, 주소) ✅
+
+파일:
+- lib/features/my_page/presentation/screens/*.dart (7개 화면)
+- lib/features/my_page/data/repositories/favorites_repository.dart
+
+================================================================================
+🎯 Epic 2: 시세 조회 시스템 (우선순위: 높음) - 85% 완료 ⭐
+================================================================================
+
+## 2.1 부품별 시세 화면 ✅ 95% 완료
+- BasePart 모델 (lowestPrice, averagePrice)
+- FL Chart 라이브러리 연동
+- 부품 카테고리 화면
+- **매물 보기 기능 구현** ⭐ NEW
+  - price_history_screen에서 "매물 보기" 버튼 클릭 시
+  - basePartId로 필터링된 active listings만 표시
+  - ListingsByBasePartScreen으로 이동
+- 🟡 실제 거래 기반 시세 집계 (부분적, 수동)
+
+파일:
+- lib/features/parts_price/presentation/screens/price_history_screen.dart
+- lib/features/listing/presentation/screens/listings_by_base_part_screen.dart ⭐ NEW
+- lib/core/models/base_part_model.dart
+
+## 2.2 가격 이력 시스템 ✅ 75% 완료
+- [✅] PriceHistory 모델 (날짜별 최저가/평균가/최고가/거래수)
+- [✅] PriceHistoryRepository (조회, 통계 계산)
+- [✅] priceHistory 컬렉션 설계
+- [❌] 거래 완료 시 가격 이력 자동 저장 (TODO: Cloud Functions)
+- [❌] Cloud Functions 스케줄러 (매일 집계)
+
+파일:
+- lib/core/models/price_history_model.dart
+- lib/features/price_history/data/repositories/price_history_repository.dart
+
+## 2.3 가격 알림 시스템 ✅ 98% 완료 ⭐⭐⭐
+
+### 핵심 기능 (완료)
+- [✅] users/{userId}/priceAlerts subcollection 설계
+- [✅] PriceAlert 모델 및 리포지토리
+  - addAlert, updateTargetPrice, toggleStatus, deleteAlert
+  - getAlertForBasePart (중복 체크)
+- [✅] Riverpod Providers (priceAlertsProvider, activePriceAlertsCountProvider)
+
+### UI/UX (완료)
+- [✅] **가격 알림 설정 다이얼로그** (최고 UX 품질)
+  - 현재가 강조 표시
+  - 목표 가격 입력 시 **실시간 할인율 계산** ("현재가 대비 15.0% 할인")
+  - 가격 포맷팅 (1000 → 1,000원)
+  - 입력 검증 (숫자만, 0원 이하 방지)
+  - 기존 알림 수정/삭제 기능
+  - 안내 메시지
+
+- [✅] **Listing 상세 페이지 통합**
+  - AppBar 우측 가격 알림 버튼 (🔔 아이콘)
+  - 찜 버튼 (하트 아이콘, 실시간 동기화)
+  - basePartId 없는 상품 알림 설정 불가 안내
+
+- [✅] **가격 알림 목록 화면**
+  - 알림 상태별 배지 (🟠대기중 / 🟢알림완료 / ⚫비활성화)
+  - 목표 가격 vs 설정 당시 가격 비교
+  - 할인율 표시
+  - 카드 클릭으로 수정/삭제
+  - 활성 알림 개수 표시 (AppBar)
+
+- [✅] **홈 화면 배지** ⭐ NEW
+  - 가격 알림 아이콘 with 활성 개수 배지 (1-9, 10+는 "9+")
+  - 로그인한 사용자에게만 표시
+  - 클릭 시 가격 알림 목록 이동
+
+### 자동화 (TODO)
+- [❌] Cloud Functions checkPriceAlerts (매일 가격 체크)
+- [❌] 목표가 도달 시 NotificationHelper.notifyPriceAlert 호출
+- [❌] FCM 푸시 알림 (현재: 인앱 알림만)
+
+ ⚠️ 알려진 이슈
+
+  BasePart listingCount 자동 업데이트 필요:
+  - 현재: Firestore의 listingCount가 수동 관리
+  - 문제: 판매 완료된 매물도 카운트에 포함될 가능성
+  - 해결책: Cloud Functions onListingStatusChange 트리거 구현 필요
+    - 매물 생성/상태 변경 시 자동으로 active listings만 카운트
+    - 예상 시간: 0.5일
+  - 임시 해결: ListingsByBasePartScreen에서 정확한 개수 표시 중 ✅
+
+
+### 문서
+- [✅] PRICE_ALERT_SYSTEM.md (종합 문서 작성 완료)
+
+파일:
+- lib/core/models/price_alert_model.dart
+- lib/features/price_alert/data/repositories/price_alert_repository.dart
+- lib/features/price_alert/presentation/providers/price_alert_provider.dart
+- lib/features/price_alert/presentation/widgets/price_alert_setup_dialog.dart
+- lib/features/price_alert/presentation/widgets/price_alert_badge_icon.dart
+- lib/features/price_alert/presentation/screens/price_alerts_screen.dart
+- lib/features/listing/presentation/screens/listing_detail_screen.dart (통합)
+- lib/features/home/presentation/widgets/home_app_bar_actions.dart (배지 추가)
+
+================================================================================
+🎯 Epic 3: 드래곤볼 기능 (우선순위: 중) - 0% 완료
+================================================================================
+
+## 개요
+드래곤볼은 사용자가 부품을 여러 곳에서 소량씩 구매할 때, 배송비를 절약하기 위해
+부품들을 하나의 중앙 창고에 모아두고, 나중에 한 번에 배송받을 수 있는 기능입니다.
+
+## 3.1 드래곤볼 스토리지 시스템 ❌ 0% 완료
+
+### 핵심 기능
+- [❌] 드래곤볼 보관함 (사용자별)
+  - 구매한 부품을 드래곤볼 창고에 보관
+  - 보관 기간 제한 (예: 최대 30일)
+  - 보관 중인 부품 목록 조회
+  - 부품별 입고일, 남은 보관일 표시
+
+- [❌] 일괄 배송 요청
+  - 보관 중인 부품들을 선택하여 일괄 배송 요청
+  - 배송비 자동 계산 (합배송 할인)
+  - 배송지 선택/입력
+  - 배송 요청 확인
+
+- [❌] 드래곤볼 상태 관리
+  - 입고 대기 (purchased)
+  - 보관 중 (stored)
+  - 배송 준비 중 (packing)
+  - 배송 중 (shipping)
+  - 배송 완료 (delivered)
+
+### 데이터베이스 설계
+```
+users/{userId}/dragonBalls/{dragonBallId}
+├─ dragonBallId: string
+├─ userId: string
+├─ listingId: string
+├─ orderId: string (연결된 주문 ID)
+├─ partName: string
+├─ imageUrl: string
+├─ status: string (stored, packing, shipping, delivered)
+├─ storedAt: timestamp (입고일)
+├─ expiresAt: timestamp (보관 만료일)
+├─ shippedAt: timestamp? (배송 시작일)
+├─ deliveredAt: timestamp? (배송 완료일)
+└─ batchShipmentId: string? (일괄 배송 ID)
+
+batchShipments/{batchShipmentId}
+├─ batchShipmentId: string
+├─ userId: string
+├─ dragonBallIds: string[] (포함된 드래곤볼 ID 목록)
+├─ shippingAddress: object
+├─ shippingCost: int
+├─ status: string (pending, processing, shipped, delivered)
+├─ requestedAt: timestamp
+├─ shippedAt: timestamp?
+└─ deliveredAt: timestamp?
+```
+
+### UI/UX 요구사항
+- [❌] 드래곤볼 보관함 화면
+  - 마이페이지에서 접근
+  - 보관 중인 부품 카드 UI (입고일, 만료일 표시)
+  - 만료 임박 부품 강조 (빨간색 배지)
+  - 전체 선택/선택 해제 기능
+
+- [❌] 일괄 배송 요청 화면
+  - 선택된 부품 목록
+  - 배송지 입력/선택
+  - 배송비 계산 및 표시
+  - 결제 연동 (PG 대기)
+
+- [❌] 드래곤볼 알림
+  - 부품 입고 완료 알림
+  - 보관 만료 임박 알림 (3일 전, 1일 전)
+  - 배송 시작/완료 알림
+
+### 비즈니스 로직
+- 보관 기간: 기본 30일, 연장 불가
+- 보관 수수료: 무료 (초기 단계)
+- 배송비: 일괄 배송 시 할인 (예: 기본 3,000원 + 부품당 500원)
+- 만료된 부품: 자동 폐기 또는 강제 배송 (정책 결정 필요)
+
+### 구현 우선순위
+1. 드래곤볼 데이터 모델 및 Repository
+2. 드래곤볼 보관함 UI
+3. 일괄 배송 요청 기능
+4. 알림 시스템 통합
+5. Admin 관리 기능 (입고 처리, 배송 처리)
+
+## 3.2 구매 플로우 통합 ❌ 0% 완료
+
+### 결제 시 드래곤볼 선택 옵션
+- Checkout 화면에 "드래곤볼 보관" 옵션 추가
+- 선택 시: 결제 완료 후 dragonBalls 컬렉션에 저장
+- 선택 안 함: 기존 플로우대로 직배송
+
+### 고려사항
+- 드래곤볼 vs 직배송 선택 시 배송비 차이 명확히 표시
+- 드래곤볼 선택 시 보관 기간 안내
+- 판매자별 드래곤볼 지원 여부 (초기에는 모든 판매자 지원)
+
+================================================================================
+🎯 Epic 4: PC 추천 시스템 (우선순위: 하) - 0% 완료
+================================================================================
+
+## 개요
+사용자의 예산과 용도에 맞는 PC 부품 조합을 추천하는 시스템
+
+## 4.1 부품 호환성 시스템 ❌ 0% 완료
+- CPU-메인보드 소켓 호환성
+- RAM-메인보드 규격 호환성
+- 파워 용량 계산 (GPU+CPU+기타 부품)
+- 케이스 폼팩터 호환성
+
+## 4.2 견적 추천 엔진 ❌ 0% 완료
+- 예산별 견적 (50만원, 100만원, 150만원 등)
+- 용도별 견적 (사무용, 게임용, 영상편집용)
+- AI 기반 최적 조합 추천 (향후)
+
+## 4.3 견적 저장/공유 ❌ 0% 완료
+- 사용자 견적 저장
+- 견적 URL 공유 기능
+- 커뮤니티 인기 견적 조회
+
+================================================================================
+🎯 Epic 5: 완제품 거래 (우선순위: 하) - 0% 완료
+================================================================================
+
+## 개요
+조립 완료된 PC를 거래할 수 있는 기능
+
+## 5.1 완제품 리스팅 ❌ 0% 완료
+- 스펙 입력 (CPU, GPU, RAM, SSD 등)
+- 벤치마크 점수 입력 (옵션)
+- 사용 기간 입력
+
+## 5.2 완제품 검색/필터 ❌ 0% 완료
+- 스펙별 필터링
+- 가격대별 필터링
+- 성능(벤치마크) 순 정렬
+
+================================================================================
+📋 데이터베이스 컬렉션 현황
+================================================================================
+
+[✅ 완료된 컬렉션]
+- users (사용자)
+- listings (매물) - basePartId, shippingCostSellerRatio 포함
+- sell_requests (판매 요청)
+- notifications (알림) - 8개 타입
+- base_parts, parts (부품)
+- users/{userId}/cart (장바구니)
+- users/{userId}/favorites (찜 목록)
+- users/{userId}/priceAlerts (가격 알림) ⭐ NEW
+- priceHistory (가격 이력) ⭐ NEW
+
+[🟡 부분 구현]
+- transactions, orders (구조만 존재)
+
+[❌ 미구현]
+- reviews, dragon_ball_storage, compatibility, complete_pc_listings
+
+================================================================================
+🔥 최근 완료 작업
+================================================================================
+
+## 2025-11-04 - 매물 보기 기능 및 알림 통합 ⭐⭐
+
+### 1. 매물 보기 기능 구현 (Epic 2.1 완성)
+**문제점**:
+- price_history_screen에서 "매물 보기" 버튼이 미구현 상태
+- 부품 시세에서 표시되는 매물 개수에 판매 완료된 매물이 포함됨
+- 실제 판매 중인 매물만 볼 수 있는 기능 부재
+
+**해결**:
+- ListingRemoteDataSource에 `getListingsByBasePartId()` 메서드 추가
+  - status='active' AND basePartId 일치하는 매물만 조회
+- ListingRepository 및 RepositoryImpl 업데이트
+- listingsByBasePartIdProvider 추가 (Riverpod FutureProvider)
+- **ListingsByBasePartScreen** 신규 생성
+  - basePartId로 필터링된 active listings만 표시
+  - 그리드 레이아웃 (2열)
+  - 정확한 매물 개수 표시
+  - 빈 상태 처리
+- price_history_screen "매물 보기" 버튼 연동
+
+**기술 구현**:
+```dart
+// 1. DataSource
+Future<List<ListingModel>> getListingsByBasePartId(String basePartId) async {
+  Query query = _firestore.collection('listings')
+    .where('status', isEqualTo: 'active')
+    .where('basePartId', isEqualTo: basePartId);
+  // ...
+}
+
+// 2. Provider
+final listingsByBasePartIdProvider =
+  FutureProvider.autoDispose.family<List<ListingEntity>, String>((ref, basePartId) async {
+    return ref.watch(listingRepositoryProvider).getListingsByBasePartId(basePartId);
+  });
+```
+
+**파일**:
+- listing_remote_datasource.dart (메서드 추가)
+- listing_repository.dart (인터페이스 추가)
+- listing_repository_impl.dart (구현 추가)
+- listing_provider.dart (Provider 추가)
+- listings_by_base_part_screen.dart (신규 생성, 115줄)
+- price_history_screen.dart (버튼 연동)
+
+### 2. 알림 시스템 통합
+**문제점**:
+- 홈 화면에 일반 알림과 가격 알림 아이콘이 2개 표시됨
+- 사용자 경험 복잡
+
+**해결**:
+- NotificationBadgeIcon에 가격 알림 개수 통합
+  - unreadCount + priceAlertCount 합산 표시
+- NotificationListScreen을 탭 구조로 변경
+  - Tab 1: 일반 알림 (빨간 배지)
+  - Tab 2: 가격 알림 (주황 배지)
+- 각 탭에 실시간 배지 표시
+- PriceAlertBadgeIcon 제거 (중복 아이콘 제거)
+
+**파일**:
+- notification_badge_icon.dart (통합)
+- notification_list_screen.dart (탭 구조 변경)
+- home_app_bar_actions.dart (중복 아이콘 제거)
+
+---
+
+## 2025-11-03 - Epic 2 완성: 가격 알림 시스템 ⭐⭐⭐
+
+### 핵심 성과
+1. **완전한 가격 알림 생명주기 구현**
+   - 설정 → 관리 → 수정/삭제 → 상태 추적
+   - Firestore 실시간 동기화
+
+2. **최고 수준의 UX 구현**
+   - 실시간 할인율 계산 및 표시
+   - 가격 포맷팅 및 입력 검증
+   - 직관적인 상태 배지
+
+3. **홈 화면 통합**
+   - 활성 알림 개수 배지 (자동 업데이트)
+   - 원클릭으로 알림 목록 접근
+
+4. **종합 문서 작성**
+   - PRICE_ALERT_SYSTEM.md (완전 가이드)
+
+### 상세 구현
+- PriceAlert 모델 (9개 필드, 할인율 계산 로직)
+- PriceAlertRepository (10개 메서드)
+- 가격 알림 설정 다이얼로그 (316줄, 실시간 피드백)
+- 가격 알림 목록 화면 (280줄, 상태별 UI)
+- 홈 화면 배지 아이콘 (활성 개수 표시)
+- Listing 상세 페이지 통합 (찜 + 알림 버튼)
+- PriceHistory 모델 및 리포지토리
+
+### 기술 스택
+- Riverpod StreamProvider (실시간 동기화)
+- Firestore subcollection (users/{userId}/priceAlerts)
+- Flutter Form 검증 및 포맷팅
+- Clean Architecture 패턴
+
+---
+
+## 2025-11-03 - 마이페이지 시스템
+
+- MyPage 대시보드 (프로필 헤더, 메뉴)
+- 판매 요청/판매/구매 내역 화면
+- 찜 목록 시스템 (Firestore whereIn 10개 제한 대응)
+- 회원 정보 수정 (폼 검증)
+
+---
+
+## 2025-01-03 이전 완료 작업
+
+1. 알림 시스템 (NotificationType 8개)
+2. 장바구니 시스템 전면 재구축
+3. 배송비 부담 비율 기능
+4. 검색 기능 (Cloud Functions)
+5. 버그 수정 (RenderFlex overflow 등)
+
+================================================================================
+📝 다음 우선순위 작업
+================================================================================
+
+## 1순위: Cloud Functions 자동화 (3-4일) 🔥
+### A. BasePart listingCount 자동 업데이트 ⭐ 긴급
+- onListingStatusChange 트리거 (매물 생성/상태 변경 시)
+- active listings만 카운트하여 base_parts.listingCount 업데이트
+- 예상 시간: 0.5일
+
+### B. 가격 알림 자동화
+- Cloud Functions 스케줄러 (매일 실행)
+  - 활성 가격 알림 조회
+  - BasePart별 현재 최저가 조회
+  - 목표가 도달 시 NotificationHelper.notifyPriceAlert 호출
+  - triggeredAt 업데이트, isActive = false
+- FCM 푸시 알림 연동 (선택)
+- 가격 이력 자동 저장 로직
+- 예상 시간: 2-3일
+
+## 2순위: 필터/정렬 강화 (2-3일)
+- Listing 리스트 필터 (가격 범위, 상태 점수, 카테고리)
+- 정렬 옵션 (최신순, 저가순, 고가순, 인기순)
+
+## 3순위: 결제 준비 (PG 대기 중) (1주)
+⚠️ 법인 설립 완료 후 PG사 계약 필요
+- Transactions 컬렉션 설계
+- Checkout 화면 구현
+- 에스크로 로직 설계
+- Cloud Functions - processTransaction, autoConfirmPurchase
+
+================================================================================
+🛠️ 기술 스택
+================================================================================
+
+[Frontend]
+- Flutter (SDK)
+- Riverpod (상태 관리)
+- GoRouter (웹) + Navigator (모바일)
+- FL Chart (차트)
+- Firebase UI (인증)
+- Image Picker
+
+[Backend]
+- Firebase Authentication
+- Cloud Firestore
+- Cloud Storage
+- Cloud Functions (TypeScript) - searchParts, addSearchKeywordsToParts
+- Firebase Hosting
+
+[개발 환경]
+- Flutter SDK (stable)
+- Firebase CLI
+- VS Code / Android Studio
+
+================================================================================
+📚 문서
+================================================================================
+
+- PRICE_ALERT_SYSTEM.md - 가격 알림 시스템 완전 가이드 ⭐ NEW
+- NOTIFICATION_SYSTEM.md - 알림 시스템 가이드
+- WEB_HOSTING_GUIDE.md - Firebase 웹 배포 가이드
+
+================================================================================
+⚠️ 알려진 이슈 및 제약사항
+================================================================================
+
+1. **BasePart listingCount 업데이트 로직 미구현** ⭐ NEW
+   - 현재: Firestore base_parts 컬렉션의 listingCount가 수동으로 관리됨
+   - 문제: 판매 완료된 매물(status='sold')도 카운트에 포함될 가능성
+   - 해결 방법: Cloud Functions onListingStatusChange 트리거 필요
+     ```typescript
+     // 매물 생성/상태 변경 시 base_parts의 listingCount 자동 업데이트
+     export const onListingStatusChange = functions.firestore
+       .document('listings/{listingId}')
+       .onWrite(async (change, context) => {
+         const basePartId = change.after.data()?.basePartId;
+         const activeCount = await countActiveListings(basePartId);
+         await updateBasePartListingCount(basePartId, activeCount);
+       });
+     ```
+   - 임시 해결: ListingsByBasePartScreen에서 정확한 active listings 개수 표시 중
+
+2. PG사 연동 대기 중 (법인 설립 후 진행)
+3. FCM 푸시 알림 미구현 (인앱 알림만 지원)
+4. 1:1 채팅 미구현 (사용자 요청으로 제외)
+5. 가격 이력 자동 집계 필요 (Cloud Functions)
+6. 가격 알림 자동 체크 필요 (Cloud Functions)
+
+================================================================================
+🎉 프로젝트 마일스톤
+================================================================================
+
+[✅ Phase 1 완료 - 2025-01-03]
+- 기본 인프라 구축
+- 판매 요청 시스템
+- Admin 관리 시스템
+- 부품 검색
+- 알림 시스템
+- 장바구니 시스템
+
+[✅ Phase 2 완료 - 2025-11-03]
+- 마이페이지 전체
+- 찜 기능
+- 가격 알림 시스템 (Epic 2 완성) ⭐
+- 홈 화면 통합
+
+[🟡 Phase 3 진행 중]
+- Cloud Functions 자동화
+- 필터/정렬
+- 결제 준비
+
+[⚪ Phase 4 대기]
+- 결제 연동 (PG 대기)
+- 에스크로 시스템
+- 리뷰 시스템
+
+[⚪ Phase 5 장기]
+- 드래곤볼 기능
+- PC 추천 시스템
+- 완제품 거래
+
+================================================================================
+📞 연락처 및 지원
+================================================================================
+
+프로젝트: 파이컴퓨터 (PiCom)
+목적: 중고 컴퓨터 부품 거래 플랫폼
+개발: Flutter + Firebase
+Epic 2 완성도: 85% ⭐⭐
+전체 진행률: 54%
+최종 업데이트: 2025-11-04
+
+================================================================================

@@ -8,5 +8,8 @@ abstract class ListingRepository {
   // ✅ Stream → Future로 변경, Listing → ListingEntity로 수정
   Future<List<ListingEntity>> getListings({String? category, String? sortBy});
 
+  // basePartId로 필터링된 active listings 가져오기
+  Future<List<ListingEntity>> getListingsByBasePartId(String basePartId, {String? sortBy});
+
   Future<void> updateListingStatus(String listingId, ListingStatus status);
 }

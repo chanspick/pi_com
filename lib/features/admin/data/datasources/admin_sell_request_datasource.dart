@@ -58,6 +58,8 @@ class AdminSellRequestDataSource {
         status: ListingStatus.available,
         createdAt: DateTime.now(),
         soldAt: null,
+        category: sellRequest.category,
+        shippingCostSellerRatio: sellRequest.shippingCostSellerRatio, // ✅ 배송비 비율 전달
       );
 
       final listingRef = _firestore

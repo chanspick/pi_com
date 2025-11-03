@@ -51,28 +51,27 @@ class BasePartCard extends StatelessWidget {
             Expanded(
               flex: 4,
               child: Padding(
-                padding: const EdgeInsets.all(12.0),
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 7.0),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          '최저가',
-                          style: TextStyle(color: Colors.grey, fontSize: 12),
-                        ),
-                        Text(
-                          basePart.priceRangeText,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: Theme.of(context).primaryColor,
-                          ),
-                        ),
-                      ],
+                    const Text(
+                      '최저가',
+                      style: TextStyle(color: Colors.grey, fontSize: 12),
                     ),
+                    const SizedBox(height: 2),
+                    Text(
+                      basePart.priceRangeText,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const Spacer(),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [

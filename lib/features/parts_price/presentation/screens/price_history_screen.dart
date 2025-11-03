@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../domain/entities/base_part_entity.dart';
 import '../providers/part_provider.dart';
 import '../widgets/price_history_chart.dart';
+import '../../../listing/presentation/screens/listings_by_base_part_screen.dart';
 
 class PriceHistoryScreen extends ConsumerWidget {
   final BasePartEntity basePart;
@@ -131,14 +132,18 @@ class PriceHistoryScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
 
-            // 구매하기 버튼
+            // 매물 보기 버튼
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  // TODO: 매물 목록으로 이동
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('매물 목록 화면은 준비 중입니다.')),
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => ListingsByBasePartScreen(
+                        basePartId: basePart.basePartId,
+                        partName: basePart.modelName,
+                      ),
+                    ),
                   );
                 },
                 icon: const Icon(Icons.shopping_cart),

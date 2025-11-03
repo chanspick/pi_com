@@ -16,6 +16,17 @@ import '../../features/parts_price/domain/entities/base_part_entity.dart';
 import '../../features/cart/presentation/screens/cart_screen.dart';
 import '../../features/checkout/presentation/screens/checkout_screen.dart';
 
+// ✅ 새로 추가: MyPage 피처 imports
+import '../../features/my_page/presentation/screens/my_page_screen.dart';
+import '../../features/my_page/presentation/screens/profile_edit_screen.dart';
+import '../../features/my_page/presentation/screens/purchase_history_screen.dart';
+import '../../features/my_page/presentation/screens/sales_history_screen.dart';
+import '../../features/my_page/presentation/screens/sell_request_history_screen.dart';
+import '../../features/my_page/presentation/screens/favorites_screen.dart';
+
+// ✅ 새로 추가: PriceAlert 피처 imports
+import '../../features/price_alert/presentation/screens/price_alerts_screen.dart';
+
 /// 앱 내부용 Navigator Route Generator
 class AppRouter {
   static Route generateRoute(RouteSettings settings) {
@@ -100,6 +111,49 @@ class AppRouter {
       case Routes.checkout:
         return MaterialPageRoute(
           builder: (_) => const CheckoutScreen(),
+          settings: settings,
+        );
+
+    // ✅ 새로 추가: MyPage 피처
+      case Routes.myPage:
+        return MaterialPageRoute(
+          builder: (_) => const MyPageScreen(),
+          settings: settings,
+        );
+
+      case Routes.profileEdit:
+        return MaterialPageRoute(
+          builder: (_) => const ProfileEditScreen(),
+          settings: settings,
+        );
+
+      case Routes.purchaseHistory:
+        return MaterialPageRoute(
+          builder: (_) => const PurchaseHistoryScreen(),
+          settings: settings,
+        );
+
+      case Routes.salesHistory:
+        return MaterialPageRoute(
+          builder: (_) => const SalesHistoryScreen(),
+          settings: settings,
+        );
+
+      case Routes.sellRequestHistory:
+        return MaterialPageRoute(
+          builder: (_) => const SellRequestHistoryScreen(),
+          settings: settings,
+        );
+
+      case Routes.favorites:
+        return MaterialPageRoute(
+          builder: (_) => const FavoritesScreen(),
+          settings: settings,
+        );
+
+      case Routes.priceAlerts:
+        return MaterialPageRoute(
+          builder: (_) => const PriceAlertsScreen(),
           settings: settings,
         );
 

@@ -6,10 +6,12 @@ import '../datasources/admin_sell_request_datasource.dart';
 import '../datasources/admin_notification_datasource.dart';
 import '../../../../core/models/notification_model.dart';
 import '../../../../core/models/sell_request_model.dart';
+import '../../../../core/utils/notification_helper.dart';
 
 class AdminSellRequestRepositoryImpl implements AdminSellRequestRepository {
   final AdminSellRequestDataSource _sellRequestDataSource;
   final AdminNotificationDataSource _notificationDataSource;
+  final NotificationHelper _notificationHelper = NotificationHelper();
 
   AdminSellRequestRepositoryImpl(
       this._sellRequestDataSource,
@@ -43,17 +45,12 @@ class AdminSellRequestRepositoryImpl implements AdminSellRequestRepository {
       adminNotes: adminNotes,
     );
 
-    // 3. 판매자에게 승인 알림 발송 ⭐⭐⭐
-    await _notificationDataSource.sendNotificationToUser(
-      userId: sellRequest.sellerId,
-      type: NotificationType.statusChanged,
-      title: '판매 요청이 승인되었습니다 🎉',
-      message: '${sellRequest.brand} ${sellRequest.modelName} 부품의 판매 요청이 승인되었습니다.\n'
-          '최종 판매 가격: ${finalPrice.toString().replaceAllMapped(
-        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-            (Match m) => '${m[1]},',
-      )}원',
-      relatedSellRequestId: requestId,
+    // 3. 판매자에게 승인 알림 발송 ⭐⭐⭐ (NotificationHelper 사용)
+    await _notificationHelper.notifySellRequestApproved(
+      sellerId: sellRequest.sellerId,
+      sellRequestId: requestId,
+      partName: '${sellRequest.brand} ${sellRequest.modelName}',
+      finalPrice: finalPrice,
     );
 
     print('✅ 승인 알림 발송 완료: ${sellRequest.sellerId}');
@@ -82,15 +79,12 @@ class AdminSellRequestRepositoryImpl implements AdminSellRequestRepository {
       rejectReason: rejectReason,
     );
 
-    // 3. 판매자에게 반려 알림 발송 ⭐⭐⭐
-    await _notificationDataSource.sendNotificationToUser(
-      userId: sellRequest.sellerId,
-      type: NotificationType.statusChanged,
-      title: '판매 요청이 반려되었습니다',
-      message: '${sellRequest.brand} ${sellRequest.modelName} 부품의 판매 요청이 반려되었습니다.\n\n'
-          '반려 사유: $rejectReason\n\n'
-          '수정 후 다시 신청해주세요.',
-      relatedSellRequestId: requestId,
+    // 3. 판매자에게 반려 알림 발송 ⭐⭐⭐ (NotificationHelper 사용)
+    await _notificationHelper.notifySellRequestRejected(
+      sellerId: sellRequest.sellerId,
+      sellRequestId: requestId,
+      partName: '${sellRequest.brand} ${sellRequest.modelName}',
+      reason: rejectReason,
     );
 
     print('✅ 반려 알림 발송 완료: ${sellRequest.sellerId}');

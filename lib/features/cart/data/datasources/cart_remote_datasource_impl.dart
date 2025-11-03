@@ -20,14 +20,31 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
 
   CollectionReference<Map<String, dynamic>> _cartCollection() {
     if (_userId == null) {
-      throw Exception('User not logged in');
+      throw Exception('로그인이 필요합니다');
     }
     return _firestore.collection('users').doc(_userId).collection('cart');
   }
 
   @override
-  Future<void> addToCart(CartItemModel item) {
-    return _cartCollection().doc(item.productId).set(item.toFirestore());
+  Future<void> addToCart(CartItemModel item) async {
+    // 1. 기존 장바구니 항목 조회
+    final existingItems = await _cartCollection().get();
+
+    // 2. 장바구니에 다른 판매자의 상품이 있는지 확인
+    if (existingItems.docs.isNotEmpty) {
+      final firstItem = CartItemModel.fromFirestore(existingItems.docs.first.data());
+      if (firstItem.sellerId != item.sellerId) {
+        throw Exception(
+          '장바구니에는 한 명의 판매자 상품만 담을 수 있습니다.\n'
+          '현재 장바구니: ${firstItem.sellerName}\n'
+          '추가하려는 상품: ${item.sellerName}\n\n'
+          '장바구니를 비우고 다시 시도해주세요.',
+        );
+      }
+    }
+
+    // 3. 장바구니에 추가 (listingId를 문서 ID로 사용)
+    return _cartCollection().doc(item.listingId).set(item.toFirestore());
   }
 
   @override
@@ -38,15 +55,25 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
   }
 
   @override
-  Future<void> removeFromCart(String productId) {
-    return _cartCollection().doc(productId).delete();
+  Future<void> removeFromCart(String listingId) {
+    return _cartCollection().doc(listingId).delete();
   }
 
   @override
-  Future<void> updateCartItemQuantity(String productId, int quantity) {
+  Future<void> updateCartItemQuantity(String listingId, int quantity) {
     if (quantity <= 0) {
-      return removeFromCart(productId);
+      return removeFromCart(listingId);
     }
-    return _cartCollection().doc(productId).update({'quantity': quantity});
+    return _cartCollection().doc(listingId).update({'quantity': quantity});
+  }
+
+  @override
+  Future<void> clearCart() async {
+    final batch = _firestore.batch();
+    final cartItems = await _cartCollection().get();
+    for (final doc in cartItems.docs) {
+      batch.delete(doc.reference);
+    }
+    return batch.commit();
   }
 }

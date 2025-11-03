@@ -6,18 +6,24 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../cart/presentation/providers/cart_provider.dart';
 import '../providers/use_case_providers.dart';
 
-
-class ListingBottomBar extends ConsumerWidget {
+class ListingBottomBar extends ConsumerStatefulWidget {
   final ListingEntity listing;
 
   const ListingBottomBar({super.key, required this.listing});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ListingBottomBar> createState() => _ListingBottomBarState();
+}
+
+class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
+  bool _isAddingToCart = false;
+
+  @override
+  Widget build(BuildContext context) {
     final currentUser = ref.watch(currentUserProvider);
 
-    final bool isSold = listing.isSold;
-    final bool isMyItem = currentUser?.uid == listing.sellerId;
+    final bool isSold = widget.listing.isSold;
+    final bool isMyItem = currentUser?.uid == widget.listing.sellerId;
     final bool canPurchase = !isSold && !isMyItem && currentUser != null;
 
     return Container(
@@ -26,75 +32,152 @@ class ListingBottomBar extends ConsumerWidget {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(25),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 10,
             offset: const Offset(0, -5),
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: canPurchase ? Colors.red : Colors.grey,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              onPressed: canPurchase
-                  ? () => _handlePurchase(context, ref, listing, currentUser!.uid)
-                  : null,
-              child: Text(
-                isSold ? '판매 완료' : (isMyItem ? '내 판매 상품' : '구매하기'),
-              ),
-            ),
-          ),
-        ],
+      child: SafeArea(
+        child: _buildButtons(context, canPurchase, isSold, isMyItem, currentUser),
       ),
     );
   }
 
-  void _handlePurchase(
-      BuildContext context,
-      WidgetRef ref,
-      ListingEntity listing,
-      String userId,
-      ) async { // async 키워드 추가
+  Widget _buildButtons(
+    BuildContext context,
+    bool canPurchase,
+    bool isSold,
+    bool isMyItem,
+    dynamic currentUser,
+  ) {
+    if (!canPurchase) {
+      // 구매 불가능한 경우 (판매 완료, 내 상품, 로그인 안함)
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.grey,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+          onPressed: null,
+          child: Text(
+            isSold ? '판매 완료' : (isMyItem ? '내 판매 상품' : '로그인 필요'),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ),
+      );
+    }
+
+    // 구매 가능한 경우 - "장바구니" + "바로 구매" 버튼
+    return Row(
+      children: [
+        // 장바구니 버튼
+        Expanded(
+          flex: 1,
+          child: OutlinedButton.icon(
+            icon: _isAddingToCart
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.shopping_cart_outlined),
+            label: const Text('장바구니'),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              side: BorderSide(color: Theme.of(context).primaryColor),
+              foregroundColor: Theme.of(context).primaryColor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: _isAddingToCart
+                ? null
+                : () => _handleAddToCart(context, currentUser.uid),
+          ),
+        ),
+        const SizedBox(width: 12),
+
+        // 바로 구매 버튼 (TODO: 체크아웃 바로 이동)
+        Expanded(
+          flex: 2,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('바로 구매 기능은 개발 예정입니다')),
+              );
+            },
+            child: const Text(
+              '바로 구매',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _handleAddToCart(BuildContext context, String userId) async {
+    setState(() => _isAddingToCart = true);
+
     try {
-      // 구매 가능 여부 검증
+      // 1. 구매 가능 여부 검증
       final validatePurchaseUseCase = ref.read(validatePurchaseUseCaseProvider);
-      validatePurchaseUseCase(listing, userId);
+      validatePurchaseUseCase(widget.listing, userId);
 
-      // CartItem 생성
+      // 2. CartItem 생성 (async 처리)
       final createCartItemUseCase = ref.read(createCartItemUseCaseProvider);
-      final cartItem = createCartItemUseCase(listing);
+      final cartItem = await createCartItemUseCase(widget.listing);
 
-      // Firestore에 장바구니 아이템 저장
-      final cartRepository = ref.read(cartRepositoryProvider);
-      await cartRepository.addToCart(cartItem); // await을 사용하여 비동기 완료 대기
+      // 3. Firestore에 장바구니 추가
+      final addToCart = ref.read(addToCartProvider);
+      await addToCart(cartItem);
 
-      // 장바구니 추가 성공 알림
+      // 4. 성공 알림
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${listing.modelName}을(를) 장바구니에 담았습니다.'),
+          content: Text('${widget.listing.modelName}을(를) 장바구니에 담았습니다'),
           action: SnackBarAction(
-            label: '보기',
-                          onPressed: () {
-                            Navigator.of(context).pushNamed('/cart');
-                          },          ),
+            label: '장바구니 보기',
+            onPressed: () {
+              // TODO: 장바구니 화면으로 이동 (라우팅 설정 필요)
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('장바구니 화면으로 이동 - 라우팅 설정 필요')),
+              );
+            },
+          ),
           duration: const Duration(seconds: 3),
+          backgroundColor: Colors.green,
         ),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('오류: ${e.toString()}'), // 사용자에게 오류 메시지 표시
+          content: Text(e.toString().replaceAll('Exception: ', '')),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isAddingToCart = false);
+      }
     }
   }
 }

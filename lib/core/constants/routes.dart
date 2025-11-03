@@ -22,8 +22,15 @@ class Routes {
   static const String marketplace = '/marketplace';
   static const String productDetails = '/product-details';
 
-  // Profile (차후 구현)
+  // MyPage
+  static const String myPage = '/my-page';
   static const String profile = '/profile';
+  static const String profileEdit = '/profile-edit';
+  static const String purchaseHistory = '/purchase-history';
+  static const String salesHistory = '/sales-history';
+  static const String sellRequestHistory = '/sell-request-history';
+  static const String favorites = '/favorites';
+  static const String priceAlerts = '/price-alerts';
   static const String settings = '/settings';
   // ✅ 새로 추가: Listing 피처
   static const String partShop = '/part-shop';

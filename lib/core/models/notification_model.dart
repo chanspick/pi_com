@@ -4,9 +4,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 /// 알림 타입 정의
 enum NotificationType {
-  statusChanged,      // 판매 요청 상태 변경
-  paymentCompleted,   // 대금 입금 완료
-  system,             // 시스템 공지
+  statusChanged,       // 판매 요청 상태 변경 (승인/반려)
+  paymentCompleted,    // 결제 완료
+  listingSold,         // 매물 판매 완료 (판매자에게)
+  purchaseConfirmed,   // 구매 확정 (판매자에게)
+  shipping,            // 배송 시작
+  priceAlert,          // 목표 가격 도달
+  marketing,           // 광고/마케팅 알림
+  system,              // 시스템 공지
 }
 
 /// NotificationType enum 헬퍼
@@ -18,6 +23,16 @@ extension NotificationTypeExtension on NotificationType {
         return 'statusChanged';
       case NotificationType.paymentCompleted:
         return 'paymentCompleted';
+      case NotificationType.listingSold:
+        return 'listingSold';
+      case NotificationType.purchaseConfirmed:
+        return 'purchaseConfirmed';
+      case NotificationType.shipping:
+        return 'shipping';
+      case NotificationType.priceAlert:
+        return 'priceAlert';
+      case NotificationType.marketing:
+        return 'marketing';
       case NotificationType.system:
         return 'system';
     }
@@ -31,6 +46,16 @@ NotificationType notificationTypeFromString(String type) {
       return NotificationType.statusChanged;
     case 'paymentcompleted':
       return NotificationType.paymentCompleted;
+    case 'listingsold':
+      return NotificationType.listingSold;
+    case 'purchaseconfirmed':
+      return NotificationType.purchaseConfirmed;
+    case 'shipping':
+      return NotificationType.shipping;
+    case 'pricealert':
+      return NotificationType.priceAlert;
+    case 'marketing':
+      return NotificationType.marketing;
     case 'system':
       return NotificationType.system;
     default:

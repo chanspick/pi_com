@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';  // ✅ Riverpod import
 import '../../../auth/presentation/providers/auth_provider.dart';  // ✅ Provider import
 import '../../../notification/presentations/widgets/notification_badge_icon.dart';
+import '../../../../core/constants/routes.dart';  // ✅ Routes import
 
 class HomeAppBarActions extends ConsumerWidget {  // ✅ ConsumerWidget으로 변경
   const HomeAppBarActions({super.key});
@@ -32,12 +33,10 @@ class HomeAppBarActions extends ConsumerWidget {  // ✅ ConsumerWidget으로 �
             // ✅ Use Case Provider 사용
             if (value == 'profile') {
               if (user != null && !user.isAnonymous) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('프로필 기능은 준비 중입니다.')),
-                );
+                Navigator.of(context).pushNamed(Routes.myPage);
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('로그인 후 프로필을 볼 수 있습니다.')),
+                  const SnackBar(content: Text('로그인 후 마이페이지를 볼 수 있습니다.')),
                 );
               }
             } else if (value == 'settings') {
@@ -58,7 +57,7 @@ class HomeAppBarActions extends ConsumerWidget {  // ✅ ConsumerWidget으로 �
                 value: 'profile',
                 child: ListTile(
                   leading: Icon(Icons.person_outline),
-                  title: Text('프로필'),
+                  title: Text('마이페이지'),
                 ),
               ),
               const PopupMenuItem(

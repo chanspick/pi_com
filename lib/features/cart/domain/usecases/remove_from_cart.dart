@@ -8,7 +8,7 @@ class RemoveFromCart {
 
   RemoveFromCart(this.repository);
 
-  Future<void> call(String productId) {
-    return repository.removeFromCart(productId);
+  Future<void> call(String listingId) {
+    return repository.removeFromCart(listingId);
   }
 }

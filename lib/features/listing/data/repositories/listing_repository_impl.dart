@@ -22,6 +22,12 @@ class ListingRepositoryImpl implements ListingRepository {
   }
 
   @override
+  Future<List<ListingEntity>> getListingsByBasePartId(String basePartId, {String? sortBy}) async {
+    final models = await remoteDataSource.getListingsByBasePartId(basePartId, sortBy: sortBy);
+    return models.map((model) => model.toEntity()).toList();
+  }
+
+  @override
   Future<void> updateListingStatus(String listingId, ListingStatus status) {
     return remoteDataSource.updateListingStatus(listingId, status);
   }

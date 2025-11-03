@@ -42,6 +42,7 @@ class _SellRequestScreenState extends ConsumerState<SellRequestScreen> {
   int? _ageInfoMonth;
   bool _isSecondHand = true;
   final _requestedPriceController = TextEditingController();
+  int _shippingCostSellerRatio = 0; // 배송비 판매자 부담 비율 (0-100)
 
   bool _isLoading = false;
 
@@ -145,6 +146,7 @@ class _SellRequestScreenState extends ConsumerState<SellRequestScreen> {
         purpose: _selectedPurpose ?? '',
         requestedPrice: int.parse(_requestedPriceController.text),
         imageUrls: [],
+        shippingCostSellerRatio: _shippingCostSellerRatio, // ✅ 배송비 비율 전달
         status: SellRequestStatus.pending,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
@@ -195,6 +197,8 @@ class _SellRequestScreenState extends ConsumerState<SellRequestScreen> {
               _buildImagePicker(),
               const SizedBox(height: 24),
               _buildPriceInput(),
+              const SizedBox(height: 24),
+              _buildShippingCostRatio(),
               const SizedBox(height: 24),
               _buildAgeInfo(),
               const SizedBox(height: 24),
@@ -347,6 +351,54 @@ class _SellRequestScreenState extends ConsumerState<SellRequestScreen> {
         if (int.parse(value) <= 0) return '가격은 0보다 커야 합니다';
         return null;
       },
+    );
+  }
+
+  Widget _buildShippingCostRatio() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              '배송비 부담 비율',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '판매자 부담: $_shippingCostSellerRatio%, 구매자 부담: ${100 - _shippingCostSellerRatio}%',
+              style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                const Text('구매자\n100%', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
+                Expanded(
+                  child: Slider(
+                    value: _shippingCostSellerRatio.toDouble(),
+                    min: 0,
+                    max: 100,
+                    divisions: 10,
+                    label: '$_shippingCostSellerRatio%',
+                    onChanged: (value) {
+                      setState(() {
+                        _shippingCostSellerRatio = value.toInt();
+                      });
+                    },
+                  ),
+                ),
+                const Text('판매자\n100%', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '💡 0%는 구매자 전액 부담, 100%는 판매자 전액 부담입니다.',
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

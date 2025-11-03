@@ -6,6 +6,9 @@ import '../widgets/listing_image_carousel.dart';
 import '../widgets/listing_header.dart';
 import '../widgets/listing_price_info.dart';
 import '../widgets/listing_bottom_bar.dart';
+import '../../../my_page/presentation/providers/favorites_provider.dart';
+import '../../../price_alert/presentation/widgets/price_alert_setup_dialog.dart';
+import '../../../price_alert/presentation/providers/price_alert_provider.dart';
 
 class ListingDetailScreen extends ConsumerWidget {
   final String listingId;
@@ -24,26 +27,31 @@ class ListingDetailScreen extends ConsumerWidget {
           icon: const Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.share_outlined, color: Colors.black),
-            onPressed: () {
-              // TODO: 공유 기능 구현
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('공유 기능은 준비 중입니다.')),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.favorite_border, color: Colors.black),
-            onPressed: () {
-              // TODO: 찜 기능 구현
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('찜 기능은 준비 중입니다.')),
-              );
-            },
-          ),
-        ],
+        actions: listingAsync.when(
+          data: (listing) => [
+            // 공유 버튼
+            IconButton(
+              icon: const Icon(Icons.share_outlined, color: Colors.black),
+              onPressed: () {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('공유 기능은 준비 중입니다.')),
+                );
+              },
+            ),
+
+            // 가격 알림 버튼
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined, color: Colors.black),
+              onPressed: () => _showPriceAlertDialog(context, ref, listing),
+              tooltip: '가격 알림',
+            ),
+
+            // 찜 버튼
+            _buildFavoriteButton(ref, listing),
+          ],
+          loading: () => [],
+          error: (_, __) => [],
+        ),
       ),
       body: listingAsync.when(
         data: (listing) => SingleChildScrollView(
@@ -137,5 +145,84 @@ class ListingDetailScreen extends ConsumerWidget {
 
   String _formatDate(DateTime date) {
     return '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}';
+  }
+
+  /// 찜 버튼 위젯
+  Widget _buildFavoriteButton(WidgetRef ref, dynamic listing) {
+    final isFavAsync = ref.watch(isFavoriteProvider(listingId));
+
+    return isFavAsync.when(
+      data: (isFav) => IconButton(
+        icon: Icon(
+          isFav ? Icons.favorite : Icons.favorite_border,
+          color: isFav ? Colors.red : Colors.black,
+        ),
+        onPressed: () => _toggleFavorite(ref, listing),
+        tooltip: '찜',
+      ),
+      loading: () => const IconButton(
+        icon: Icon(Icons.favorite_border, color: Colors.black),
+        onPressed: null,
+      ),
+      error: (_, __) => const IconButton(
+        icon: Icon(Icons.favorite_border, color: Colors.black),
+        onPressed: null,
+      ),
+    );
+  }
+
+  /// 찜 추가/제거
+  Future<void> _toggleFavorite(WidgetRef ref, dynamic listing) async {
+    final actions = ref.read(favoritesActionsProvider);
+    if (actions == null) {
+      return;
+    }
+
+    try {
+      await actions.toggleFavorite(listingId);
+    } catch (e) {
+      // 에러 무시 (사용자 경험 우선)
+    }
+  }
+
+  /// 가격 알림 다이얼로그 표시
+  Future<void> _showPriceAlertDialog(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic listing,
+  ) async {
+    // basePartId가 없으면 알림 설정 불가
+    if (listing.basePartId == null || listing.basePartId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('이 상품은 가격 알림을 설정할 수 없습니다'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    final actions = ref.read(priceAlertActionsProvider);
+    if (actions == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('로그인이 필요합니다')),
+      );
+      return;
+    }
+
+    // 기존 알림 확인
+    final existingAlert = await actions.getAlertForBasePart(listing.basePartId);
+
+    if (!context.mounted) return;
+
+    await showDialog(
+      context: context,
+      builder: (context) => PriceAlertSetupDialog(
+        basePartId: listing.basePartId,
+        partName: '${listing.brand} ${listing.modelName}',
+        currentPrice: listing.price,
+        existingAlert: existingAlert,
+      ),
+    );
   }
 }

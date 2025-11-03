@@ -37,12 +37,12 @@ class PurchaseUseCase {
 
     // 2. Update listing statuses
     for (final item in items) {
-      await _listingRepository.updateListingStatus(item.productId, ListingStatus.sold);
+      await _listingRepository.updateListingStatus(item.listingId, ListingStatus.sold);
     }
 
     // 3. Clear cart
     for (final item in items) {
-      await _cartRepository.removeFromCart(item.productId);
+      await _cartRepository.removeFromCart(item.listingId);
     }
   }
 }

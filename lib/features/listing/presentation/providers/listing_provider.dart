@@ -56,3 +56,9 @@ final listingsFutureProvider = FutureProvider.autoDispose.family<List<ListingEnt
 final listingProvider = StreamProvider.autoDispose.family<ListingEntity, String>((ref, id) {
   return ref.watch(getListingProvider).call(id);
 });
+
+// basePartId로 필터링된 listings
+final listingsByBasePartIdProvider = FutureProvider.autoDispose.family<List<ListingEntity>, String>((ref, basePartId) async {
+  final repository = ref.watch(listingRepositoryProvider);
+  return repository.getListingsByBasePartId(basePartId);
+});

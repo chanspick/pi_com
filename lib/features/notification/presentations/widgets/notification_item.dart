@@ -105,6 +105,26 @@ class NotificationItem extends ConsumerWidget {
         iconData = Icons.payment;
         iconColor = Colors.blue;
         break;
+      case NotificationType.listingSold:
+        iconData = Icons.sell;
+        iconColor = Colors.purple;
+        break;
+      case NotificationType.purchaseConfirmed:
+        iconData = Icons.verified;
+        iconColor = Colors.teal;
+        break;
+      case NotificationType.shipping:
+        iconData = Icons.local_shipping;
+        iconColor = Colors.indigo;
+        break;
+      case NotificationType.priceAlert:
+        iconData = Icons.trending_down;
+        iconColor = Colors.red;
+        break;
+      case NotificationType.marketing:
+        iconData = Icons.campaign;
+        iconColor = Colors.deepOrange;
+        break;
       case NotificationType.system:
         iconData = Icons.info;
         iconColor = Colors.orange;

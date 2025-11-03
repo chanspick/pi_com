@@ -24,12 +24,17 @@ class CartRepositoryImpl implements CartRepository {
   }
 
   @override
-  Future<void> removeFromCart(String productId) {
-    return remoteDataSource.removeFromCart(productId);
+  Future<void> removeFromCart(String listingId) {
+    return remoteDataSource.removeFromCart(listingId);
   }
 
   @override
-  Future<void> updateCartItemQuantity(String productId, int quantity) {
-    return remoteDataSource.updateCartItemQuantity(productId, quantity);
+  Future<void> updateCartItemQuantity(String listingId, int quantity) {
+    return remoteDataSource.updateCartItemQuantity(listingId, quantity);
+  }
+
+  @override
+  Future<void> clearCart() {
+    return remoteDataSource.clearCart();
   }
 }

@@ -20,6 +20,7 @@ class Listing {
   final DateTime? soldAt;
   final List<String> imageUrls;
   final String? category; // ✅ 추가
+  final int shippingCostSellerRatio; // 배송비 부담 비율 (0-100)
 
   Listing({
     required this.listingId,
@@ -36,6 +37,7 @@ class Listing {
     this.soldAt,
     required this.imageUrls,
     this.category, // ✅ 추가
+    this.shippingCostSellerRatio = 0, // 기본값: 구매자 전액 부담
   });
 
   Map<String, dynamic> toMap() {
@@ -54,6 +56,7 @@ class Listing {
       'soldAt': soldAt != null ? Timestamp.fromDate(soldAt!) : null,
       'imageUrls': imageUrls,
       'category': category, // ✅ 추가
+      'shippingCostSellerRatio': shippingCostSellerRatio,
     };
   }
 
@@ -76,6 +79,7 @@ class Listing {
       soldAt: (data['soldAt'] as Timestamp?)?.toDate(),
       imageUrls: List<String>.from(data['imageUrls'] ?? []),
       category: data['category'], // ✅ 추가
+      shippingCostSellerRatio: (data['shippingCostSellerRatio'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -101,6 +105,7 @@ class Listing {
           : null,
       imageUrls: List<String>.from(data['imageUrls'] ?? []),
       category: data['category'], // ✅ 추가
+      shippingCostSellerRatio: (data['shippingCostSellerRatio'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -120,6 +125,7 @@ class Listing {
     DateTime? soldAt,
     List<String>? imageUrls,
     String? category,
+    int? shippingCostSellerRatio,
   }) {
     return Listing(
       listingId: listingId ?? this.listingId,
@@ -136,6 +142,7 @@ class Listing {
       soldAt: soldAt ?? this.soldAt,
       imageUrls: imageUrls ?? this.imageUrls,
       category: category ?? this.category,
+      shippingCostSellerRatio: shippingCostSellerRatio ?? this.shippingCostSellerRatio,
     );
   }
 
