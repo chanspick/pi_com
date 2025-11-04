@@ -1,6 +1,7 @@
 //lib/features/home/presentation/widgets/home_search_bar.dart
 
 import 'package:flutter/material.dart';
+import '../../../../core/constants/routes.dart';
 
 class HomeSearchBar extends StatelessWidget {
   const HomeSearchBar({super.key});
@@ -33,9 +34,6 @@ class HomeSearchBar extends StatelessWidget {
   }
 
   void _navigateToSearch(BuildContext context) {
-    // TODO: SearchScreen 구현 후 연결
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('검색 기능은 준비 중입니다.')),
-    );
+    Navigator.of(context).pushNamed(Routes.basePartSearch);
   }
 }

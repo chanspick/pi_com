@@ -3,9 +3,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 // ✅ 앱 내부용 Router
 import 'core/router/app_router.dart';
+import 'core/providers/theme_provider.dart';
 
 // Shared
 import 'shared/widgets/auth_gate.dart';
@@ -22,19 +24,21 @@ import 'features/admin/presentation/screens/admin_dashboard.dart';
 import 'features/admin/presentation/screens/user_list_page.dart';
 import 'features/admin/presentation/screens/listing_list_page.dart';
 import 'features/admin/presentation/screens/admin_sell_request_list_page.dart';
-class MyApp extends StatelessWidget {
+
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+
     // ✅ 웹인 경우: GoRouter 사용 (웹 공개 페이지 + Admin)
     if (kIsWeb) {
       return MaterialApp.router(
         title: 'PiCom',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-          useMaterial3: true,
-        ),
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        themeMode: themeMode,
         routerConfig: _webRouter,
         debugShowCheckedModeBanner: false,
       );
@@ -43,10 +47,9 @@ class MyApp extends StatelessWidget {
     // ✅ 모바일/데스크톱: MaterialApp + Navigator 사용
     return MaterialApp(
       title: 'PiCom',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
-      ),
+      theme: lightTheme,
+      darkTheme: darkTheme,
+      themeMode: themeMode,
       home: const AuthGate(), // 인증 게이트
       onGenerateRoute: AppRouter.generateRoute, // ✅ Navigator 라우트 생성
       debugShowCheckedModeBanner: false,

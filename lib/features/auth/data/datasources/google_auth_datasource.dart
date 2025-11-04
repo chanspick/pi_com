@@ -4,69 +4,86 @@ import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-/// Google Sign-In 7.x 사용
 class GoogleAuthDataSource {
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  // ✅ 6.2.1 버전에서는 이렇게만 해도 충분
+  late final GoogleSignIn _googleSignIn;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  bool _isInitialized = false;
 
-  /// ✅ Public 초기화 메서드
-  Future<void> initialize() async {
-    if (!_isInitialized) {
-      if (kIsWeb) {
-        await _googleSignIn.initialize();
-      } else {
-        await _googleSignIn.initialize(
-          serverClientId:
-          '329187044859-d2v6bhhsormrv5on2ff2krsm271gssir.apps.googleusercontent.com',
-        );
-      }
-      _isInitialized = true;
-      debugPrint('✅ GoogleSignIn initialized');
+  GoogleAuthDataSource() {
+    // ✅ 웹과 모바일 분리
+    if (kIsWeb) {
+      // 웹에서는 GoogleSignIn 사용 안 함
+      _googleSignIn = GoogleSignIn(); // 더미 인스턴스
+    } else {
+      // 모바일: google-services.json에서 자동으로 clientId 읽음
+      _googleSignIn = GoogleSignIn(
+        scopes: ['email', 'profile'],
+      );
     }
   }
 
-  /// Google 로그인 (모바일 전용!)
   Future<User?> signIn() async {
-    // ⚠️ 웹에서는 이 메서드를 호출하면 안 됨!
     if (kIsWeb) {
-      debugPrint('⚠️ signIn() is not supported on web. Use renderButton instead.');
-      return null;
+      debugPrint('⚠️ Web: Using popup instead of GoogleSignIn');
+      try {
+        GoogleAuthProvider googleProvider = GoogleAuthProvider();
+        final UserCredential userCredential =
+        await _auth.signInWithPopup(googleProvider);
+        debugPrint('✅ Web Sign-In Success: ${userCredential.user?.email}');
+        return userCredential.user;
+      } catch (e) {
+        debugPrint('❌ Web Sign-In failed: $e');
+        rethrow;
+      }
     }
 
+    // 모바일 로그인
     try {
-      await initialize();
+      debugPrint('🔍 [1/5] Starting Google Sign-In...');
 
-      // ✅ 모바일: authenticate() 사용
-      final googleUser = await _googleSignIn.authenticate();
+      // ✅ 중요: 기존 로그인 상태 확인
+      await _googleSignIn.signOut(); // 이전 세션 정리
 
-      // ✅ 7.x: authentication 속성으로 토큰 접근
-      final idToken = googleUser.authentication.idToken;
+      debugPrint('🔍 [2/5] Calling _googleSignIn.signIn()...');
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
-      if (idToken == null) {
-        throw Exception('Failed to get ID token');
+      if (googleUser == null) {
+        debugPrint('⚠️ [3/5] User canceled sign-in');
+        return null;
       }
+      debugPrint('✅ [3/5] GoogleSignInAccount obtained: ${googleUser.email}');
 
-      // ✅ 7.x: idToken만 사용
-      final credential = GoogleAuthProvider.credential(idToken: idToken);
+      debugPrint('🔍 [4/5] Getting authentication...');
+      final GoogleSignInAuthentication googleAuth =
+      await googleUser.authentication;
 
-      final userCredential = await _auth.signInWithCredential(credential);
-      final user = userCredential.user;
+      debugPrint('🔍 accessToken: ${googleAuth.accessToken != null ? "exists" : "null"}');
+      debugPrint('🔍 idToken: ${googleAuth.idToken != null ? "exists" : "null"}');
 
-      debugPrint('✅ Google Sign-In Success: ${user?.email}');
-      return user;
-    } catch (e) {
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      debugPrint('🔍 [5/5] Signing in with credential...');
+      final UserCredential userCredential =
+      await _auth.signInWithCredential(credential);
+
+      debugPrint('✅ Google Sign-In Success: ${userCredential.user?.email}');
+      return userCredential.user;
+    } catch (e, stackTrace) {
       debugPrint('❌ Google Sign-In failed: $e');
+      debugPrint('❌ StackTrace: $stackTrace');
       rethrow;
     }
   }
 
-  /// 로그아웃
   Future<void> signOut() async {
     try {
-      await initialize();
       await _auth.signOut();
-      await _googleSignIn.disconnect();
+      if (!kIsWeb) {
+        await _googleSignIn.signOut();
+      }
       debugPrint('✅ Sign-Out Success');
     } catch (e) {
       debugPrint('❌ Sign-Out failed: $e');
@@ -74,12 +91,7 @@ class GoogleAuthDataSource {
     }
   }
 
-  /// 현재 사용자
   User? get currentUser => _auth.currentUser;
-
-  /// 인증 상태 스트림
   Stream<User?> get authStateChanges => _auth.authStateChanges();
-
-  /// GoogleSignIn 인스턴스 (renderButton용)
   GoogleSignIn get instance => _googleSignIn;
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/part_provider.dart';
 import '../widgets/base_part_card.dart';
+import '../../../../core/constants/routes.dart';
 
 class PartsCategoryScreen extends ConsumerStatefulWidget {
   const PartsCategoryScreen({super.key});
@@ -61,10 +62,7 @@ class _PartsCategoryScreenState extends ConsumerState<PartsCategoryScreen>
             padding: const EdgeInsets.all(8.0),
             child: GestureDetector(
               onTap: () {
-                // TODO: 검색 화면으로 이동
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('검색 기능은 준비 중입니다.')),
-                );
+                Navigator.of(context).pushNamed(Routes.basePartSearch);
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

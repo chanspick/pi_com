@@ -23,7 +23,7 @@ class AppFooter extends StatelessWidget {
         children: [
           // 회사명
           const Text(
-            '(주)피컴',
+            '(주) 파이컴퓨터',
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 16,
@@ -32,10 +32,12 @@ class AppFooter extends StatelessWidget {
           const SizedBox(height: 16),
 
           // 사업자 정보
-          _buildInfoText('대표자: OOO'), // ⭐️ 실제 이름으로 변경
-          _buildInfoText('사업자등록번호: XXX-XX-XXXXX'), // ⭐️ 실제 번호
+          _buildInfoText('대표자: 최진규'), // ⭐️ 실제 이름으로 변경
+          _buildInfoText('사업자등록번호: 207-87-03690'), // ⭐️ 실제 번호
           _buildInfoText('통신판매업 신고번호: 제XXXX-서울-XXXX호'), // ⭐️ 신고 후
-          _buildInfoText('사업장 주소: 서울특별시 OO구 OO로 OO'), // ⭐️ 실제 주소
+          _buildInfoText('사업장 주소: 서울특별시 서대문구 연세로2나길 61'), // ⭐️ 실제 주소
+          _buildInfoText('창천동 캠퍼스타운 에스큐브'), // ⭐️ 실제 주소
+
           _buildInfoText('대표전화: 02-XXXX-XXXX'),
           _buildInfoText('이메일: contact@picom.team'),
 

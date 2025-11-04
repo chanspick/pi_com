@@ -87,6 +87,28 @@ class MyPageScreen extends ConsumerWidget {
 
             const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
 
+            // 드래곤볼 섹션
+            _buildSection(
+              context,
+              title: '드래곤볼',
+              items: [
+                _MenuItem(
+                  icon: Icons.inventory_2_outlined,
+                  title: '드래곤볼 보관함',
+                  subtitle: '보관 중인 부품 확인 및 배송 요청',
+                  onTap: () => Navigator.pushNamed(context, Routes.dragonBallStorage),
+                ),
+                _MenuItem(
+                  icon: Icons.local_shipping_outlined,
+                  title: '일괄 배송 내역',
+                  subtitle: '배송 요청 상태 확인',
+                  onTap: () => Navigator.pushNamed(context, Routes.batchShipmentHistory),
+                ),
+              ],
+            ),
+
+            const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
+
             // 관심 상품 및 알림
             _buildSection(
               context,

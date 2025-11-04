@@ -18,9 +18,9 @@ class CircleMenuSection extends StatelessWidget {
       'route': Routes.partsCategory,  // ✅ 새로 추가한 라우트 연결
     },
     {
-      'icon': Icons.desktop_mac,
-      'label': '나만의 PC',
-      'route': null, // 준비 중
+      'icon': Icons.inventory_2_outlined,
+      'label': '드래곤볼',
+      'route': Routes.dragonBallStorage, // ✅ 드래곤볼 보관함 연결!
     },
     {
       'icon': Icons.add_box_outlined,

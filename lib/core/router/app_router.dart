@@ -27,6 +27,17 @@ import '../../features/my_page/presentation/screens/favorites_screen.dart';
 // ✅ 새로 추가: PriceAlert 피처 imports
 import '../../features/price_alert/presentation/screens/price_alerts_screen.dart';
 
+// ✅ 새로 추가: DragonBall 피처 imports
+import '../../features/dragon_ball/presentation/screens/dragon_ball_storage_screen.dart';
+import '../../features/dragon_ball/presentation/screens/batch_shipment_request_screen.dart';
+
+// ✅ 새로 추가: Search 피처 imports
+import '../../features/sell_request/presentation/screens/part_search_screen.dart';
+import '../../features/parts_price/presentation/screens/base_part_search_screen.dart';
+
+// ✅ 새로 추가: Settings 피처 imports
+import '../../features/my_page/presentation/screens/settings_screen.dart';
+
 /// 앱 내부용 Navigator Route Generator
 class AppRouter {
   static Route generateRoute(RouteSettings settings) {
@@ -154,6 +165,50 @@ class AppRouter {
       case Routes.priceAlerts:
         return MaterialPageRoute(
           builder: (_) => const PriceAlertsScreen(),
+          settings: settings,
+        );
+
+      case Routes.partSearch:
+        return MaterialPageRoute(
+          builder: (_) => const PartSearchScreen(),
+          settings: settings,
+        );
+
+      case Routes.basePartSearch:
+        return MaterialPageRoute(
+          builder: (_) => const BasePartSearchScreen(),
+          settings: settings,
+        );
+
+      case Routes.settings:
+        return MaterialPageRoute(
+          builder: (_) => const SettingsScreen(),
+          settings: settings,
+        );
+
+    // ✅ 새로 추가: DragonBall 피처
+      case Routes.dragonBallStorage:
+        return MaterialPageRoute(
+          builder: (_) => const DragonBallStorageScreen(),
+          settings: settings,
+        );
+
+      case Routes.batchShipmentRequest:
+        final dragonBallIds = settings.arguments as List<String>?;
+        if (dragonBallIds == null || dragonBallIds.isEmpty) {
+          return _errorRoute('선택한 드래곤볼이 없습니다.');
+        }
+        return MaterialPageRoute(
+          builder: (_) => BatchShipmentRequestScreen(dragonBallIds: dragonBallIds),
+          settings: settings,
+        );
+
+      case Routes.batchShipmentHistory:
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            appBar: AppBar(title: const Text('일괄 배송 내역')),
+            body: const Center(child: Text('일괄 배송 내역 (구현 예정)')),
+          ),
           settings: settings,
         );
 

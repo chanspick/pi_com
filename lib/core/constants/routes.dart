@@ -32,6 +32,10 @@ class Routes {
   static const String favorites = '/favorites';
   static const String priceAlerts = '/price-alerts';
   static const String settings = '/settings';
+
+  // Search
+  static const String partSearch = '/part-search'; // sell_request용 (parts 컬렉션)
+  static const String basePartSearch = '/base-part-search'; // 홈 검색용 (base_parts 컬렉션)
   // ✅ 새로 추가: Listing 피처
   static const String partShop = '/part-shop';
   static const String listingDetail = '/listing-detail';
@@ -42,4 +46,9 @@ class Routes {
   static const String partDetail = '/part-detail';
   static const String cart = '/cart';
   static const String checkout = '/checkout';
+
+  // ✅ 새로 추가: DragonBall 피처
+  static const String dragonBallStorage = '/dragon-ball-storage';
+  static const String batchShipmentRequest = '/batch-shipment-request';
+  static const String batchShipmentHistory = '/batch-shipment-history';
 }

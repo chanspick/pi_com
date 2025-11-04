@@ -40,9 +40,7 @@ class HomeAppBarActions extends ConsumerWidget {  // ✅ ConsumerWidget으로 �
                 );
               }
             } else if (value == 'settings') {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('설정 기능은 준비 중입니다.')),
-              );
+              Navigator.of(context).pushNamed(Routes.settings);
             } else if (value == 'logout' || value == 'login') {
               // ✅ Use Case로 로그아웃
               final signOutUseCase = ref.read(signOutUseCaseProvider);
