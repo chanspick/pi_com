@@ -59,10 +59,17 @@ class _PartSearchScreenState extends State<PartSearchScreen> {
       });
 
       final data = result.data as List<dynamic>;
+      // 🔍 디버그: Cloud Function 응답 확인
+      print('🔍 searchParts 응답 데이터: $data');
       setState(() {
-        _searchResults = data.cast<Map<String, dynamic>>();
+        // ✅ 타입 캐스팅 수정: .cast() 대신 Map.from() 사용
+        _searchResults = data.map((item) => Map<String, dynamic>.from(item as Map)).toList();
         _isSearching = false;
       });
+      // 🔍 디버그: 변환 후 결과 확인
+      if (_searchResults.isNotEmpty) {
+        print('🔍 첫 번째 검색 결과: ${_searchResults[0]}');
+      }
 
       if (_searchResults.isEmpty) {
         setState(() {
@@ -79,16 +86,24 @@ class _PartSearchScreenState extends State<PartSearchScreen> {
 
   /// 부품 선택 시 BasePart로 변환하여 반환
   void _selectPart(Map<String, dynamic> partData) {
+    // 🔍 디버그: 선택된 부품 데이터 전체 출력
+    print('🔍 _selectPart 호출됨, partData: $partData');
+    print('🔍 partData의 brand 값: ${partData['brand']}');
+
     final referencePrice = (partData['referencePrice'] as num?)?.toInt() ?? 0;
 
     final basePart = BasePart(
       basePartId: partData['basePartId'] ?? partData['partId'] ?? '',
       modelName: partData['modelName'] ?? partData['model'] ?? partData['name'] ?? '',
       category: _selectedCategory.toUpperCase(),
+      brand: partData['brand'] ?? '',  // ✅ brand 추가
       lowestPrice: referencePrice,
       averagePrice: referencePrice.toDouble(),
       listingCount: 0,
     );
+
+    // 🔍 디버그: 생성된 BasePart 확인
+    print('🔍 생성된 BasePart: basePartId=${basePart.basePartId}, brand=${basePart.brand}, modelName=${basePart.modelName}');
 
     Navigator.pop(context, basePart);
   }

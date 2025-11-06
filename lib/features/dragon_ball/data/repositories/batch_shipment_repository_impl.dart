@@ -35,6 +35,8 @@ class BatchShipmentRepositoryImpl implements BatchShipmentRepository {
     required String shippingAddress,
     required String phoneNumber,
     required int shippingCost,
+    List<String> additionalServices = const [],
+    int additionalServicesCost = 0,
   }) async {
     final batchShipment = BatchShipmentModel(
       batchShipmentId: const Uuid().v4(),
@@ -44,6 +46,8 @@ class BatchShipmentRepositoryImpl implements BatchShipmentRepository {
       shippingAddress: shippingAddress,
       phoneNumber: phoneNumber,
       shippingCost: shippingCost,
+      additionalServices: additionalServices,
+      additionalServicesCost: additionalServicesCost,
       status: BatchShipmentStatus.pending,
       requestedAt: DateTime.now(),
     );

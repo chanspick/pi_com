@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/favorites_provider.dart';
 import '../../../../core/models/listing_model.dart';
+import '../../../../core/constants/routes.dart';
 
 /// 찜 목록 화면
 class FavoritesScreen extends ConsumerWidget {
@@ -92,7 +93,8 @@ class _FavoriteCard extends ConsumerWidget {
         onTap: () {
           Navigator.pushNamed(
             context,
-            '/listing/${listing.listingId}',
+            Routes.listingDetail,
+            arguments: listing.listingId,
           );
         },
         child: Column(
@@ -173,24 +175,24 @@ class _FavoriteCard extends ConsumerWidget {
             // 상품 정보
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       '${listing.brand} ${listing.modelName}',
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       '${_formatPrice(listing.price)}원',
                       style: TextStyle(
-                        fontSize: 16,
+                        fontSize: 15,
                         fontWeight: FontWeight.bold,
                         color: Theme.of(context).primaryColor,
                       ),
@@ -198,12 +200,12 @@ class _FavoriteCard extends ConsumerWidget {
                     const Spacer(),
                     Row(
                       children: [
-                        Icon(Icons.local_shipping_outlined, size: 14, color: Colors.grey[600]),
+                        Icon(Icons.local_shipping_outlined, size: 12, color: Colors.grey[600]),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            _getShippingText(),
-                            style: TextStyle(fontSize: 11, color: Colors.grey[600]),
+                            '배송비 별도',
+                            style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -218,15 +220,5 @@ class _FavoriteCard extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  String _getShippingText() {
-    if (listing.shippingCostSellerRatio == 100) {
-      return '무료배송';
-    } else if (listing.shippingCostSellerRatio == 0) {
-      return '배송비 별도';
-    } else {
-      return '배송비 ${listing.shippingCostSellerRatio}% 판매자 부담';
-    }
   }
 }

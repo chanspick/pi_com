@@ -21,6 +21,8 @@ class BatchShipmentModel {
   final String shippingAddress;           // 배송지
   final String phoneNumber;               // 연락처
   final int shippingCost;                 // 배송비
+  final List<String> additionalServices;  // 추가 서비스 목록 (enum 이름들)
+  final int additionalServicesCost;       // 추가 서비스 비용
   final BatchShipmentStatus status;       // 배송 상태
   final DateTime requestedAt;             // 요청일
   final DateTime? shippedAt;              // 배송 시작일
@@ -36,6 +38,8 @@ class BatchShipmentModel {
     required this.shippingAddress,
     required this.phoneNumber,
     required this.shippingCost,
+    this.additionalServices = const [],
+    this.additionalServicesCost = 0,
     required this.status,
     required this.requestedAt,
     this.shippedAt,
@@ -54,6 +58,8 @@ class BatchShipmentModel {
       'shippingAddress': shippingAddress,
       'phoneNumber': phoneNumber,
       'shippingCost': shippingCost,
+      'additionalServices': additionalServices,
+      'additionalServicesCost': additionalServicesCost,
       'status': status.name,
       'requestedAt': Timestamp.fromDate(requestedAt),
       'shippedAt': shippedAt != null ? Timestamp.fromDate(shippedAt!) : null,
@@ -74,6 +80,8 @@ class BatchShipmentModel {
       shippingAddress: data['shippingAddress'] ?? '',
       phoneNumber: data['phoneNumber'] ?? '',
       shippingCost: (data['shippingCost'] as num?)?.toInt() ?? 0,
+      additionalServices: List<String>.from(data['additionalServices'] ?? []),
+      additionalServicesCost: (data['additionalServicesCost'] as num?)?.toInt() ?? 0,
       status: _parseStatus(data['status']),
       requestedAt: (data['requestedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       shippedAt: (data['shippedAt'] as Timestamp?)?.toDate(),
@@ -93,6 +101,8 @@ class BatchShipmentModel {
       shippingAddress: data['shippingAddress'] ?? '',
       phoneNumber: data['phoneNumber'] ?? '',
       shippingCost: (data['shippingCost'] as num?)?.toInt() ?? 0,
+      additionalServices: List<String>.from(data['additionalServices'] ?? []),
+      additionalServicesCost: (data['additionalServicesCost'] as num?)?.toInt() ?? 0,
       status: _parseStatus(data['status']),
       requestedAt: data['requestedAt'] is Timestamp
           ? (data['requestedAt'] as Timestamp).toDate()
@@ -135,6 +145,8 @@ class BatchShipmentModel {
     String? shippingAddress,
     String? phoneNumber,
     int? shippingCost,
+    List<String>? additionalServices,
+    int? additionalServicesCost,
     BatchShipmentStatus? status,
     DateTime? requestedAt,
     DateTime? shippedAt,
@@ -150,6 +162,8 @@ class BatchShipmentModel {
       shippingAddress: shippingAddress ?? this.shippingAddress,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       shippingCost: shippingCost ?? this.shippingCost,
+      additionalServices: additionalServices ?? this.additionalServices,
+      additionalServicesCost: additionalServicesCost ?? this.additionalServicesCost,
       status: status ?? this.status,
       requestedAt: requestedAt ?? this.requestedAt,
       shippedAt: shippedAt ?? this.shippedAt,

@@ -102,7 +102,7 @@ class CartItemCard extends ConsumerWidget {
 
                       // 배송비 정보
                       Text(
-                        _getShippingCostText(),
+                        '배송비 별도',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey[600],
@@ -145,91 +145,9 @@ class CartItemCard extends ConsumerWidget {
               ],
             ),
 
-            const Divider(height: 16),
-
-            // 수량 조절 및 소계
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // 수량 조절
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey[300]!),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.remove, size: 18),
-                        onPressed: item.quantity > 1
-                            ? () {
-                                final newQuantity = item.quantity - 1;
-                                ref.read(updateCartItemQuantityProvider).call(
-                                      item.listingId,
-                                      newQuantity,
-                                    );
-                              }
-                            : null,
-                        padding: const EdgeInsets.all(4),
-                        constraints: const BoxConstraints(
-                          minWidth: 32,
-                          minHeight: 32,
-                        ),
-                      ),
-                      Container(
-                        constraints: const BoxConstraints(minWidth: 32),
-                        alignment: Alignment.center,
-                        child: Text(
-                          item.quantity.toString(),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.add, size: 18),
-                        onPressed: () {
-                          final newQuantity = item.quantity + 1;
-                          ref.read(updateCartItemQuantityProvider).call(
-                                item.listingId,
-                                newQuantity,
-                              );
-                        },
-                        padding: const EdgeInsets.all(4),
-                        constraints: const BoxConstraints(
-                          minWidth: 32,
-                          minHeight: 32,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                // 소계
-                Text(
-                  '소계: ${_formatPrice(item.totalPrice)}원',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-              ],
-            ),
           ],
         ),
       ),
     );
-  }
-
-  String _getShippingCostText() {
-    if (item.shippingCostSellerRatio == 100) {
-      return '배송비: 판매자 부담';
-    } else if (item.shippingCostSellerRatio == 0) {
-      return '배송비: 구매자 부담';
-    } else {
-      return '배송비: 판매자 ${item.shippingCostSellerRatio}% / 구매자 ${100 - item.shippingCostSellerRatio}%';
-    }
   }
 }

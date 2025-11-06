@@ -12,6 +12,7 @@ import '../../domain/usecases/reject_sell_request.dart';
 import '../../domain/usecases/get_pending_sell_requests.dart';
 import '../../domain/usecases/send_notification_to_user.dart';
 import '../../../../core/models/sell_request_model.dart';
+import '../../../../core/constants/firebase_constants.dart';
 
 import '../../domain/usecases/get_sell_request_by_id.dart';
 
@@ -161,7 +162,7 @@ class AdminActionController extends StateNotifier<AdminActionState> {
   Future<void> approve({
     required String requestId,
     required int finalPrice,
-    required int finalConditionScore,
+    required double finalConditionScore,
     String? adminNotes,
   }) async {
     state = AdminActionState.loading();
@@ -217,7 +218,7 @@ StateNotifierProvider<AdminActionController, AdminActionState>((ref) {
 /// 승인된 SellRequest Stream Provider
 final approvedSellRequestsStreamProvider = StreamProvider<List<SellRequest>>((ref) {
   return FirebaseFirestore.instance
-      .collection('sellRequests')
+      .collection(FirebaseConstants.sellRequestsCollection)
       .where('status', isEqualTo: SellRequestStatus.approved.name)
       .orderBy('updatedAt', descending: true)
       .snapshots()
@@ -231,7 +232,7 @@ final approvedSellRequestsStreamProvider = StreamProvider<List<SellRequest>>((re
 /// 반려된 SellRequest Stream Provider
 final rejectedSellRequestsStreamProvider = StreamProvider<List<SellRequest>>((ref) {
   return FirebaseFirestore.instance
-      .collection('sellRequests')
+      .collection(FirebaseConstants.sellRequestsCollection)
       .where('status', isEqualTo: SellRequestStatus.rejected.name)
       .orderBy('updatedAt', descending: true)
       .snapshots()

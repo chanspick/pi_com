@@ -10,7 +10,7 @@ class ListingModel {
   final String brand;
   final String modelName;
   final int price;
-  final int conditionScore;
+  final double conditionScore;
   final List<String> imageUrls;
   final String status;
   final Timestamp createdAt;
@@ -55,7 +55,7 @@ class ListingModel {
         brand: data['brand'] ?? '',
         modelName: data['modelName'] ?? '',
         price: (data['price'] ?? 0) as int,
-        conditionScore: (data['conditionScore'] ?? 0) as int,
+        conditionScore: ((data['conditionScore'] ?? 0) as num).toDouble(),
         imageUrls: imageUrls,
         status: data['status'] ?? 'pending',
         createdAt: data['createdAt'] ?? Timestamp.now(),
@@ -94,10 +94,19 @@ class ListingModel {
   }
 
   static ListingStatus _parseStatus(String status) {
-    if (status.toLowerCase().trim() == 'active') {
-      return ListingStatus.active;
+    final normalizedStatus = status.toLowerCase().trim();
+    switch (normalizedStatus) {
+      case 'available':
+        return ListingStatus.available;
+      case 'sold':
+        return ListingStatus.sold;
+      case 'cancelled':
+        return ListingStatus.cancelled;
+      case 'pending':
+        return ListingStatus.pending;
+      default:
+        return ListingStatus.pending; // 기본값
     }
-    return ListingStatus.pending; // 기본값
   }
 
   Map<String, dynamic> toFirestore() {

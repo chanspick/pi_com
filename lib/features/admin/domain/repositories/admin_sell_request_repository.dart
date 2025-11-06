@@ -7,7 +7,7 @@ abstract class AdminSellRequestRepository {
   Future<void> approveSellRequest({
     required String requestId,
     required int finalPrice,
-    required int finalConditionScore,
+    required double finalConditionScore,
     // ❌ brand 파라미터 제거 (SellRequest에서 가져옴)
     String? adminNotes,
   });

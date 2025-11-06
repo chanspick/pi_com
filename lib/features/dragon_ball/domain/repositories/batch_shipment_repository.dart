@@ -19,6 +19,8 @@ abstract class BatchShipmentRepository {
     required String shippingAddress,
     required String phoneNumber,
     required int shippingCost,
+    List<String> additionalServices = const [],
+    int additionalServicesCost = 0,
   });
 
   /// 일괄 배송 상태 업데이트

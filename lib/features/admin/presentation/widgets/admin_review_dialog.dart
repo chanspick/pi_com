@@ -29,7 +29,7 @@ class _AdminReviewDialogState extends ConsumerState<AdminReviewDialog> {
     super.initState();
     // 기본값 설정
     _finalPriceController.text = widget.request.requestedPrice.toString();
-    _conditionScoreController.text = '7';
+    _conditionScoreController.text = '70';
   }
 
   @override
@@ -327,18 +327,18 @@ class _AdminReviewDialogState extends ConsumerState<AdminReviewDialog> {
         TextFormField(
           controller: _conditionScoreController,
           decoration: const InputDecoration(
-            labelText: '상태 점수 (1-10)',
+            labelText: '상태 점수 (1-100)',
             border: OutlineInputBorder(),
-            helperText: '1=매우 나쁨, 10=매우 좋음',
+            helperText: '1=매우 나쁨, 100=새제품 수준 (실수 가능, 예: 85.5)',
           ),
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
           validator: (value) {
             if (value == null || value.isEmpty) {
               return '점수를 입력하세요';
             }
-            final score = int.tryParse(value);
-            if (score == null || score < 1 || score > 10) {
-              return '1-10 사이 숫자를 입력하세요';
+            final score = double.tryParse(value);
+            if (score == null || score < 1 || score > 100) {
+              return '1-100 사이 숫자를 입력하세요';
             }
             return null;
           },
@@ -410,7 +410,7 @@ class _AdminReviewDialogState extends ConsumerState<AdminReviewDialog> {
     if (!_formKey.currentState!.validate()) return;
 
     final finalPrice = int.parse(_finalPriceController.text);
-    final conditionScore = int.parse(_conditionScoreController.text);
+    final conditionScore = double.parse(_conditionScoreController.text);
     final adminNotes = _adminNotesController.text.trim();
 
     ref.read(adminActionControllerProvider.notifier).approve(

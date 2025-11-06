@@ -11,7 +11,6 @@ class CartItemModel {
   final int price;
   final int quantity;
   final String imageUrl;
-  final int shippingCostSellerRatio;
   final Timestamp addedAt;
 
   CartItemModel({
@@ -23,7 +22,6 @@ class CartItemModel {
     required this.price,
     required this.quantity,
     required this.imageUrl,
-    required this.shippingCostSellerRatio,
     required this.addedAt,
   });
 
@@ -37,7 +35,6 @@ class CartItemModel {
       price: (data['price'] ?? 0) as int,
       quantity: data['quantity'] ?? 1,
       imageUrl: data['imageUrl'] ?? '',
-      shippingCostSellerRatio: data['shippingCostSellerRatio'] ?? 0,
       addedAt: data['addedAt'] ?? Timestamp.now(),
     );
   }
@@ -52,7 +49,6 @@ class CartItemModel {
       'price': price,
       'quantity': quantity,
       'imageUrl': imageUrl,
-      'shippingCostSellerRatio': shippingCostSellerRatio,
       'addedAt': addedAt,
     };
   }
@@ -68,7 +64,6 @@ class CartItemModel {
       price: price,
       quantity: quantity,
       imageUrl: imageUrl,
-      shippingCostSellerRatio: shippingCostSellerRatio,
       addedAt: addedAt.toDate(),
     );
   }
@@ -84,7 +79,6 @@ class CartItemModel {
       price: entity.price,
       quantity: entity.quantity,
       imageUrl: entity.imageUrl,
-      shippingCostSellerRatio: entity.shippingCostSellerRatio,
       addedAt: Timestamp.fromDate(entity.addedAt),
     );
   }

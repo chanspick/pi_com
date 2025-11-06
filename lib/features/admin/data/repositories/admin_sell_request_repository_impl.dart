@@ -7,6 +7,7 @@ import '../datasources/admin_notification_datasource.dart';
 import '../../../../core/models/notification_model.dart';
 import '../../../../core/models/sell_request_model.dart';
 import '../../../../core/utils/notification_helper.dart';
+import '../../../../core/constants/firebase_constants.dart';
 
 class AdminSellRequestRepositoryImpl implements AdminSellRequestRepository {
   final AdminSellRequestDataSource _sellRequestDataSource;
@@ -22,12 +23,12 @@ class AdminSellRequestRepositoryImpl implements AdminSellRequestRepository {
   Future<void> approveSellRequest({
     required String requestId,
     required int finalPrice,
-    required int finalConditionScore,
+    required double finalConditionScore,
     String? adminNotes,
   }) async {
     // 1. 먼저 SellRequest 정보 조회 (판매자 ID 확인용)
     final requestDoc = await FirebaseFirestore.instance
-        .collection('sellRequests')
+        .collection(FirebaseConstants.sellRequestsCollection)
         .doc(requestId)
         .get();
 
@@ -63,7 +64,7 @@ class AdminSellRequestRepositoryImpl implements AdminSellRequestRepository {
   }) async {
     // 1. 먼저 SellRequest 정보 조회 (판매자 ID 확인용)
     final requestDoc = await FirebaseFirestore.instance
-        .collection('sellRequests')
+        .collection(FirebaseConstants.sellRequestsCollection)
         .doc(requestId)
         .get();
 

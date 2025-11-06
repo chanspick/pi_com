@@ -42,9 +42,6 @@ class SellRequest {
   final int requestedPrice;
   final List imageUrls;
 
-  // 배송비 부담 비율 (0 = 구매자 전액, 100 = 판매자 전액)
-  final int shippingCostSellerRatio;
-
   // 관리 정보
   final SellRequestStatus status;
   final DateTime createdAt;
@@ -69,7 +66,6 @@ class SellRequest {
     required this.purpose,
     required this.requestedPrice,
     required this.imageUrls,
-    this.shippingCostSellerRatio = 0,  // 기본값: 구매자 전액 부담
     required this.status,
     required this.createdAt,
     required this.updatedAt,
@@ -95,7 +91,6 @@ class SellRequest {
       'purpose': purpose,
       'requestedPrice': requestedPrice,
       'imageUrls': imageUrls,
-      'shippingCostSellerRatio': shippingCostSellerRatio,
       'status': status.name,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
@@ -126,7 +121,6 @@ class SellRequest {
       purpose: data['purpose'] ?? '',
       requestedPrice: (data['requestedPrice'] as num?)?.toInt() ?? 0,
       imageUrls: List.from(data['imageUrls'] ?? []),
-      shippingCostSellerRatio: (data['shippingCostSellerRatio'] as num?)?.toInt() ?? 0,
       status: SellRequestStatus.values.firstWhere(
             (e) => e.name == data['status'],
         orElse: () => SellRequestStatus.pending,
@@ -155,7 +149,6 @@ class SellRequest {
     String? purpose,
     int? requestedPrice,
     List? imageUrls,
-    int? shippingCostSellerRatio,
     SellRequestStatus? status,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -179,7 +172,6 @@ class SellRequest {
       purpose: purpose ?? this.purpose,
       requestedPrice: requestedPrice ?? this.requestedPrice,
       imageUrls: imageUrls ?? this.imageUrls,
-      shippingCostSellerRatio: shippingCostSellerRatio ?? this.shippingCostSellerRatio,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

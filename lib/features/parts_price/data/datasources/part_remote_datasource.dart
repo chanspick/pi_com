@@ -6,7 +6,7 @@ import '../models/base_part_model.dart';
 abstract class PartRemoteDataSource {
   Future<PartModel?> getPartById(String partId);
   Stream<List<BasePartModel>> getBasePartsByCategory(String category);
-  Future<List<Map<String, dynamic>>> getPriceHistory(String partId);
+  Future<List<Map<String, dynamic>>> getPriceHistory(String basePartId);
   Future<List<BasePartModel>> searchBaseParts(String query);
 }
 
@@ -39,12 +39,12 @@ class PartRemoteDataSourceImpl implements PartRemoteDataSource {
   }
 
   @override
-  Future<List<Map<String, dynamic>>> getPriceHistory(String partId) async {
+  Future<List<Map<String, dynamic>>> getPriceHistory(String basePartId) async {
     try {
-      // listings 컬렉션에서 해당 partId의 판매 이력 조회
+      // listings 컬렉션에서 해당 basePartId의 판매 이력 조회
       final querySnapshot = await _firestore
           .collection('listings')
-          .where('partId', isEqualTo: partId)
+          .where('basePartId', isEqualTo: basePartId)
           .where('status', isEqualTo: 'sold')
           .orderBy('soldAt', descending: false)
           .limit(100)

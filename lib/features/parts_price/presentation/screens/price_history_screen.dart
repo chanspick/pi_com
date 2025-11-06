@@ -6,6 +6,8 @@ import '../../domain/entities/base_part_entity.dart';
 import '../providers/part_provider.dart';
 import '../widgets/price_history_chart.dart';
 import '../../../listing/presentation/screens/listings_by_base_part_screen.dart';
+import '../../../price_alert/presentation/widgets/price_alert_setup_dialog.dart';
+import '../../../price_alert/presentation/providers/price_alert_provider.dart';
 
 class PriceHistoryScreen extends ConsumerWidget {
   final BasePartEntity basePart;
@@ -20,6 +22,37 @@ class PriceHistoryScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(basePart.modelName),
+        actions: [
+          // 가격 알림 설정 버튼
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            tooltip: '가격 알림 설정',
+            onPressed: () async {
+              final actions = ref.read(priceAlertActionsProvider);
+              if (actions == null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('로그인이 필요합니다')),
+                );
+                return;
+              }
+
+              // 기존 알림 확인
+              final existingAlert = await actions.getAlertForBasePart(basePart.basePartId);
+
+              if (context.mounted) {
+                await showDialog(
+                  context: context,
+                  builder: (context) => PriceAlertSetupDialog(
+                    basePartId: basePart.basePartId,
+                    partName: basePart.modelName,
+                    currentPrice: basePart.lowestPrice,
+                    existingAlert: existingAlert,
+                  ),
+                );
+              }
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -116,15 +149,58 @@ class PriceHistoryScreen extends ConsumerWidget {
                   child: priceHistoryAsync.when(
                     data: (priceHistory) {
                       if (priceHistory.isEmpty) {
-                        return const Center(
-                          child: Text('가격 데이터가 충분하지 않습니다.'),
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.show_chart,
+                                size: 64,
+                                color: Colors.grey[300],
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                '아직 판매 완료된 거래가 없습니다',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '거래가 누적되면 가격 추이를 확인할 수 있습니다',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[500],
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
                         );
                       }
                       return PriceHistoryChart(priceHistory: priceHistory);
                     },
                     loading: () => const Center(child: CircularProgressIndicator()),
                     error: (error, stack) => Center(
-                      child: Text('오류: $error'),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+                          const SizedBox(height: 16),
+                          Text(
+                            '가격 정보를 불러올 수 없습니다',
+                            style: TextStyle(fontSize: 16, color: Colors.grey[700]),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            '$error',
+                            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

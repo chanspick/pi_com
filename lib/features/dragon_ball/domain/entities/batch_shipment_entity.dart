@@ -11,6 +11,8 @@ class BatchShipmentEntity {
   final String shippingAddress;
   final String phoneNumber;
   final int shippingCost;
+  final List<String> additionalServices;
+  final int additionalServicesCost;
   final BatchShipmentStatus status;
   final DateTime requestedAt;
   final DateTime? shippedAt;
@@ -26,6 +28,8 @@ class BatchShipmentEntity {
     required this.shippingAddress,
     required this.phoneNumber,
     required this.shippingCost,
+    this.additionalServices = const [],
+    this.additionalServicesCost = 0,
     required this.status,
     required this.requestedAt,
     this.shippedAt,
@@ -44,6 +48,8 @@ class BatchShipmentEntity {
       shippingAddress: model.shippingAddress,
       phoneNumber: model.phoneNumber,
       shippingCost: model.shippingCost,
+      additionalServices: model.additionalServices,
+      additionalServicesCost: model.additionalServicesCost,
       status: model.status,
       requestedAt: model.requestedAt,
       shippedAt: model.shippedAt,
@@ -63,6 +69,8 @@ class BatchShipmentEntity {
       shippingAddress: shippingAddress,
       phoneNumber: phoneNumber,
       shippingCost: shippingCost,
+      additionalServices: additionalServices,
+      additionalServicesCost: additionalServicesCost,
       status: status,
       requestedAt: requestedAt,
       shippedAt: shippedAt,

@@ -93,3 +93,41 @@ final cartIsEmptyProvider = Provider<bool>((ref) {
     orElse: () => true,
   );
 });
+
+/// 판매자별로 그룹화된 장바구니 아이템
+final cartItemsBySellerProvider = Provider<Map<String, List<CartItemEntity>>>((ref) {
+  final cartItemsAsync = ref.watch(cartItemsStreamProvider);
+  return cartItemsAsync.maybeWhen(
+    data: (items) {
+      final Map<String, List<CartItemEntity>> groupedItems = {};
+      for (final item in items) {
+        if (!groupedItems.containsKey(item.sellerId)) {
+          groupedItems[item.sellerId] = [];
+        }
+        groupedItems[item.sellerId]!.add(item);
+      }
+      return groupedItems;
+    },
+    orElse: () => {},
+  );
+});
+
+/// 판매자별 총 금액 (배송비 제외)
+final sellerTotalPriceProvider = Provider.family<int, String>((ref, sellerId) {
+  final groupedItems = ref.watch(cartItemsBySellerProvider);
+  final sellerItems = groupedItems[sellerId] ?? [];
+  return sellerItems.fold(0, (sum, item) => sum + item.totalPrice);
+});
+
+/// 판매자별 배송비 (판매자당 3000원)
+final sellerShippingFeeProvider = Provider.family<int, String>((ref, sellerId) {
+  final groupedItems = ref.watch(cartItemsBySellerProvider);
+  final sellerItems = groupedItems[sellerId] ?? [];
+  return sellerItems.isEmpty ? 0 : 3000;
+});
+
+/// 총 배송비 (모든 판매자)
+final totalShippingFeeProvider = Provider<int>((ref) {
+  final groupedItems = ref.watch(cartItemsBySellerProvider);
+  return groupedItems.keys.length * 3000;
+});

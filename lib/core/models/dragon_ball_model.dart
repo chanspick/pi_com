@@ -35,6 +35,7 @@ class DragonBallModel {
   final int purchasePrice;        // 구매 당시 가격
   final String? basePartId;       // 부품 카테고리 (가격 분석용)
   final String? category;         // 부품 카테고리명
+  final int accumulatedFee;       // 누적 보관료
 
   DragonBallModel({
     required this.dragonBallId,
@@ -54,6 +55,7 @@ class DragonBallModel {
     required this.purchasePrice,
     this.basePartId,
     this.category,
+    this.accumulatedFee = 0,
   });
 
   /// Firestore 문서로 변환
@@ -76,6 +78,7 @@ class DragonBallModel {
       'purchasePrice': purchasePrice,
       'basePartId': basePartId,
       'category': category,
+      'accumulatedFee': accumulatedFee,
     };
   }
 
@@ -100,6 +103,7 @@ class DragonBallModel {
       purchasePrice: (data['purchasePrice'] as num?)?.toInt() ?? 0,
       basePartId: data['basePartId'],
       category: data['category'],
+      accumulatedFee: (data['accumulatedFee'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -133,6 +137,7 @@ class DragonBallModel {
       purchasePrice: (data['purchasePrice'] as num?)?.toInt() ?? 0,
       basePartId: data['basePartId'],
       category: data['category'],
+      accumulatedFee: (data['accumulatedFee'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -173,6 +178,7 @@ class DragonBallModel {
     int? purchasePrice,
     String? basePartId,
     String? category,
+    int? accumulatedFee,
   }) {
     return DragonBallModel(
       dragonBallId: dragonBallId ?? this.dragonBallId,
@@ -192,6 +198,7 @@ class DragonBallModel {
       purchasePrice: purchasePrice ?? this.purchasePrice,
       basePartId: basePartId ?? this.basePartId,
       category: category ?? this.category,
+      accumulatedFee: accumulatedFee ?? this.accumulatedFee,
     );
   }
 

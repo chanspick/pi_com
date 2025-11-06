@@ -7,10 +7,10 @@ class GetPriceHistoryUseCase {
 
   GetPriceHistoryUseCase({required this.repository});
 
-  Future<List<PricePointEntity>> call(String partId) {
-    if (partId.isEmpty) {
-      throw ArgumentError('Part ID cannot be empty');
+  Future<List<PricePointEntity>> call(String basePartId) {
+    if (basePartId.isEmpty) {
+      throw ArgumentError('BasePart ID cannot be empty');
     }
-    return repository.getPriceHistory(partId);
+    return repository.getPriceHistory(basePartId);
   }
 }

@@ -27,23 +27,8 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
 
   @override
   Future<void> addToCart(CartItemModel item) async {
-    // 1. 기존 장바구니 항목 조회
-    final existingItems = await _cartCollection().get();
-
-    // 2. 장바구니에 다른 판매자의 상품이 있는지 확인
-    if (existingItems.docs.isNotEmpty) {
-      final firstItem = CartItemModel.fromFirestore(existingItems.docs.first.data());
-      if (firstItem.sellerId != item.sellerId) {
-        throw Exception(
-          '장바구니에는 한 명의 판매자 상품만 담을 수 있습니다.\n'
-          '현재 장바구니: ${firstItem.sellerName}\n'
-          '추가하려는 상품: ${item.sellerName}\n\n'
-          '장바구니를 비우고 다시 시도해주세요.',
-        );
-      }
-    }
-
-    // 3. 장바구니에 추가 (listingId를 문서 ID로 사용)
+    // 장바구니에 추가 (listingId를 문서 ID로 사용)
+    // 여러 판매자의 상품을 동시에 담을 수 있도록 제한 제거
     return _cartCollection().doc(item.listingId).set(item.toFirestore());
   }
 

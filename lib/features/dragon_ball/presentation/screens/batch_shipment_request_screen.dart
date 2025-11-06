@@ -11,9 +11,13 @@ import 'package:pi_com/shared/utils/snackbar_helper.dart';
 /// 일괄 배송 요청 화면
 class BatchShipmentRequestScreen extends ConsumerStatefulWidget {
   final List<String> dragonBallIds;
+  final List<String> additionalServices;
+  final int additionalServicesCost;
 
   const BatchShipmentRequestScreen({
     required this.dragonBallIds,
+    this.additionalServices = const [],
+    this.additionalServicesCost = 0,
     super.key,
   });
 
@@ -59,6 +63,8 @@ class _BatchShipmentRequestScreenState extends ConsumerState<BatchShipmentReques
         shippingAddress: _addressController.text.trim(),
         phoneNumber: _phoneController.text.trim(),
         shippingCost: shippingCost,
+        additionalServices: widget.additionalServices,
+        additionalServicesCost: widget.additionalServicesCost,
       );
 
       // 선택 초기화

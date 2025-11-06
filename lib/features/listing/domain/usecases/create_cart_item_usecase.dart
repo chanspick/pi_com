@@ -15,7 +15,7 @@ class CreateCartItemUseCase {
       throw Exception('판매 완료된 상품입니다.');
     }
 
-    // Firestore에서 전체 Listing 정보 조회 (shippingCostSellerRatio 포함)
+    // Firestore에서 전체 Listing 정보 조회
     final listingDoc = await _firestore
         .collection('listings')
         .doc(listingEntity.listingId)
@@ -43,7 +43,6 @@ class CreateCartItemUseCase {
       price: listing.price,
       quantity: 1,
       imageUrl: listing.imageUrls.isNotEmpty ? listing.imageUrls.first : '',
-      shippingCostSellerRatio: listing.shippingCostSellerRatio,
       addedAt: DateTime.now(),
     );
   }

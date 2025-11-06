@@ -211,5 +211,49 @@ final toggleSelectAllDragonBallsProvider = Provider<void Function(bool selectAll
 final clearDragonBallSelectionProvider = Provider<void Function()>((ref) {
   return () {
     ref.read(selectedDragonBallIdsProvider.notifier).state = {};
+    ref.read(selectedAdditionalServicesProvider.notifier).state = {};
+  };
+});
+
+// ===========================
+// 추가 서비스 관련 Providers
+// ===========================
+
+/// 추가 서비스 enum
+enum AdditionalService {
+  windowsHome('Windows 11 Home', '정품 Windows 11 Home 라이선스', 150000),
+  windowsPro('Windows 11 Pro', '정품 Windows 11 Pro 라이선스 (업무용)', 220000),
+  windowsInstallOnly('Windows 설치', '정품키 없이 Windows 설치만', 20000),
+  assembly('조립 공임비', '전문가 조립 + 24시간 안정화 테스트', 50000);
+
+  final String title;
+  final String description;
+  final int price;
+
+  const AdditionalService(this.title, this.description, this.price);
+}
+
+/// 선택된 추가 서비스 목록
+final selectedAdditionalServicesProvider = StateProvider<Set<AdditionalService>>((ref) {
+  return {};
+});
+
+/// 선택된 추가 서비스 총 비용
+final selectedServicesCostProvider = Provider<int>((ref) {
+  final selectedServices = ref.watch(selectedAdditionalServicesProvider);
+  return selectedServices.fold(0, (total, service) => total + service.price);
+});
+
+/// 추가 서비스 선택/해제 토글
+final toggleAdditionalServiceProvider = Provider<void Function(AdditionalService service)>((ref) {
+  return (AdditionalService service) {
+    final selectedServices = ref.read(selectedAdditionalServicesProvider.notifier);
+    final currentServices = ref.read(selectedAdditionalServicesProvider);
+
+    if (currentServices.contains(service)) {
+      selectedServices.state = Set.from(currentServices)..remove(service);
+    } else {
+      selectedServices.state = Set.from(currentServices)..add(service);
+    }
   };
 });

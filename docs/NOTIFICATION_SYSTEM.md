@@ -534,10 +534,10 @@ notifications/{notificationId}
 
 ## 🔗 관련 파일
 
-- [notification_model.dart](lib/core/models/notification_model.dart) - 알림 모델 & 타입
-- [notification_helper.dart](lib/core/utils/notification_helper.dart) - 알림 헬퍼
-- [notification_item.dart](lib/features/notification/presentations/widgets/notification_item.dart) - 알림 UI
-- [admin_dashboard.dart](lib/features/admin/presentation/screens/admin_dashboard.dart) - 광고 전송
+- [notification_model.dart](../lib/core/models/notification_model.dart) - 알림 모델 & 타입
+- [notification_helper.dart](../lib/core/utils/notification_helper.dart) - 알림 헬퍼
+- [notification_item.dart](../lib/features/notification/presentations/widgets/notification_item.dart) - 알림 UI
+- [admin_dashboard.dart](../lib/features/admin/presentation/screens/admin_dashboard.dart) - 광고 전송
 
 ---
 

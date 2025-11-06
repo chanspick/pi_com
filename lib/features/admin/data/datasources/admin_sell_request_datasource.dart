@@ -15,7 +15,7 @@ class AdminSellRequestDataSource {
   Future<void> approveSellRequest({
     required String requestId,
     required int finalPrice,
-    required int finalConditionScore,
+    required double finalConditionScore,
     // ❌ brand 파라미터 제거
     String? adminNotes,
   }) async {
@@ -59,7 +59,6 @@ class AdminSellRequestDataSource {
         createdAt: DateTime.now(),
         soldAt: null,
         category: sellRequest.category,
-        shippingCostSellerRatio: sellRequest.shippingCostSellerRatio, // ✅ 배송비 비율 전달
       );
 
       final listingRef = _firestore

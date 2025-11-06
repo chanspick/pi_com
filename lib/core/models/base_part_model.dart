@@ -6,6 +6,7 @@ class BasePart {
   final String basePartId;
   final String modelName;
   final String category;
+  final String brand;  // 제조사 (예: Intel, AMD, Samsung)
   // Cloud Function이 업데이트해 줄 가격 통계 필드
   final int lowestPrice;
   final double averagePrice;
@@ -15,6 +16,7 @@ class BasePart {
     required this.basePartId,
     required this.modelName,
     required this.category,
+    this.brand = '',  // 기본값: 빈 문자열
     required this.lowestPrice,
     required this.averagePrice,
     required this.listingCount,
@@ -26,6 +28,7 @@ class BasePart {
       basePartId: doc.id,
       modelName: data['modelName'] ?? '이름 없음',
       category: data['category'] ?? '',
+      brand: data['brand'] ?? '',
       lowestPrice: (data['lowestPrice'] as num?)?.toInt() ?? 0,
       averagePrice: (data['averagePrice'] as num?)?.toDouble() ?? 0.0,
       listingCount: (data['listingCount'] as num?)?.toInt() ?? 0,
@@ -38,6 +41,7 @@ class BasePart {
       basePartId: data['basePartId'] ?? data['objectID'] ?? '',
       modelName: data['modelName'] ?? '이름 없음',
       category: data['category'] ?? '',
+      brand: data['brand'] ?? '',
       lowestPrice: (data['lowestPrice'] as num?)?.toInt() ?? 0,
       averagePrice: (data['averagePrice'] as num?)?.toDouble() ?? 0.0,
       listingCount: (data['listingCount'] as num?)?.toInt() ?? 0,
@@ -50,6 +54,7 @@ class BasePart {
       'basePartId': basePartId,
       'modelName': modelName,
       'category': category,
+      'brand': brand,
       'lowestPrice': lowestPrice,
       'averagePrice': averagePrice,
       'listingCount': listingCount,

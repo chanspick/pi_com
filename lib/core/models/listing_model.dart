@@ -9,7 +9,7 @@ class Listing {
   final String listingId;
   final String basePartId;      // ✅ 추가: BasePart 참조
   final String partId;           // 호환성 체크용 Part 참조
-  final int conditionScore;      // 1~100 컨디션 점수
+  final double conditionScore;   // 1~100 컨디션 점수 (실수, ML label용)
   final int price;
   final ListingStatus status;
   final String sellerId;
@@ -20,7 +20,6 @@ class Listing {
   final DateTime? soldAt;
   final List<String> imageUrls;
   final String? category; // ✅ 추가
-  final int shippingCostSellerRatio; // 배송비 부담 비율 (0-100)
 
   Listing({
     required this.listingId,
@@ -37,7 +36,6 @@ class Listing {
     this.soldAt,
     required this.imageUrls,
     this.category, // ✅ 추가
-    this.shippingCostSellerRatio = 0, // 기본값: 구매자 전액 부담
   });
 
   Map<String, dynamic> toMap() {
@@ -56,7 +54,6 @@ class Listing {
       'soldAt': soldAt != null ? Timestamp.fromDate(soldAt!) : null,
       'imageUrls': imageUrls,
       'category': category, // ✅ 추가
-      'shippingCostSellerRatio': shippingCostSellerRatio,
     };
   }
 
@@ -66,7 +63,7 @@ class Listing {
       listingId: doc.id,
       basePartId: data['basePartId'] ?? '',  // ✅ 추가
       partId: data['partId'] ?? '',
-      conditionScore: (data['conditionScore'] as num?)?.toInt() ?? 100,
+      conditionScore: (data['conditionScore'] as num?)?.toDouble() ?? 100.0,
       price: (data['price'] as num?)?.toInt() ?? 0,
       status: data['status'] == 'sold'
           ? ListingStatus.sold
@@ -79,7 +76,6 @@ class Listing {
       soldAt: (data['soldAt'] as Timestamp?)?.toDate(),
       imageUrls: List<String>.from(data['imageUrls'] ?? []),
       category: data['category'], // ✅ 추가
-      shippingCostSellerRatio: (data['shippingCostSellerRatio'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -88,7 +84,7 @@ class Listing {
       listingId: data['listingId'] ?? '',
       basePartId: data['basePartId'] ?? '',  // ✅ 추가
       partId: data['partId'] ?? '',
-      conditionScore: (data['conditionScore'] as num?)?.toInt() ?? 100,
+      conditionScore: (data['conditionScore'] as num?)?.toDouble() ?? 100.0,
       price: (data['price'] as num?)?.toInt() ?? 0,
       status: data['status'] == 'sold'
           ? ListingStatus.sold
@@ -105,7 +101,6 @@ class Listing {
           : null,
       imageUrls: List<String>.from(data['imageUrls'] ?? []),
       category: data['category'], // ✅ 추가
-      shippingCostSellerRatio: (data['shippingCostSellerRatio'] as num?)?.toInt() ?? 0,
     );
   }
 
@@ -114,7 +109,7 @@ class Listing {
     String? listingId,
     String? basePartId,
     String? partId,
-    int? conditionScore,
+    double? conditionScore,
     int? price,
     ListingStatus? status,
     String? sellerId,
@@ -125,7 +120,6 @@ class Listing {
     DateTime? soldAt,
     List<String>? imageUrls,
     String? category,
-    int? shippingCostSellerRatio,
   }) {
     return Listing(
       listingId: listingId ?? this.listingId,
@@ -142,7 +136,6 @@ class Listing {
       soldAt: soldAt ?? this.soldAt,
       imageUrls: imageUrls ?? this.imageUrls,
       category: category ?? this.category,
-      shippingCostSellerRatio: shippingCostSellerRatio ?? this.shippingCostSellerRatio,
     );
   }
 
@@ -156,7 +149,7 @@ class Listing {
       price: price,
       conditionScore: conditionScore,
       imageUrls: imageUrls,
-      status: status == ListingStatus.sold ? entity.ListingStatus.sold : entity.ListingStatus.active,
+      status: status == ListingStatus.sold ? entity.ListingStatus.sold : entity.ListingStatus.available,
       createdAt: createdAt,
       category: category, // ✅ 추가
     );

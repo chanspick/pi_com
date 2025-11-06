@@ -14,8 +14,11 @@ enum OrderStatus {
 class OrderEntity {
   final String orderId;
   final String userId;
+  final String sellerId;
+  final String sellerName;
   final List<CartItemEntity> items;
   final double totalPrice;
+  final double shippingFee;
   final OrderStatus status;
   final DateTime createdAt;
   final String shippingAddress;
@@ -23,10 +26,15 @@ class OrderEntity {
   OrderEntity({
     required this.orderId,
     required this.userId,
+    required this.sellerId,
+    required this.sellerName,
     required this.items,
     required this.totalPrice,
+    required this.shippingFee,
     required this.status,
     required this.createdAt,
     required this.shippingAddress,
   });
+
+  double get finalTotal => totalPrice + shippingFee;
 }

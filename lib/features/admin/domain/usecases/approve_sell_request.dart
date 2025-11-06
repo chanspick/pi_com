@@ -18,7 +18,7 @@ class ApproveSellRequest {
   ///
   /// [requestId]: 승인할 SellRequest ID
   /// [finalPrice]: Admin이 결정한 최종 판매 가격
-  /// [finalConditionScore]: Admin이 평가한 상태 점수 (1-10)
+  /// [finalConditionScore]: Admin이 평가한 상태 점수 (1-100, 실수)
   /// [adminNotes]: Admin의 검토 노트 (선택)
   ///
   /// ⚠️ 주의:
@@ -27,7 +27,7 @@ class ApproveSellRequest {
   Future<void> call({
     required String requestId,
     required int finalPrice,
-    required int finalConditionScore,
+    required double finalConditionScore,
     String? adminNotes,
   }) async {
     // Repository를 통해 승인 프로세스 실행

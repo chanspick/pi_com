@@ -21,6 +21,7 @@ class DragonBallEntity {
   final int purchasePrice;
   final String? basePartId;
   final String? category;
+  final int accumulatedFee; // 누적 보관료
 
   DragonBallEntity({
     required this.dragonBallId,
@@ -40,6 +41,7 @@ class DragonBallEntity {
     required this.purchasePrice,
     this.basePartId,
     this.category,
+    this.accumulatedFee = 0,
   });
 
   /// 모델에서 엔티티 생성
@@ -62,6 +64,7 @@ class DragonBallEntity {
       purchasePrice: model.purchasePrice,
       basePartId: model.basePartId,
       category: model.category,
+      accumulatedFee: model.accumulatedFee,
     );
   }
 
@@ -85,6 +88,7 @@ class DragonBallEntity {
       purchasePrice: purchasePrice,
       basePartId: basePartId,
       category: category,
+      accumulatedFee: accumulatedFee,
     );
   }
 
@@ -124,5 +128,46 @@ class DragonBallEntity {
   /// 일괄 배송에 포함될 수 있는지
   bool canBeAddedToBatch() {
     return isStored && batchShipmentId == null;
+  }
+
+  /// 보관료 계산
+  /// 60일 이후 하루 1% 보관료 (구매가 기준)
+  int calculateStorageFee() {
+    final now = DateTime.now();
+    final daysSinceStored = now.difference(storedAt).inDays;
+
+    // 60일 이내는 무료
+    if (daysSinceStored <= 60) {
+      return 0;
+    }
+
+    // 60일 이후 하루 1%
+    final overdueDays = daysSinceStored - 60;
+    final dailyFee = (purchasePrice * 0.01).round(); // 1%
+    return dailyFee * overdueDays;
+  }
+
+  /// 보관료율 계산 (구매가 대비 %)
+  double calculateStorageFeePercentage() {
+    if (purchasePrice == 0) return 0;
+    final totalFee = calculateStorageFee() + accumulatedFee;
+    return (totalFee / purchasePrice) * 100;
+  }
+
+  /// 소유권 이전 대상인지 (보관료 100% 초과)
+  bool shouldTransferOwnership() {
+    return calculateStorageFeePercentage() >= 100;
+  }
+
+  /// 60일 무료 기간 남은 일수
+  int get freeDaysRemaining {
+    final daysSinceStored = DateTime.now().difference(storedAt).inDays;
+    final remaining = 60 - daysSinceStored;
+    return remaining > 0 ? remaining : 0;
+  }
+
+  /// 60일 무료 기간 종료일
+  DateTime get freeStorageEndsAt {
+    return storedAt.add(const Duration(days: 60));
   }
 }

@@ -5,6 +5,7 @@ import '../../domain/entities/listing_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../cart/presentation/providers/cart_provider.dart';
 import '../providers/use_case_providers.dart';
+import '../../../../core/constants/routes.dart';
 
 class ListingBottomBar extends ConsumerStatefulWidget {
   final ListingEntity listing;
@@ -155,10 +156,7 @@ class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
           action: SnackBarAction(
             label: '장바구니 보기',
             onPressed: () {
-              // TODO: 장바구니 화면으로 이동 (라우팅 설정 필요)
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('장바구니 화면으로 이동 - 라우팅 설정 필요')),
-              );
+              Navigator.pushNamed(context, Routes.cart);
             },
           ),
           duration: const Duration(seconds: 3),

@@ -1,6 +1,6 @@
 // lib/features/listing/domain/entities/listing_entity.dart
 enum ListingStatus {
-  active,
+  available,
   sold,
   pending,
   cancelled;
@@ -13,7 +13,7 @@ class ListingEntity {
   final String brand;
   final String modelName;
   final int price;
-  final int conditionScore;
+  final double conditionScore;
   final List<String> imageUrls;
   final ListingStatus status;
   final DateTime createdAt;
@@ -34,9 +34,9 @@ class ListingEntity {
   });
 
   bool get isSold => status == ListingStatus.sold;
-  bool get isActive => status == ListingStatus.active;
+  bool get isAvailable => status == ListingStatus.available;
 
   bool canBePurchasedBy(String userId) {
-    return isActive && sellerId != userId;
+    return isAvailable && sellerId != userId;
   }
 }

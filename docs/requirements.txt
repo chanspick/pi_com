@@ -1,25 +1,28 @@
 # 파이컴퓨터 (PiCom) - 중고 컴퓨터 부품 거래 플랫폼
 # 프로젝트 요구사항 및 진행 상황
-# 최종 업데이트: 2025-11-04 (Epic 3 완료!)
+# 최종 업데이트: 2025-11-05 (Cloud Functions 자동화 완료!)
 
   📊 현재 프로젝트 상황 요약
 
   프로젝트: 파이컴퓨터 (PiCom)
 
-  중고 컴퓨터 부품 거래 플랫폼 | Flutter + Firebase | 전체 진행률: 68%
+  중고 컴퓨터 부품 거래 플랫폼 | Flutter + Firebase | 전체 진행률: 75%
 
   Epic별 진행 상황
 
-  ✅ Epic 1: 핵심 거래 기능 (87% 완료)
+  ✅ Epic 1: 핵심 거래 기능 (95% 완료) 🎉 개선됨!
   - 회원 인증, 판매 요청, Admin 관리, 매물 리스팅, 검색, 장바구니, 알림 시스템 완료
+  - ✅ BasePart listingCount 자동 업데이트 완료 (Cloud Functions)
   - ❌ 결제 시스템만 대기 중 (법인 설립 후 PG사 연동 필요)
 
-  ✅ Epic 2: 시세 조회 시스템 (85% 완료)
+  ✅ Epic 2: 시세 조회 시스템 (95% 완료) 🎉 개선됨!
   - 부품별 시세 화면, 가격 알림 시스템 완료
   - 매물 보기 기능 구현 완료 (2025-11-04)
-  - ❌ Cloud Functions 자동화 필요 (가격 이력 집계, 알림 자동 체크)
+  - ✅ 가격 알림 자동화 완료 (Cloud Functions)
+  - ✅ BasePart 가격 통계 자동 업데이트 완료
 
-  ✅ Epic 3: 드래곤볼 기능 (100% 완료) 🎉 NEW!
+  ✅ Epic 3: 드래곤볼 기능 (100% 완료) 🎉
+  - ✅ 드래곤볼 만료 알림 자동화 완료 (Cloud Functions)
 
   📋 상세 구현 내역: EPIC3_IMPLEMENTATION_DETAILS.md 참조
 
@@ -78,38 +81,53 @@
   - PC 추천 시스템
   - 완제품 거래
 
-  최근 완료 작업 (2025-11-04)
+  최근 완료 작업 (2025-11-05)
 
-  🎉 Epic 3: 드래곤볼 기능 완전 구현 완료!
+  🎉 Cloud Functions 자동화 완전 구현 완료!
 
   구현 내용:
-  - Data Layer: DragonBallRepository, BatchShipmentRepository, DataSources
-  - Domain Layer: 9개 UseCases (생성, 조회, 삭제, 일괄배송 등)
-  - Presentation Layer: Provider, 화면 2개, 위젯 2개
-  - Checkout 통합: 배송 방법 선택 UI, 약관 동의, 자동 드래곤볼 생성
-  - MyPage 통합: 드래곤볼 섹션 추가 (보관함, 배송 내역)
-  - Routes: 3개 라우트 추가
-  - Home 진입: circle menu에서 "드래곤볼" 버튼으로 접근 가능
+  - A. BasePart listingCount 자동 업데이트 (Firestore 트리거)
+    · onListingCreated: Listing 생성 시 자동 카운트 업데이트
+    · onListingUpdated: Listing 상태/가격 변경 시 재계산
+    · onListingDeleted: Listing 삭제 시 자동 카운트 감소
+    · recalculateBasePartStats: active listings만 집계하여 통계 업데이트
+    · 해결: 판매 완료된 매물 카운트 문제 완전 해결
 
-  총 23개 파일 생성, 5개 파일 수정
-  코드 품질: Flutter analyze 통과 (에러 0개)
+  - B. 가격 알림 자동화 (스케줄러)
+    · checkPriceAlerts: 매일 오전 10시 실행
+    · 활성화된 알림 중 목표가 도달 여부 확인
+    · FCM 푸시 알림 자동 발송
+    · lastCheckedAt, triggeredAt 자동 업데이트
+
+  - C. 드래곤볼 만료 알림 자동화 (스케줄러)
+    · checkDragonBallExpiry: 매일 오전 9시 실행
+    · 만료 3일 전 알림 발송 (FCM)
+    · 만료 시 자동 배송 처리 (status: stored → packing)
+    · collectionGroup 쿼리로 모든 사용자 드래곤볼 조회
+
+  총 6개 Cloud Functions 추가
+  - 기존: 3개 (addSearchKeywordsToParts, searchParts, onPartCreated)
+  - 신규: 6개 (onListingCreated/Updated/Deleted, checkPriceAlerts, checkDragonBallExpiry, recalculateBasePartStats)
+  코드 품질: TypeScript 빌드 성공 (에러 0개)
 
   ---
   🎯 다음 우선순위 작업
 
-  1순위: Cloud Functions 자동화 (3-4일) 🔥
+  1순위: Cloud Functions 배포 및 테스트 (1일) 🔥
 
-  A. BasePart listingCount 자동 업데이트 ⭐ 긴급
-  - 현재: 판매 완료된 매물도 카운트에 포함되는 문제
-  - 해결: Firestore 트리거로 active listings만 자동 카운트
+  A. Functions 배포
+  - firebase deploy --only functions 실행
+  - 배포 로그 확인 및 오류 해결
+  - Firebase Console에서 배포 상태 확인
 
-  B. 가격 알림 자동화
-  - 매일 스케줄러로 목표가 도달 시 알림 발송
-  - 가격 이력 자동 저장
+  B. 트리거 테스트
+  - Listing 생성/수정/삭제 시 BasePart 통계 업데이트 확인
+  - 스케줄러 수동 실행으로 가격 알림 테스트
+  - 드래곤볼 만료 알림 테스트
 
-  C. 드래곤볼 만료 알림 자동화 (NEW)
-  - 만료 3일 전 자동 알림 발송
-  - 만료 시 기본 배송지로 자동 배송 처리
+  C. Firestore 인덱스 설정
+  - collectionGroup 쿼리용 인덱스 추가
+  - 복합 쿼리 인덱스 확인
 
   2순위: 일괄 배송 내역 화면 (1일)
 

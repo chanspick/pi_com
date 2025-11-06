@@ -25,8 +25,8 @@ class PartRepositoryImpl implements PartRepository {
   }
 
   @override
-  Future<List<PricePointEntity>> getPriceHistory(String partId) async {
-    final priceData = await remoteDataSource.getPriceHistory(partId);
+  Future<List<PricePointEntity>> getPriceHistory(String basePartId) async {
+    final priceData = await remoteDataSource.getPriceHistory(basePartId);
     return priceData
         .map((data) => PricePointModel.fromMap(data).toEntity())
         .toList();

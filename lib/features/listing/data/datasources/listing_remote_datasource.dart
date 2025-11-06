@@ -39,7 +39,7 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
   @override
   // ✅✅✅ 이 부분을 꼭 수정하세요!
   Future<List<ListingModel>> getListings({String? category, String? sortBy}) async {
-    Query query = _firestore.collection('listings').where('status', isEqualTo: 'active');
+    Query query = _firestore.collection('listings').where('status', isEqualTo: 'available');
 
     // 카테고리 필터 (All이 아닐 때만)
     if (category != null && category != 'All') {
@@ -74,10 +74,10 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
 
   @override
   Future<List<ListingModel>> getListingsByBasePartId(String basePartId, {String? sortBy}) async {
-    // active 상태이고 basePartId가 일치하는 매물만 가져오기
+    // available 상태이고 basePartId가 일치하는 매물만 가져오기
     Query query = _firestore
         .collection('listings')
-        .where('status', isEqualTo: 'active')
+        .where('status', isEqualTo: 'available')
         .where('basePartId', isEqualTo: basePartId);
 
     // 정렬

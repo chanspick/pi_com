@@ -55,7 +55,7 @@ final partFutureProvider = FutureProvider.family<PartEntity?, String>((ref, part
   return useCase(partId);
 });
 
-final priceHistoryFutureProvider = FutureProvider.family<List<PricePointEntity>, String>((ref, partId) {
+final priceHistoryFutureProvider = FutureProvider.family<List<PricePointEntity>, String>((ref, basePartId) {
   final useCase = ref.watch(getPriceHistoryUseCaseProvider);
-  return useCase(partId);
+  return useCase(basePartId);
 });
