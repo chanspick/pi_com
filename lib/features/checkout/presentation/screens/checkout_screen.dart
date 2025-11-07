@@ -11,6 +11,9 @@ import 'package:pi_com/features/checkout/presentation/providers/checkout_provide
 import 'package:pi_com/features/dragon_ball/presentation/providers/dragon_ball_provider.dart';
 import 'package:pi_com/features/payment/presentation/providers/payment_provider.dart';
 import 'package:pi_com/features/payment/presentation/screens/payment_webview_screen.dart';
+import 'package:pi_com/features/payment/presentation/screens/payment_success_screen.dart';
+import 'package:pi_com/features/payment/presentation/screens/payment_failure_screen.dart';
+import 'package:pi_com/features/payment/presentation/screens/payment_cancel_screen.dart';
 
 enum ShippingMethod {
   immediate,  // 즉시 배송
@@ -289,11 +292,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       // 6. WebView로 결제 페이지 열기
       if (!mounted) return;
 
-      final paymentSuccess = await Navigator.push<bool>(
+      final paymentResult = await Navigator.push<dynamic>(
         context,
         MaterialPageRoute(
           builder: (context) => PaymentWebViewScreen(
-            paymentUrl: payment.tid, // TODO: 실제로는 redirect URL을 사용해야 함
+            paymentUrl: payment.nextRedirectMobileUrl ?? payment.nextRedirectPcUrl ?? '', // 모바일 리디렉션 URL 사용
             tid: payment.tid,
             orderId: orderId,
             userId: userId,
@@ -301,9 +304,45 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         ),
       );
 
-      // 7. 결제 성공 시 주문 및 드래곤볼 생성
-      if (paymentSuccess == true) {
+      // 7. 결제 결과 처리
+      if (!mounted) return;
+
+      if (paymentResult == true) {
+        // 결제 성공: 주문 및 드래곤볼 생성 후 성공 페이지로 이동
         await _completeOrder(userId, cartItems, shippingAddress, orderId);
+
+        final approvedPayment = ref.read(currentPaymentProvider);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentSuccessScreen(
+              payment: approvedPayment,
+              orderId: orderId,
+            ),
+          ),
+        );
+      } else if (paymentResult == 'cancel') {
+        // 결제 취소: 취소 페이지로 이동
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentCancelScreen(
+              orderId: orderId,
+            ),
+          ),
+        );
+      } else if (paymentResult is String && paymentResult.startsWith('fail:')) {
+        // 결제 실패: 실패 페이지로 이동
+        final errorMsg = paymentResult.substring(5); // 'fail:' 제거
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => PaymentFailureScreen(
+              errorMessage: errorMsg,
+              orderId: orderId,
+            ),
+          ),
+        );
       }
     } catch (e) {
       ref.read(isPreparingPaymentProvider.notifier).state = false;

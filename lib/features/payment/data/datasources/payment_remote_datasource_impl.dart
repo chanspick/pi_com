@@ -14,8 +14,8 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     Dio? dio,
     String? baseUrl,
   })  : _dio = dio ?? Dio(),
-        // PC 로컬 IP 사용 (PC와 핸드폰이 같은 Wi-Fi에 연결되어 있어야 함)
-        _baseUrl = baseUrl ?? 'http://100.76.33.205:3000';
+        // Firebase Functions URL 사용
+        _baseUrl = baseUrl ?? 'https://asia-northeast3-picom-team.cloudfunctions.net/api';
 
   @override
   Future<PaymentPrepareResponseModel> preparePayment(

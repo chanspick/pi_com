@@ -46,6 +46,9 @@ class Routes {
   static const String partDetail = '/part-detail';
   static const String cart = '/cart';
   static const String checkout = '/checkout';
+  static const String paymentSuccess = '/payment/success';
+  static const String paymentFailure = '/payment/failure';
+  static const String paymentCancel = '/payment/cancel';
 
   // ✅ 새로 추가: DragonBall 피처
   static const String dragonBallStorage = '/dragon-ball-storage';

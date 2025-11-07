@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:pi_com/features/payment/presentation/providers/payment_provider.dart';
+import 'package:pi_com/features/payment/presentation/screens/payment_success_screen.dart';
+import 'package:pi_com/features/payment/presentation/screens/payment_failure_screen.dart';
+import 'package:pi_com/features/payment/presentation/screens/payment_cancel_screen.dart';
 
 /// 카카오페이 WebView 결제 화면
 class PaymentWebViewScreen extends ConsumerStatefulWidget {
@@ -137,10 +140,7 @@ class _PaymentWebViewScreenState extends ConsumerState<PaymentWebViewScreen> {
   /// 결제 취소 처리
   void _handleCancel() {
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('결제가 취소되었습니다')),
-      );
-      Navigator.pop(context, false);
+      Navigator.pop(context, 'cancel');
     }
   }
 
@@ -149,7 +149,11 @@ class _PaymentWebViewScreenState extends ConsumerState<PaymentWebViewScreen> {
     final uri = Uri.parse(url);
     final errorMsg = uri.queryParameters['error_msg'] ?? '알 수 없는 오류';
 
-    _showError('결제 실패: $errorMsg');
+    ref.read(paymentErrorProvider.notifier).state = errorMsg;
+
+    if (mounted) {
+      Navigator.pop(context, 'fail:$errorMsg');
+    }
   }
 
   /// 에러 메시지 표시

@@ -1,7 +1,15 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
+import axios from "axios";
+import express from "express";
+import cors from "cors";
 
 admin.initializeApp();
+
+// Express 앱 생성
+const app = express();
+app.use(cors({origin: true}));
+app.use(express.json());
 
 // ============================================================================
 // 타입 정의
@@ -13,6 +21,335 @@ interface ListingData {
   price: number;
   [key: string]: any;
 }
+
+// 카카오페이 API 타입 정의
+interface KakaoPayPrepareRequest {
+  partner_order_id: string;
+  partner_user_id: string;
+  item_name: string;
+  quantity: number;
+  total_amount: number;
+  tax_free_amount: number;
+  approval_url: string;
+  cancel_url: string;
+  fail_url: string;
+}
+
+interface KakaoPayPrepareResponse {
+  tid: string;
+  next_redirect_app_url: string;
+  next_redirect_mobile_url: string;
+  next_redirect_pc_url: string;
+  android_app_scheme?: string;
+  ios_app_scheme?: string;
+  created_at: string;
+}
+
+interface KakaoPayApproveRequest {
+  tid: string;
+  partner_order_id: string;
+  partner_user_id: string;
+  pg_token: string;
+}
+
+interface KakaoPayApproveResponse {
+  aid: string;
+  tid: string;
+  cid: string;
+  sid?: string;
+  partner_order_id: string;
+  partner_user_id: string;
+  payment_method_type: string;
+  amount: {
+    total: number;
+    tax_free: number;
+    vat: number;
+    point: number;
+    discount: number;
+    green_deposit?: number;
+  };
+  card_info?: {
+    kakaopay_purchase_corp: string;
+    kakaopay_purchase_corp_code: string;
+    kakaopay_issuer_corp: string;
+    kakaopay_issuer_corp_code: string;
+    bin: string;
+    card_type: string;
+    install_month: string;
+    approved_id: string;
+    card_mid: string;
+  };
+  item_name: string;
+  item_code?: string;
+  quantity: number;
+  created_at: string;
+  approved_at: string;
+  payload?: string;
+}
+
+interface KakaoCancelRequest {
+  tid: string;
+  cancel_amount: number;
+  cancel_tax_free_amount: number;
+}
+
+// ============================================================================
+// 카카오페이 API 상수 및 설정
+// ============================================================================
+
+const KAKAO_PAY_API_URL = "https://open-api.kakaopay.com/online/v1/payment";
+
+// 환경변수에서 카카오페이 설정 가져오기
+// Firebase Console에서 설정: firebase functions:config:set kakaopay.admin_key="YOUR_ADMIN_KEY" kakaopay.cid="YOUR_CID"
+const getKakaoPayConfig = () => {
+  const config = functions.config();
+  return {
+    adminKey: config.kakaopay?.admin_key || process.env.KAKAO_ADMIN_KEY || "",
+    cid: config.kakaopay?.cid || process.env.KAKAO_CID || "TC0ONETIME", // 테스트용 CID
+  };
+};
+
+// ============================================================================
+// 카카오페이 결제 API (Express Routes)
+// ============================================================================
+
+/**
+ * 결제 준비 API
+ * POST /api/payment/prepare
+ */
+app.post("/api/payment/prepare", async (req, res) => {
+  try {
+      const {
+        partner_order_id,
+        partner_user_id,
+        item_name,
+        quantity,
+        total_amount,
+        tax_free_amount,
+        approval_url,
+        cancel_url,
+        fail_url,
+      } = req.body as KakaoPayPrepareRequest;
+
+      // 필수 파라미터 검증
+      if (!partner_order_id || !partner_user_id || !item_name || !total_amount) {
+        res.status(400).json({
+          error: "Missing required parameters",
+          required: ["partner_order_id", "partner_user_id", "item_name", "total_amount"],
+        });
+        return;
+      }
+
+      const kakaoConfig = getKakaoPayConfig();
+
+      if (!kakaoConfig.adminKey) {
+        console.error("Kakao Admin Key not configured");
+        res.status(500).json({
+          error: "Payment service not configured",
+          message: "Kakao Admin Key is missing. Please set it using: firebase functions:config:set kakaopay.admin_key=YOUR_KEY",
+        });
+        return;
+      }
+
+      // 카카오페이 결제 준비 API 호출
+      const response = await axios.post<KakaoPayPrepareResponse>(
+        `${KAKAO_PAY_API_URL}/ready`,
+        {
+          cid: kakaoConfig.cid,
+          partner_order_id,
+          partner_user_id,
+          item_name,
+          quantity: quantity || 1,
+          total_amount,
+          tax_free_amount: tax_free_amount || 0,
+          approval_url,
+          cancel_url,
+          fail_url,
+        },
+        {
+          headers: {
+            "Authorization": `SECRET_KEY ${kakaoConfig.adminKey}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("Payment prepared:", {
+        tid: response.data.tid,
+        partner_order_id,
+        total_amount,
+      });
+
+      // Firestore에 결제 정보 저장
+      await admin.firestore().collection("payments").doc(response.data.tid).set({
+        tid: response.data.tid,
+        partner_order_id,
+        partner_user_id,
+        item_name,
+        quantity: quantity || 1,
+        total_amount,
+        tax_free_amount: tax_free_amount || 0,
+        status: "ready",
+        created_at: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      res.status(200).json(response.data);
+    } catch (error: any) {
+      console.error("Payment prepare error:", error.response?.data || error.message);
+      res.status(error.response?.status || 500).json({
+        error: "Payment preparation failed",
+        details: error.response?.data || error.message,
+      });
+    }
+});
+
+/**
+ * 결제 승인 API
+ * POST /api/payment/approve
+ */
+app.post("/api/payment/approve", async (req, res) => {
+  try {
+      const {
+        tid,
+        partner_order_id,
+        partner_user_id,
+        pg_token,
+      } = req.body as KakaoPayApproveRequest;
+
+      // 필수 파라미터 검증
+      if (!tid || !partner_order_id || !partner_user_id || !pg_token) {
+        res.status(400).json({
+          error: "Missing required parameters",
+          required: ["tid", "partner_order_id", "partner_user_id", "pg_token"],
+        });
+        return;
+      }
+
+      const kakaoConfig = getKakaoPayConfig();
+
+      if (!kakaoConfig.adminKey) {
+        res.status(500).json({error: "Payment service not configured"});
+        return;
+      }
+
+      // 카카오페이 결제 승인 API 호출
+      const response = await axios.post<KakaoPayApproveResponse>(
+        `${KAKAO_PAY_API_URL}/approve`,
+        {
+          cid: kakaoConfig.cid,
+          tid,
+          partner_order_id,
+          partner_user_id,
+          pg_token,
+        },
+        {
+          headers: {
+            "Authorization": `SECRET_KEY ${kakaoConfig.adminKey}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("Payment approved:", {
+        tid: response.data.tid,
+        partner_order_id,
+        amount: response.data.amount.total,
+      });
+
+      // Firestore에 결제 승인 정보 업데이트
+      await admin.firestore().collection("payments").doc(tid).update({
+        status: "approved",
+        approved_at: admin.firestore.FieldValue.serverTimestamp(),
+        payment_method_type: response.data.payment_method_type,
+        aid: response.data.aid,
+        amount: response.data.amount,
+        card_info: response.data.card_info || null,
+      });
+
+      res.status(200).json(response.data);
+    } catch (error: any) {
+      console.error("Payment approve error:", error.response?.data || error.message);
+      res.status(error.response?.status || 500).json({
+        error: "Payment approval failed",
+        details: error.response?.data || error.message,
+      });
+    }
+});
+
+/**
+ * 결제 취소 API
+ * POST /api/payment/cancel
+ */
+app.post("/api/payment/cancel", async (req, res) => {
+  try {
+      const {
+        tid,
+        cancel_amount,
+        cancel_tax_free_amount,
+      } = req.body as KakaoCancelRequest;
+
+      // 필수 파라미터 검증
+      if (!tid || !cancel_amount) {
+        res.status(400).json({
+          error: "Missing required parameters",
+          required: ["tid", "cancel_amount"],
+        });
+        return;
+      }
+
+      const kakaoConfig = getKakaoPayConfig();
+
+      if (!kakaoConfig.adminKey) {
+        res.status(500).json({error: "Payment service not configured"});
+        return;
+      }
+
+      // 카카오페이 결제 취소 API 호출
+      const response = await axios.post(
+        `${KAKAO_PAY_API_URL}/cancel`,
+        {
+          cid: kakaoConfig.cid,
+          tid,
+          cancel_amount,
+          cancel_tax_free_amount: cancel_tax_free_amount || 0,
+        },
+        {
+          headers: {
+            "Authorization": `SECRET_KEY ${kakaoConfig.adminKey}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("Payment cancelled:", {
+        tid,
+        cancel_amount,
+      });
+
+      // Firestore에 결제 취소 정보 업데이트
+      await admin.firestore().collection("payments").doc(tid).update({
+        status: "cancelled",
+        cancelled_at: admin.firestore.FieldValue.serverTimestamp(),
+        cancel_amount,
+        cancel_tax_free_amount: cancel_tax_free_amount || 0,
+      });
+
+      res.status(200).json(response.data);
+    } catch (error: any) {
+      console.error("Payment cancel error:", error.response?.data || error.message);
+      res.status(error.response?.status || 500).json({
+        error: "Payment cancellation failed",
+        details: error.response?.data || error.message,
+      });
+    }
+});
+
+// Express 앱을 Firebase Function으로 export
+export const api = functions.region("asia-northeast3").https.onRequest(app);
+
+// ============================================================================
+// 기존 Functions
+// ============================================================================
 
 interface BasePartStats {
   lowestPrice: number;

@@ -8,6 +8,9 @@ class PaymentEntity {
   final DateTime createdAt; // 결제 생성 시간
   final String? approvedAt; // 결제 승인 시간
   final String status; // 결제 상태 (ready, approved, failed, cancelled)
+  final String? nextRedirectAppUrl; // 앱 환경 리다이렉트 URL
+  final String? nextRedirectMobileUrl; // 모바일 웹 리다이렉트 URL
+  final String? nextRedirectPcUrl; // PC 웹 리다이렉트 URL
 
   PaymentEntity({
     required this.tid,
@@ -18,6 +21,9 @@ class PaymentEntity {
     required this.createdAt,
     this.approvedAt,
     required this.status,
+    this.nextRedirectAppUrl,
+    this.nextRedirectMobileUrl,
+    this.nextRedirectPcUrl,
   });
 
   PaymentEntity copyWith({
@@ -29,6 +35,9 @@ class PaymentEntity {
     DateTime? createdAt,
     String? approvedAt,
     String? status,
+    String? nextRedirectAppUrl,
+    String? nextRedirectMobileUrl,
+    String? nextRedirectPcUrl,
   }) {
     return PaymentEntity(
       tid: tid ?? this.tid,
@@ -39,6 +48,9 @@ class PaymentEntity {
       createdAt: createdAt ?? this.createdAt,
       approvedAt: approvedAt ?? this.approvedAt,
       status: status ?? this.status,
+      nextRedirectAppUrl: nextRedirectAppUrl ?? this.nextRedirectAppUrl,
+      nextRedirectMobileUrl: nextRedirectMobileUrl ?? this.nextRedirectMobileUrl,
+      nextRedirectPcUrl: nextRedirectPcUrl ?? this.nextRedirectPcUrl,
     );
   }
 }

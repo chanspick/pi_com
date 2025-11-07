@@ -46,6 +46,9 @@ class PaymentPrepareResponseModel {
       totalAmount: totalAmount,
       createdAt: createdAt,
       status: PaymentStatus.ready,
+      nextRedirectAppUrl: nextRedirectAppUrl,
+      nextRedirectMobileUrl: nextRedirectMobileUrl,
+      nextRedirectPcUrl: nextRedirectPcUrl,
     );
   }
 }
