@@ -102,9 +102,61 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
   }
 
   @override
-  Future<void> updateListingStatus(String listingId, ListingStatus status) {
-    return _firestore.collection('listings').doc(listingId).update({
+  Future<void> updateListingStatus(String listingId, ListingStatus status) async {
+    // Listing 정보 먼저 가져오기 (basePartId 필요)
+    final listingDoc = await _firestore.collection('listings').doc(listingId).get();
+
+    if (!listingDoc.exists) {
+      throw Exception('Listing not found');
+    }
+
+    final listingData = listingDoc.data()!;
+    final basePartId = listingData['basePartId'] as String?;
+
+    // Listing 상태 업데이트
+    await _firestore.collection('listings').doc(listingId).update({
       'status': status.name,
+      if (status == ListingStatus.sold) 'soldAt': FieldValue.serverTimestamp(),
+    });
+
+    // 판매 완료된 경우, BasePart 통계 재계산
+    if (status == ListingStatus.sold && basePartId != null) {
+      await _recalculateBasePriceStatistics(basePartId);
+    }
+  }
+
+  /// BasePart 가격 통계 재계산 (AVAILABLE 상태만 포함)
+  Future<void> _recalculateBasePriceStatistics(String basePartId) async {
+    // 같은 BasePart의 모든 AVAILABLE Listing만 조회
+    final listingsSnapshot = await _firestore
+        .collection('listings')
+        .where('basePartId', isEqualTo: basePartId)
+        .where('status', isEqualTo: 'available')
+        .get();
+
+    final prices = listingsSnapshot.docs
+        .map((doc) => (doc.data()['price'] as num).toInt())
+        .toList();
+
+    // AVAILABLE 매물이 없는 경우
+    if (prices.isEmpty) {
+      await _firestore.collection('base_parts').doc(basePartId).update({
+        'lowestPrice': 0,
+        'averagePrice': 0,
+        'listingCount': 0,
+      });
+      return;
+    }
+
+    // 가격 통계 계산
+    final lowestPrice = prices.reduce((a, b) => a < b ? a : b);
+    final averagePrice = prices.reduce((a, b) => a + b) ~/ prices.length;
+
+    // BasePart 업데이트
+    await _firestore.collection('base_parts').doc(basePartId).update({
+      'lowestPrice': lowestPrice,
+      'averagePrice': averagePrice,
+      'listingCount': prices.length,
     });
   }
 }

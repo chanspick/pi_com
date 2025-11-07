@@ -41,27 +41,30 @@ class PartRemoteDataSourceImpl implements PartRemoteDataSource {
   @override
   Future<List<Map<String, dynamic>>> getPriceHistory(String basePartId) async {
     try {
-      // listings 컬렉션에서 해당 basePartId의 판매 이력 조회
+      // priceHistory 컬렉션에서 6시간 간격 스냅샷 조회 (최근 30일)
+      final startDate = DateTime.now().subtract(const Duration(days: 30));
+
       final querySnapshot = await _firestore
-          .collection('listings')
+          .collection('priceHistory')
           .where('basePartId', isEqualTo: basePartId)
-          .where('status', isEqualTo: 'sold')
-          .orderBy('soldAt', descending: false)
-          .limit(100)
+          .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(startDate))
+          .orderBy('timestamp', descending: false)
           .get();
 
       final pricePoints = <Map<String, dynamic>>[];
 
       for (final doc in querySnapshot.docs) {
         final data = doc.data();
-        final soldAt = data['soldAt'] as Timestamp?;
-        final price = data['price'] as num?;
+        final timestamp = data['timestamp'] as Timestamp?;
+        final averagePrice = data['averagePrice'] as num?;
+        final lowestPrice = data['lowestPrice'] as num?;
+        final availableCount = data['availableCount'] as num?;
 
-        if (soldAt != null && price != null) {
+        if (timestamp != null && averagePrice != null) {
           pricePoints.add({
-            'date': soldAt.toDate().toIso8601String(),
-            'price': price.toDouble(),
-            'count': 1,
+            'date': timestamp.toDate().toIso8601String(),
+            'price': averagePrice.toDouble(), // 평균가를 차트에 표시
+            'count': availableCount ?? 0,
           });
         }
       }

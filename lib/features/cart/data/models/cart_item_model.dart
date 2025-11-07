@@ -12,6 +12,7 @@ class CartItemModel {
   final int quantity;
   final String imageUrl;
   final Timestamp addedAt;
+  final String? basePartId;
 
   CartItemModel({
     required this.listingId,
@@ -23,6 +24,7 @@ class CartItemModel {
     required this.quantity,
     required this.imageUrl,
     required this.addedAt,
+    this.basePartId,
   });
 
   factory CartItemModel.fromFirestore(Map<String, dynamic> data) {
@@ -36,6 +38,7 @@ class CartItemModel {
       quantity: data['quantity'] ?? 1,
       imageUrl: data['imageUrl'] ?? '',
       addedAt: data['addedAt'] ?? Timestamp.now(),
+      basePartId: data['basePartId'],
     );
   }
 
@@ -50,6 +53,7 @@ class CartItemModel {
       'quantity': quantity,
       'imageUrl': imageUrl,
       'addedAt': addedAt,
+      if (basePartId != null) 'basePartId': basePartId,
     };
   }
 
@@ -65,6 +69,7 @@ class CartItemModel {
       quantity: quantity,
       imageUrl: imageUrl,
       addedAt: addedAt.toDate(),
+      basePartId: basePartId,
     );
   }
 
@@ -80,6 +85,7 @@ class CartItemModel {
       quantity: entity.quantity,
       imageUrl: entity.imageUrl,
       addedAt: Timestamp.fromDate(entity.addedAt),
+      basePartId: entity.basePartId,
     );
   }
 }

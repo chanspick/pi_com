@@ -44,6 +44,7 @@ class CreateCartItemUseCase {
       quantity: 1,
       imageUrl: listing.imageUrls.isNotEmpty ? listing.imageUrls.first : '',
       addedAt: DateTime.now(),
+      basePartId: listing.basePartId, // 가격 스냅샷 생성용
     );
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/entities/listing_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../cart/presentation/providers/cart_provider.dart';
+import '../../../checkout/presentation/screens/checkout_screen.dart';
 import '../providers/use_case_providers.dart';
 import '../../../../core/constants/routes.dart';
 
@@ -182,20 +183,20 @@ class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
       final validatePurchaseUseCase = ref.read(validatePurchaseUseCaseProvider);
       validatePurchaseUseCase(widget.listing, userId);
 
-      // 2. CartItem 생성 (임시로 장바구니 형식 사용)
+      // 2. CartItem 생성 (장바구니에 추가하지 않음)
       final createCartItemUseCase = ref.read(createCartItemUseCaseProvider);
       final cartItem = await createCartItemUseCase(widget.listing);
 
-      // 3. 단일 상품 결제 화면으로 이동
+      // 3. CheckoutScreen으로 직접 이동 (장바구니 우회)
       if (!mounted) return;
-
-      // 단일 상품 결제를 위한 특별 화면 또는 CheckoutScreen으로 이동
-      // 임시로 장바구니에 추가 후 체크아웃으로 이동
-      final addToCart = ref.read(addToCartProvider);
-      await addToCart(cartItem);
-
-      if (!mounted) return;
-      Navigator.pushNamed(context, Routes.checkout);
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CheckoutScreen(
+            directPurchaseItem: cartItem, // 바로구매 상품 직접 전달
+          ),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

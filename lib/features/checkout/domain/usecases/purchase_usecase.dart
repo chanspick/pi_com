@@ -7,13 +7,20 @@ import 'package:pi_com/features/listing/domain/repositories/listing_repository.d
 import 'package:pi_com/features/order/domain/entities/order_entity.dart';
 import 'package:pi_com/features/order/domain/repositories/order_repository.dart';
 import 'package:pi_com/features/listing/domain/entities/listing_entity.dart';
+import 'package:pi_com/features/price_history/data/repositories/price_history_repository.dart';
 
 class PurchaseUseCase {
   final OrderRepository _orderRepository;
   final ListingRepository _listingRepository;
   final CartRepository _cartRepository;
+  final PriceHistoryRepository _priceHistoryRepository;
 
-  PurchaseUseCase(this._orderRepository, this._listingRepository, this._cartRepository);
+  PurchaseUseCase(
+    this._orderRepository,
+    this._listingRepository,
+    this._cartRepository,
+    this._priceHistoryRepository,
+  );
 
   Future<void> call({
     required String userId,
@@ -57,15 +64,31 @@ class PurchaseUseCase {
       // 1. 판매자별 주문 생성
       await _orderRepository.createOrder(order);
 
-      // 2. 해당 판매자의 listing 상태 업데이트
+      // 2. 해당 판매자의 listing 상태 업데이트 + 가격 스냅샷 생성
+      final basePartIds = <String>{};
       for (final item in sellerItems) {
         await _listingRepository.updateListingStatus(item.listingId, ListingStatus.sold);
+        // basePartId 수집 (중복 제거)
+        if (item.basePartId != null) {
+          basePartIds.add(item.basePartId!);
+        }
+      }
+
+      // 3. 거래 완료된 basePartId들의 가격 스냅샷 생성
+      for (final basePartId in basePartIds) {
+        try {
+          await _priceHistoryRepository.createPriceSnapshot(basePartId);
+          print('✅ 가격 스냅샷 생성 완료: $basePartId');
+        } catch (e) {
+          print('⚠️ 가격 스냅샷 생성 실패: $basePartId - $e');
+          // 스냅샷 생성 실패해도 주문은 계속 진행
+        }
       }
 
       orderIndex++;
     }
 
-    // 3. 장바구니 비우기 (모든 아이템)
+    // 4. 장바구니 비우기 (모든 아이템)
     for (final item in items) {
       await _cartRepository.removeFromCart(item.listingId);
     }

@@ -10,6 +10,7 @@ class CartItemEntity {
   final int quantity;
   final String imageUrl;
   final DateTime addedAt;
+  final String? basePartId; // 가격 스냅샷 생성용
 
   CartItemEntity({
     required this.listingId,
@@ -21,6 +22,7 @@ class CartItemEntity {
     required this.quantity,
     required this.imageUrl,
     required this.addedAt,
+    this.basePartId,
   });
 
   int get totalPrice => price * quantity;

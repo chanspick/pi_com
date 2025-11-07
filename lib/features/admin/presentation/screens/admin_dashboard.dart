@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/repositories/admin_auth_repository.dart';
+import '../../../price_history/data/repositories/price_history_repository.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -16,6 +17,7 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   final _authRepo = AdminAuthRepository();
+  final _priceHistoryRepo = PriceHistoryRepository();
   bool _isChecking = true;
 
   @override
@@ -203,6 +205,63 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
   }
 
+  /// 가격 스냅샷 생성 (6시간 간격)
+  Future<void> _createPriceSnapshots() async {
+    try {
+      // 로딩 다이얼로그 표시
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const AlertDialog(
+          content: Row(
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(width: 20),
+              Text('가격 스냅샷을 생성하는 중...'),
+            ],
+          ),
+        ),
+      );
+
+      // 모든 basePart의 가격 스냅샷 생성
+      await _priceHistoryRepo.createAllPriceSnapshots();
+
+      // 다이얼로그 닫기
+      if (mounted) Navigator.pop(context);
+
+      // 성공 메시지
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('완료'),
+            content: const Text('모든 부품의 가격 스냅샷을 생성했습니다.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('확인'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      // 다이얼로그 닫기
+      if (mounted) Navigator.pop(context);
+
+      // 에러 메시지
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('오류 발생: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   /// searchKeywords 일괄 추가 Cloud Function 호출
   Future<void> _addSearchKeywordsToParts() async {
     try {
@@ -386,6 +445,40 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     icon: Icons.campaign,
                     color: Colors.deepOrange,
                     onTap: _sendMarketingNotification,
+                  ),
+                  _AdminMenuCard(
+                    title: '가격 스냅샷 생성',
+                    icon: Icons.camera_alt,
+                    color: Colors.indigo,
+                    onTap: () async {
+                      // 확인 다이얼로그
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('가격 스냅샷 수동 생성'),
+                          content: const Text(
+                            '현재 판매중인 모든 부품의 가격 정보를 스냅샷으로 저장합니다.\n\n'
+                            '💡 참고: 스냅샷은 거래 완료 시 자동으로 생성됩니다.\n'
+                            '   수동 생성은 테스트 또는 초기 데이터 수집용입니다.\n\n'
+                            '계속하시겠습니까?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('취소'),
+                            ),
+                            ElevatedButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              child: const Text('확인'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirmed == true) {
+                        _createPriceSnapshots();
+                      }
+                    },
                   ),
                 ],
               ),

@@ -23,7 +23,12 @@ enum PaymentMethod {
 }
 
 class CheckoutScreen extends ConsumerStatefulWidget {
-  const CheckoutScreen({super.key});
+  final CartItemEntity? directPurchaseItem; // 바로구매 상품 (null이면 장바구니 전체 구매)
+
+  const CheckoutScreen({
+    super.key,
+    this.directPurchaseItem,
+  });
 
   @override
   ConsumerState<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -49,6 +54,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 바로구매 모드: directPurchaseItem 사용
+    // 장바구니 구매 모드: cartItemsStreamProvider 사용
+    if (widget.directPurchaseItem != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('결제'),
+        ),
+        body: _buildCheckoutContent([widget.directPurchaseItem!]),
+      );
+    }
+
     final cartItemsAsync = ref.watch(cartItemsStreamProvider);
 
     return Scaffold(
@@ -57,13 +73,22 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       ),
       body: cartItemsAsync.when(
         data: (cartItems) {
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
+          return _buildCheckoutContent(cartItems);
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(child: Text('오류: $error')),
+      ),
+    );
+  }
+
+  Widget _buildCheckoutContent(List<CartItemEntity> cartItems) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16.0),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
                   // 주문 상품 정보
                   const Text('주문 상품', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
@@ -152,27 +177,22 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 },
               ),
               const SizedBox(height: 32),
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    onPressed: _purchase,
-                    child: const Text('결제하기'),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                ],
+                ),
+                onPressed: _purchase,
+                child: const Text('결제하기'),
               ),
-            ),
-          );
-        },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('오류: $error')),
-      ),
-    );
+            ],
+          ),
+        ),
+      );
   }
 
   Future<void> _purchase() async {
@@ -197,7 +217,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     }
 
     final userId = ref.read(currentUserProvider)!.uid;
-    final cartItems = await ref.read(cartItemsStreamProvider.future);
+
+    // 바로구매 모드 또는 장바구니 모드에 따라 상품 목록 가져오기
+    final cartItems = widget.directPurchaseItem != null
+        ? [widget.directPurchaseItem!]
+        : await ref.read(cartItemsStreamProvider.future);
+
     final shippingAddress = _selectedShippingMethod == ShippingMethod.immediate
         ? '${_addressController.text}, ${_nameController.text}, ${_phoneController.text}'
         : 'DragonBall Storage';
@@ -339,6 +364,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           agreedToTerms: true,
         );
       }
+    }
+
+    // 장바구니 구매 모드일 때만 장바구니 비우기 (바로구매는 비우지 않음)
+    if (widget.directPurchaseItem == null) {
+      await ref.read(clearCartProvider).call();
     }
 
     if (mounted) {
