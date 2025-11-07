@@ -42,40 +42,105 @@ class DragonBallStorageScreen extends ConsumerWidget {
       ),
       body: dragonBallsAsync.when(
         data: (allDragonBalls) {
-          if (storedDragonBalls.isEmpty) {
-            return _EmptyState(ref: ref);
-          }
-
           return Column(
             children: [
               // 요약 정보
-              DragonBallStorageSummary(
-                storedCount: storedDragonBalls.length,
-                selectedCount: selectedCount,
-              ),
+              if (storedDragonBalls.isNotEmpty)
+                DragonBallStorageSummary(
+                  storedCount: storedDragonBalls.length,
+                  selectedCount: selectedCount,
+                ),
 
-              // 드래곤볼 리스트 + 추가 서비스
+              // 드래곤볼 표 + 추가 서비스
               Expanded(
                 child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // 드래곤볼 카드들
-                      ...storedDragonBalls.map((dragonBall) {
-                        final isSelected = selectedIds.contains(dragonBall.dragonBallId);
-                        return DragonBallCard(
-                          dragonBall: dragonBall,
-                          isSelected: isSelected,
-                          onTap: () {
-                            ref.read(toggleDragonBallSelectionProvider)(dragonBall.dragonBallId);
-                          },
-                        );
-                      }).toList(),
+                      // 헤더
+                      Text(
+                        '드래곤볼 보관함',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.blue[50],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.blue[200]!),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                '부품 구매 시 드래곤볼 보관을 선택하면 30일간 무료 보관 후 합배송으로 배송비를 절약할 수 있어요!',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.blue[900],
+                                  height: 1.4,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // 부품 슬롯 테이블
+                      _buildPartSlotsTable(context, ref, storedDragonBalls),
+
+                      const SizedBox(height: 24),
 
                       // 추가 서비스 섹션
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: _AdditionalServicesSection(),
-                      ),
+                      const _AdditionalServicesSection(),
+
+                      const SizedBox(height: 24),
+
+                      // 안내 메시지 (부품이 없을 때만)
+                      if (storedDragonBalls.isEmpty)
+                        Center(
+                          child: Column(
+                            children: [
+                              Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[400]),
+                              const SizedBox(height: 16),
+                              Text(
+                                '아직 보관 중인 부품이 없어요',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.grey[700],
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '부품 쇼핑몰에서 부품을 구매하고\n드래곤볼 보관을 선택해보세요',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                  height: 1.4,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.of(context).pushNamed(Routes.partShop);
+                                },
+                                icon: const Icon(Icons.shopping_bag),
+                                label: const Text('부품 쇼핑하러 가기'),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -121,14 +186,10 @@ class DragonBallStorageScreen extends ConsumerWidget {
   }
 }
 
-/// 빈 상태 위젯 - 부품 카테고리 슬롯 테이블 UI
-class _EmptyState extends StatelessWidget {
-  final WidgetRef ref;
-
-  const _EmptyState({required this.ref});
-
+// 부품 슬롯 테이블 빌더
+Widget _buildPartSlotsTable(BuildContext context, WidgetRef ref, List<DragonBallEntity> storedDragonBalls) {
   // 부품 카테고리 정의
-  static const partCategories = [
+  const partCategories = [
     {'name': 'CPU', 'icon': Icons.memory},
     {'name': 'GPU', 'icon': Icons.videogame_asset},
     {'name': 'MAINBOARD', 'icon': Icons.developer_board, 'displayName': '메인보드'},
@@ -139,196 +200,109 @@ class _EmptyState extends StatelessWidget {
     {'name': 'COOLER', 'icon': Icons.ac_unit, 'displayName': '쿨러'},
   ];
 
+  // 카테고리별 드래곤볼 매핑
+  final Map<String, DragonBallEntity?> categoryMap = {};
+  for (var category in partCategories) {
+    categoryMap[category['name'] as String] = null;
+  }
+  for (var db in storedDragonBalls) {
+    if (db.category != null) {
+      categoryMap[db.category!.toUpperCase()] = db;
+    }
+  }
+
+  return Container(
+    decoration: BoxDecoration(
+      border: Border.all(color: Colors.grey[300]!),
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Column(
+      children: [
+        // 테이블 헤더
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+          ),
+          child: Row(
+            children: [
+              const SizedBox(width: 40), // 체크박스 공간
+              const SizedBox(
+                width: 80,
+                child: Text('부품', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+              const Expanded(
+                flex: 3,
+                child: Text('모델명', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+              const Expanded(
+                flex: 2,
+                child: Text('입고일', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+              const Expanded(
+                flex: 2,
+                child: Text('남은기간', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              ),
+            ],
+          ),
+        ),
+
+        // 테이블 바디
+        ...partCategories.asMap().entries.map((entry) {
+          final index = entry.key;
+          final category = entry.value;
+          final categoryName = category['name'] as String;
+          final displayName = category['displayName'] as String? ?? categoryName;
+          final icon = category['icon'] as IconData;
+          final dragonBall = categoryMap[categoryName];
+
+          return Container(
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: index < partCategories.length - 1
+                    ? BorderSide(color: Colors.grey[300]!)
+                    : BorderSide.none,
+              ),
+            ),
+            child: _PartSlotRow(
+              ref: ref,
+              categoryName: categoryName,
+              displayName: displayName,
+              icon: icon,
+              dragonBall: dragonBall,
+            ),
+          );
+        }).toList(),
+      ],
+    ),
+  );
+}
+
+/// 부품 슬롯 행 위젯
+class _PartSlotRow extends ConsumerWidget {
+  final WidgetRef ref;
+  final String categoryName;
+  final String displayName;
+  final IconData icon;
+  final DragonBallEntity? dragonBall;
+
+  const _PartSlotRow({
+    required this.ref,
+    required this.categoryName,
+    required this.displayName,
+    required this.icon,
+    required this.dragonBall,
+  });
+
   @override
-  Widget build(BuildContext context) {
-    final storedDragonBalls = ref.watch(storedDragonBallsProvider);
-
-    // 카테고리별 드래곤볼 매핑
-    final Map<String, DragonBallEntity?> categoryMap = {};
-    for (var category in partCategories) {
-      categoryMap[category['name'] as String] = null;
-    }
-    for (var db in storedDragonBalls) {
-      if (db.category != null) {
-        categoryMap[db.category!.toUpperCase()] = db;
-      }
-    }
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // 헤더
-          Text(
-            '드래곤볼 보관함',
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.blue[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.blue[200]!),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '부품 구매 시 드래곤볼 보관을 선택하면 30일간 무료 보관 후 합배송으로 배송비를 절약할 수 있어요!',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.blue[900],
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
-          // 부품 슬롯 테이블
-          _buildPartSlotsTable(context, categoryMap),
-
-          const SizedBox(height: 24),
-
-          // 추가 서비스 섹션
-          const _AdditionalServicesSection(),
-
-          const SizedBox(height: 24),
-
-          // 안내 메시지
-          if (storedDragonBalls.isEmpty)
-            Center(
-              child: Column(
-                children: [
-                  Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey[400]),
-                  const SizedBox(height: 16),
-                  Text(
-                    '아직 보관 중인 부품이 없어요',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.grey[700],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '부품 쇼핑몰에서 부품을 구매하고\n드래곤볼 보관을 선택해보세요',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                      height: 1.4,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.of(context).pushNamed(Routes.partShop);
-                    },
-                    icon: const Icon(Icons.shopping_bag),
-                    label: const Text('부품 쇼핑하러 가기'),
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPartSlotsTable(BuildContext context, Map<String, DragonBallEntity?> categoryMap) {
-    return Container(
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey[300]!),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          // 테이블 헤더
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-            ),
-            child: Row(
-              children: [
-                const SizedBox(width: 40), // 체크박스 공간
-                const SizedBox(
-                  width: 80,
-                  child: Text('부품', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                ),
-                const Expanded(
-                  flex: 3,
-                  child: Text('모델명', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                ),
-                const Expanded(
-                  flex: 2,
-                  child: Text('입고일', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                ),
-                const Expanded(
-                  flex: 2,
-                  child: Text('남은기간', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                ),
-              ],
-            ),
-          ),
-
-          // 테이블 바디
-          ...partCategories.asMap().entries.map((entry) {
-            final index = entry.key;
-            final category = entry.value;
-            final categoryName = category['name'] as String;
-            final displayName = category['displayName'] as String? ?? categoryName;
-            final icon = category['icon'] as IconData;
-            final dragonBall = categoryMap[categoryName];
-
-            return Container(
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: index < partCategories.length - 1
-                      ? BorderSide(color: Colors.grey[300]!)
-                      : BorderSide.none,
-                ),
-              ),
-              child: _buildPartSlotRow(
-                context,
-                categoryName,
-                displayName,
-                icon,
-                dragonBall,
-              ),
-            );
-          }).toList(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPartSlotRow(
-    BuildContext context,
-    String categoryName,
-    String displayName,
-    IconData icon,
-    DragonBallEntity? dragonBall,
-  ) {
-    final selectedIds = ref.watch(selectedDragonBallIdsProvider);
-    final isSelected = dragonBall != null && selectedIds.contains(dragonBall.dragonBallId);
+  Widget build(BuildContext context, WidgetRef widgetRef) {
+    final selectedIds = widgetRef.watch(selectedDragonBallIdsProvider);
+    final isSelected = dragonBall != null && selectedIds.contains(dragonBall!.dragonBallId);
 
     return InkWell(
       onTap: dragonBall != null
-          ? () => ref.read(toggleDragonBallSelectionProvider)(dragonBall.dragonBallId)
+          ? () => widgetRef.read(toggleDragonBallSelectionProvider)(dragonBall!.dragonBallId)
           : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -341,7 +315,7 @@ class _EmptyState extends StatelessWidget {
                   ? Checkbox(
                       value: isSelected,
                       onChanged: (value) {
-                        ref.read(toggleDragonBallSelectionProvider)(dragonBall.dragonBallId);
+                        widgetRef.read(toggleDragonBallSelectionProvider)(dragonBall!.dragonBallId);
                       },
                     )
                   : null,
@@ -375,7 +349,7 @@ class _EmptyState extends StatelessWidget {
               flex: 3,
               child: dragonBall != null
                   ? Text(
-                      dragonBall.partName,
+                      dragonBall!.partName,
                       style: const TextStyle(fontSize: 13),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -391,7 +365,7 @@ class _EmptyState extends StatelessWidget {
               flex: 2,
               child: dragonBall != null
                   ? Text(
-                      _formatDate(dragonBall.storedAt),
+                      _formatDate(dragonBall!.storedAt),
                       style: const TextStyle(fontSize: 12, color: Colors.black54),
                     )
                   : Text(
@@ -404,7 +378,7 @@ class _EmptyState extends StatelessWidget {
             Expanded(
               flex: 2,
               child: dragonBall != null
-                  ? _buildDaysRemaining(dragonBall)
+                  ? _buildDaysRemaining(dragonBall!)
                   : Text(
                       '-',
                       style: TextStyle(fontSize: 12, color: Colors.grey[400]),

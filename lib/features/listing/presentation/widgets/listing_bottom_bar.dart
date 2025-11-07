@@ -104,7 +104,7 @@ class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
         ),
         const SizedBox(width: 12),
 
-        // 바로 구매 버튼 (TODO: 체크아웃 바로 이동)
+        // 바로 구매 버튼
         Expanded(
           flex: 2,
           child: ElevatedButton(
@@ -117,11 +117,7 @@ class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
-            onPressed: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('바로 구매 기능은 개발 예정입니다')),
-              );
-            },
+            onPressed: () => _handleDirectPurchase(context, currentUser.uid),
             child: const Text(
               '바로 구매',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
@@ -176,6 +172,39 @@ class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
       if (mounted) {
         setState(() => _isAddingToCart = false);
       }
+    }
+  }
+
+  /// 바로 구매 처리
+  Future<void> _handleDirectPurchase(BuildContext context, String userId) async {
+    try {
+      // 1. 구매 가능 여부 검증
+      final validatePurchaseUseCase = ref.read(validatePurchaseUseCaseProvider);
+      validatePurchaseUseCase(widget.listing, userId);
+
+      // 2. CartItem 생성 (임시로 장바구니 형식 사용)
+      final createCartItemUseCase = ref.read(createCartItemUseCaseProvider);
+      final cartItem = await createCartItemUseCase(widget.listing);
+
+      // 3. 단일 상품 결제 화면으로 이동
+      if (!mounted) return;
+
+      // 단일 상품 결제를 위한 특별 화면 또는 CheckoutScreen으로 이동
+      // 임시로 장바구니에 추가 후 체크아웃으로 이동
+      final addToCart = ref.read(addToCartProvider);
+      await addToCart(cartItem);
+
+      if (!mounted) return;
+      Navigator.pushNamed(context, Routes.checkout);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('Exception: ', '')),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
     }
   }
 }

@@ -50,6 +50,9 @@ dependencies:
   fl_chart: ^0.65.0
   intl: ^0.19.0  # 날짜 포맷팅
   shared_preferences: ^2.2.2  # 다크모드 설정 저장
+  dio: ^5.4.0  # HTTP 클라이언트
+  webview_flutter: ^4.4.0  # WebView 결제 화면
+  url_launcher: ^6.2.2  # URL 처리
 dev_dependencies:
   flutter_test:
     sdk: flutter

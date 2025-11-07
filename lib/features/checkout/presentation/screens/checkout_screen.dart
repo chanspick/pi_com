@@ -1,15 +1,24 @@
 // lib/features/checkout/presentation/screens/checkout_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pi_com/features/auth/presentation/providers/auth_provider.dart';
 import 'package:pi_com/features/cart/presentation/providers/cart_provider.dart';
+import 'package:pi_com/features/cart/domain/entities/cart_item_entity.dart';
 import 'package:pi_com/features/checkout/presentation/providers/checkout_provider.dart';
 import 'package:pi_com/features/dragon_ball/presentation/providers/dragon_ball_provider.dart';
+import 'package:pi_com/features/payment/presentation/providers/payment_provider.dart';
+import 'package:pi_com/features/payment/presentation/screens/payment_webview_screen.dart';
 
 enum ShippingMethod {
   immediate,  // 즉시 배송
   dragonBall, // 드래곤볼 보관
+}
+
+enum PaymentMethod {
+  kakaoPay,   // 카카오페이
+  // 향후 확장 가능: card, bankTransfer 등
 }
 
 class CheckoutScreen extends ConsumerStatefulWidget {
@@ -27,6 +36,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   ShippingMethod _selectedShippingMethod = ShippingMethod.immediate;
   bool _agreedToDragonBallTerms = false;
+  PaymentMethod? _selectedPaymentMethod; // null이면 선택하지 않음
 
   @override
   void dispose() {
@@ -106,7 +116,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
               const Text('결제 수단', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              const Text('결제 수단은 현재 지원되지 않습니다.'),
+              _PaymentMethodSelector(
+                selectedMethod: _selectedPaymentMethod,
+                onMethodChanged: (method) {
+                  setState(() => _selectedPaymentMethod = method);
+                },
+              ),
               const SizedBox(height: 32),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
@@ -132,6 +147,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       return;
     }
 
+    // 결제 수단 선택 확인
+    if (_selectedPaymentMethod == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('결제 방법을 선택하세요.')),
+      );
+      return;
+    }
+
     // 드래곤볼 선택 시 약관 동의 확인
     if (_selectedShippingMethod == ShippingMethod.dragonBall && !_agreedToDragonBallTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -146,45 +169,103 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         ? '${_addressController.text}, ${_nameController.text}, ${_phoneController.text}'
         : 'DragonBall Storage';
 
+    // 카카오페이 결제 통합
+    if (_selectedPaymentMethod == PaymentMethod.kakaoPay) {
+      await _processKakaoPayment(userId, cartItems, shippingAddress);
+    } else {
+      // 다른 결제 수단 처리 (향후 확장)
+      await _processDirectOrder(userId, cartItems, shippingAddress);
+    }
+  }
+
+  /// 카카오페이 결제 처리
+  Future<void> _processKakaoPayment(
+    String userId,
+    List<CartItemEntity> cartItems,
+    String shippingAddress,
+  ) async {
     try {
-      // 주문 생성
-      await ref.read(purchaseUseCaseProvider).call(
+      // 1. 주문 번호 생성
+      final orderId = 'ORDER_${DateTime.now().millisecondsSinceEpoch}';
+
+      // 2. 결제 금액 계산
+      final totalAmount = _calculateTotalAmount(cartItems);
+
+      // 3. 상품명 생성
+      final itemName = _getItemName(cartItems);
+
+      // 4. 리다이렉트 URL 설정
+      final String approvalUrl;
+      final String cancelUrl;
+      final String failUrl;
+
+      if (kIsWeb) {
+        // 웹 환경: 웹 URL 사용
+        approvalUrl = '${Uri.base.origin}/payment/approve?order_id=$orderId';
+        cancelUrl = '${Uri.base.origin}/payment/cancel';
+        failUrl = '${Uri.base.origin}/payment/fail';
+      } else {
+        // 앱 환경: 백엔드 URL 사용 (Deep Link 처리)
+        approvalUrl = 'http://localhost:3000/payment/approve?order_id=$orderId';
+        cancelUrl = 'http://localhost:3000/payment/cancel';
+        failUrl = 'http://localhost:3000/payment/fail';
+      }
+
+      // 5. 결제 준비 API 호출
+      ref.read(isPreparingPaymentProvider.notifier).state = true;
+
+      final payment = await ref.read(preparePaymentUseCaseProvider).call(
+        orderId: orderId,
         userId: userId,
-        items: cartItems,
-        shippingAddress: shippingAddress,
+        itemName: itemName,
+        quantity: cartItems.length,
+        totalAmount: totalAmount,
+        approvalUrl: approvalUrl,
+        cancelUrl: cancelUrl,
+        failUrl: failUrl,
       );
 
-      // 드래곤볼 선택 시 드래곤볼 생성
-      if (_selectedShippingMethod == ShippingMethod.dragonBall) {
-        final createDragonBallUseCase = ref.read(createDragonBallUseCaseProvider);
+      ref.read(isPreparingPaymentProvider.notifier).state = false;
+      ref.read(currentPaymentProvider.notifier).state = payment;
 
-        for (final item in cartItems) {
-          await createDragonBallUseCase(
+      // 6. WebView로 결제 페이지 열기
+      if (!mounted) return;
+
+      final paymentSuccess = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PaymentWebViewScreen(
+            paymentUrl: payment.tid, // TODO: 실제로는 redirect URL을 사용해야 함
+            tid: payment.tid,
+            orderId: orderId,
             userId: userId,
-            listingId: item.listingId,
-            orderId: 'temp_order_id', // 실제로는 주문 ID를 받아야 함
-            partName: item.partName,
-            imageUrl: item.imageUrl,
-            purchasePrice: item.price,
-            basePartId: null, // 실제로는 listing에서 가져와야 함
-            category: item.category,
-            agreedToTerms: true,
-          );
-        }
-      }
+          ),
+        ),
+      );
 
+      // 7. 결제 성공 시 주문 및 드래곤볼 생성
+      if (paymentSuccess == true) {
+        await _completeOrder(userId, cartItems, shippingAddress, orderId);
+      }
+    } catch (e) {
+      ref.read(isPreparingPaymentProvider.notifier).state = false;
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _selectedShippingMethod == ShippingMethod.dragonBall
-                  ? '결제가 완료되었습니다. 부품이 드래곤볼에 보관되었습니다!'
-                  : '결제가 완료되었습니다.',
-            ),
-          ),
+          SnackBar(content: Text('결제 준비 실패: $e')),
         );
-        Navigator.of(context).popUntil((route) => route.isFirst);
       }
+    }
+  }
+
+  /// 직접 주문 처리 (테스트 모드)
+  Future<void> _processDirectOrder(
+    String userId,
+    List<CartItemEntity> cartItems,
+    String shippingAddress,
+  ) async {
+    try {
+      final orderId = 'ORDER_${DateTime.now().millisecondsSinceEpoch}';
+      await _completeOrder(userId, cartItems, shippingAddress, orderId);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -192,6 +273,73 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         );
       }
     }
+  }
+
+  /// 주문 완료 처리
+  Future<void> _completeOrder(
+    String userId,
+    List<CartItemEntity> cartItems,
+    String shippingAddress,
+    String orderId,
+  ) async {
+    // 주문 생성
+    await ref.read(purchaseUseCaseProvider).call(
+      userId: userId,
+      items: cartItems,
+      shippingAddress: shippingAddress,
+    );
+
+    // 드래곤볼 선택 시 드래곤볼 생성
+    if (_selectedShippingMethod == ShippingMethod.dragonBall) {
+      final createDragonBallUseCase = ref.read(createDragonBallUseCaseProvider);
+
+      for (final item in cartItems) {
+        await createDragonBallUseCase(
+          userId: userId,
+          listingId: item.listingId,
+          orderId: orderId,
+          partName: item.partName,
+          imageUrl: item.imageUrl,
+          purchasePrice: item.price,
+          basePartId: null,
+          category: item.category,
+          agreedToTerms: true,
+        );
+      }
+    }
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _selectedShippingMethod == ShippingMethod.dragonBall
+                ? '결제가 완료되었습니다. 부품이 드래곤볼에 보관되었습니다!'
+                : '결제가 완료되었습니다.',
+          ),
+        ),
+      );
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
+  }
+
+  /// 총 결제 금액 계산
+  int _calculateTotalAmount(List<CartItemEntity> cartItems) {
+    double subtotal = 0;
+    for (final item in cartItems) {
+      subtotal += item.price * item.quantity;
+    }
+
+    // 배송비 추가
+    final shippingFee = _selectedShippingMethod == ShippingMethod.immediate ? 10000 : 0;
+
+    return (subtotal + shippingFee).toInt();
+  }
+
+  /// 상품명 생성
+  String _getItemName(List<CartItemEntity> cartItems) {
+    if (cartItems.isEmpty) return '상품';
+    if (cartItems.length == 1) return cartItems[0].partName;
+    return '${cartItems[0].partName} 외 ${cartItems.length - 1}개';
   }
 }
 
@@ -262,6 +410,90 @@ class _ShippingMethodSelector extends StatelessWidget {
           tileColor: selectedMethod == ShippingMethod.dragonBall
               ? Colors.green.withOpacity(0.1)
               : Colors.transparent,
+        ),
+      ],
+    );
+  }
+}
+
+/// 결제 수단 선택 위젯
+class _PaymentMethodSelector extends StatelessWidget {
+  final PaymentMethod? selectedMethod;
+  final ValueChanged<PaymentMethod?> onMethodChanged;
+
+  const _PaymentMethodSelector({
+    required this.selectedMethod,
+    required this.onMethodChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // 카카오페이
+        RadioListTile<PaymentMethod>(
+          value: PaymentMethod.kakaoPay,
+          groupValue: selectedMethod,
+          onChanged: onMethodChanged,
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE500), // 카카오 노란색
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Icon(
+                  Icons.chat_bubble,
+                  size: 20,
+                  color: Color(0xFF3C1E1E),
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text('카카오페이', style: TextStyle(fontWeight: FontWeight.w600)),
+            ],
+          ),
+          subtitle: const Padding(
+            padding: EdgeInsets.only(left: 38),
+            child: Text('간편하고 안전한 결제'),
+          ),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+            side: BorderSide(
+              color: selectedMethod == PaymentMethod.kakaoPay ? const Color(0xFFFEE500) : Colors.grey[300]!,
+              width: selectedMethod == PaymentMethod.kakaoPay ? 2 : 1,
+            ),
+          ),
+          tileColor: selectedMethod == PaymentMethod.kakaoPay
+              ? const Color(0xFFFEE500).withOpacity(0.1)
+              : Colors.transparent,
+        ),
+        const SizedBox(height: 8),
+
+        // 안내 메시지
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.grey[50],
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, color: Colors.grey[600], size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  '현재는 결제가 바로 완료됩니다. (테스트 모드)',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[700],
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
