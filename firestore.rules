@@ -8,15 +8,19 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow write: if request.auth != null; // 개발 환경: 모든 인증된 사용자 쓰기 가능
 
-      // DragonBalls 서브컬렉션
+      // DragonBalls 서브컬렉션 - 사용자 본인만 접근 가능
       match /dragonBalls/{dragonBallId} {
-        allow read: if request.auth != null; // 개발 환경
-        allow write: if request.auth != null; // 개발 환경
+        // 로그인한 사용자가 자신의 드래곤볼만 읽을 수 있음
+        allow read: if request.auth != null && request.auth.uid == userId;
+        // 로그인한 사용자가 자신의 드래곤볼만 수정할 수 있음
+        allow write: if request.auth != null && request.auth.uid == userId;
       }
 
-      // Cart 서브컬렉션
+      // Cart 서브컬렉션 - 사용자 본인만 접근 가능
       match /cart/{cartItemId} {
+        // 로그인한 사용자가 자신의 장바구니만 읽을 수 있음
         allow read: if request.auth != null && request.auth.uid == userId;
+        // 로그인한 사용자가 자신의 장바구니만 수정할 수 있음
         allow write: if request.auth != null && request.auth.uid == userId;
       }
 

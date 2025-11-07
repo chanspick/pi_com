@@ -8,8 +8,13 @@ import 'package:pi_com/features/cart/presentation/providers/cart_provider.dart';
 
 class CartItemCard extends ConsumerWidget {
   final CartItemEntity item;
+  final bool showDeleteButton;
 
-  const CartItemCard({super.key, required this.item});
+  const CartItemCard({
+    super.key,
+    required this.item,
+    this.showDeleteButton = true,
+  });
 
   String _formatPrice(int price) {
     return price.toString().replaceAllMapped(
@@ -112,36 +117,37 @@ class CartItemCard extends ConsumerWidget {
                   ),
                 ),
 
-                // 삭제 버튼
-                IconButton(
-                  icon: const Icon(Icons.close, size: 20),
-                  onPressed: () async {
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('상품 삭제'),
-                        content: const Text('장바구니에서 이 상품을 삭제하시겠습니까?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, false),
-                            child: const Text('취소'),
-                          ),
-                          TextButton(
-                            onPressed: () => Navigator.pop(context, true),
-                            style: TextButton.styleFrom(
-                              foregroundColor: Colors.red,
+                // 삭제 버튼 (선택적)
+                if (showDeleteButton)
+                  IconButton(
+                    icon: const Icon(Icons.close, size: 20),
+                    onPressed: () async {
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('상품 삭제'),
+                          content: const Text('장바구니에서 이 상품을 삭제하시겠습니까?'),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('취소'),
                             ),
-                            child: const Text('삭제'),
-                          ),
-                        ],
-                      ),
-                    );
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.red,
+                              ),
+                              child: const Text('삭제'),
+                            ),
+                          ],
+                        ),
+                      );
 
-                    if (confirmed == true) {
-                      await ref.read(removeFromCartProvider).call(item.listingId);
-                    }
-                  },
-                ),
+                      if (confirmed == true) {
+                        await ref.read(removeFromCartProvider).call(item.listingId);
+                      }
+                    },
+                  ),
               ],
             ),
 

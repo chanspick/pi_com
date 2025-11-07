@@ -14,7 +14,8 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     Dio? dio,
     String? baseUrl,
   })  : _dio = dio ?? Dio(),
-        _baseUrl = baseUrl ?? 'http://localhost:3000'; // TODO: 실제 백엔드 URL로 변경
+        // PC 로컬 IP 사용 (PC와 핸드폰이 같은 Wi-Fi에 연결되어 있어야 함)
+        _baseUrl = baseUrl ?? 'http://100.76.33.205:3000';
 
   @override
   Future<PaymentPrepareResponseModel> preparePayment(

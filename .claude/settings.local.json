@@ -6,7 +6,13 @@
       "Bash(findstr:*)",
       "Bash(flutter analyze:*)",
       "WebFetch(domain:developers.kakaopay.com)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(ipconfig:*)",
+      "Bash(test:*)",
+      "WebSearch",
+      "Bash(flutter clean:*)",
+      "Bash(flutter pub get:*)"
     ],
     "deny": [],
     "ask": []

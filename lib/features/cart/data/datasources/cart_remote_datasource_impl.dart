@@ -34,9 +34,22 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
 
   @override
   Stream<List<CartItemModel>> getCartItems() {
-    return _cartCollection().snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) => CartItemModel.fromFirestore(doc.data())).toList();
-    });
+    try {
+      if (_userId == null) {
+        throw Exception('로그인이 필요합니다');
+      }
+      print('장바구니 조회 중... userId: $_userId');
+      return _cartCollection().snapshots().map((snapshot) {
+        print('장바구니 아이템 개수: ${snapshot.docs.length}');
+        return snapshot.docs.map((doc) => CartItemModel.fromFirestore(doc.data())).toList();
+      }).handleError((error) {
+        print('장바구니 조회 에러: $error');
+        throw error;
+      });
+    } catch (e) {
+      print('장바구니 조회 실패: $e');
+      rethrow;
+    }
   }
 
   @override

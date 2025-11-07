@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pi_com/features/auth/presentation/providers/auth_provider.dart';
 import 'package:pi_com/features/cart/presentation/providers/cart_provider.dart';
 import 'package:pi_com/features/cart/domain/entities/cart_item_entity.dart';
+import 'package:pi_com/features/cart/presentation/widgets/cart_item_card.dart';
 import 'package:pi_com/features/checkout/presentation/providers/checkout_provider.dart';
 import 'package:pi_com/features/dragon_ball/presentation/providers/dragon_ball_provider.dart';
 import 'package:pi_com/features/payment/presentation/providers/payment_provider.dart';
@@ -48,19 +49,47 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cartItemsAsync = ref.watch(cartItemsStreamProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('결제'),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // 배송 방법 선택
-              const Text('배송 방법', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      body: cartItemsAsync.when(
+        data: (cartItems) {
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // 주문 상품 정보
+                  const Text('주문 상품', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: cartItems.length,
+                      separatorBuilder: (context, index) => Divider(height: 1, color: Colors.grey[200]),
+                      itemBuilder: (context, index) {
+                        return CartItemCard(
+                          item: cartItems[index],
+                          showDeleteButton: false,
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // 배송 방법 선택
+                  const Text('배송 방법', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
               _ShippingMethodSelector(
                 selectedMethod: _selectedShippingMethod,
@@ -123,21 +152,25 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 },
               ),
               const SizedBox(height: 32),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: _purchase,
+                    child: const Text('결제하기'),
                   ),
-                ),
-                onPressed: _purchase,
-                child: const Text('결제하기'),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(child: Text('오류: $error')),
       ),
     );
   }

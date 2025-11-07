@@ -176,10 +176,8 @@ class CartSummary extends ConsumerWidget {
                   width: double.infinity,
                   child: ElevatedButton(
                     onPressed: () {
-                      // TODO: 체크아웃 화면으로 이동
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('결제 기능은 개발 예정입니다')),
-                      );
+                      // CheckoutScreen으로 이동
+                      Navigator.pushNamed(context, Routes.checkout);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).primaryColor,
