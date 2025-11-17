@@ -18,13 +18,9 @@ class PartRemoteDataSourceImpl implements PartRemoteDataSource {
 
   @override
   Future<PartModel?> getPartById(String partId) async {
-    try {
-      final doc = await _firestore.collection('parts').doc(partId).get();
-      if (!doc.exists) return null;
-      return PartModel.fromFirestore(doc);
-    } catch (e) {
-      throw Exception('Failed to fetch part: $e');
-    }
+    // parts 컬렉션 사용 중단: base_parts를 사용하도록 변경됨
+    // 이 메서드는 현재 사용되지 않으며, null을 반환합니다.
+    return null;
   }
 
   @override
@@ -41,7 +37,7 @@ class PartRemoteDataSourceImpl implements PartRemoteDataSource {
   @override
   Future<List<Map<String, dynamic>>> getPriceHistory(String basePartId) async {
     try {
-      // priceHistory 컬렉션에서 6시간 간격 스냅샷 조회 (최근 30일)
+      // priceHistory 컬렉션에서 가격 변동 이력 조회 (최근 30일)
       final startDate = DateTime.now().subtract(const Duration(days: 30));
 
       final querySnapshot = await _firestore
@@ -58,13 +54,14 @@ class PartRemoteDataSourceImpl implements PartRemoteDataSource {
         final timestamp = data['timestamp'] as Timestamp?;
         final averagePrice = data['averagePrice'] as num?;
         final lowestPrice = data['lowestPrice'] as num?;
-        final availableCount = data['availableCount'] as num?;
+        final listingCount = data['listingCount'] as num?;
 
-        if (timestamp != null && averagePrice != null) {
+        if (timestamp != null && averagePrice != null && lowestPrice != null) {
           pricePoints.add({
             'date': timestamp.toDate().toIso8601String(),
-            'price': averagePrice.toDouble(), // 평균가를 차트에 표시
-            'count': availableCount ?? 0,
+            'averagePrice': averagePrice.toDouble(),
+            'lowestPrice': lowestPrice.toDouble(),
+            'count': listingCount ?? 0,
           });
         }
       }

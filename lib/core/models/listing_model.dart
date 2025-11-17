@@ -7,8 +7,7 @@ enum ListingStatus { available, sold }
 
 class Listing {
   final String listingId;
-  final String basePartId;      // ✅ 추가: BasePart 참조
-  final String partId;           // 호환성 체크용 Part 참조
+  final String basePartId;      // BasePart 참조
   final double conditionScore;   // 1~100 컨디션 점수 (실수, ML label용)
   final int price;
   final ListingStatus status;
@@ -19,12 +18,11 @@ class Listing {
   final DateTime createdAt;
   final DateTime? soldAt;
   final List<String> imageUrls;
-  final String? category; // ✅ 추가
+  final String? category;
 
   Listing({
     required this.listingId,
-    required this.basePartId,    // ✅ 추가
-    required this.partId,
+    required this.basePartId,
     required this.conditionScore,
     required this.price,
     required this.status,
@@ -35,14 +33,13 @@ class Listing {
     required this.createdAt,
     this.soldAt,
     required this.imageUrls,
-    this.category, // ✅ 추가
+    this.category,
   });
 
   Map<String, dynamic> toMap() {
     return {
       'listingId': listingId,
-      'basePartId': basePartId,   // ✅ 추가
-      'partId': partId,
+      'basePartId': basePartId,
       'conditionScore': conditionScore,
       'price': price,
       'status': status.name,
@@ -53,7 +50,7 @@ class Listing {
       'createdAt': Timestamp.fromDate(createdAt),
       'soldAt': soldAt != null ? Timestamp.fromDate(soldAt!) : null,
       'imageUrls': imageUrls,
-      'category': category, // ✅ 추가
+      'category': category,
     };
   }
 
@@ -61,8 +58,7 @@ class Listing {
     Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
     return Listing(
       listingId: doc.id,
-      basePartId: data['basePartId'] ?? '',  // ✅ 추가
-      partId: data['partId'] ?? '',
+      basePartId: data['basePartId'] ?? data['partId'] ?? '',  // basePartId 우선, fallback으로 partId
       conditionScore: (data['conditionScore'] as num?)?.toDouble() ?? 100.0,
       price: (data['price'] as num?)?.toInt() ?? 0,
       status: data['status'] == 'sold'
@@ -75,15 +71,14 @@ class Listing {
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       soldAt: (data['soldAt'] as Timestamp?)?.toDate(),
       imageUrls: List<String>.from(data['imageUrls'] ?? []),
-      category: data['category'], // ✅ 추가
+      category: data['category'],
     );
   }
 
   factory Listing.fromMap(Map<String, dynamic> data) {
     return Listing(
       listingId: data['listingId'] ?? '',
-      basePartId: data['basePartId'] ?? '',  // ✅ 추가
-      partId: data['partId'] ?? '',
+      basePartId: data['basePartId'] ?? data['partId'] ?? '',  // basePartId 우선, fallback으로 partId
       conditionScore: (data['conditionScore'] as num?)?.toDouble() ?? 100.0,
       price: (data['price'] as num?)?.toInt() ?? 0,
       status: data['status'] == 'sold'
@@ -100,7 +95,7 @@ class Listing {
           ? (data['soldAt'] as Timestamp).toDate()
           : null,
       imageUrls: List<String>.from(data['imageUrls'] ?? []),
-      category: data['category'], // ✅ 추가
+      category: data['category'],
     );
   }
 
@@ -108,7 +103,6 @@ class Listing {
   Listing copyWith({
     String? listingId,
     String? basePartId,
-    String? partId,
     double? conditionScore,
     int? price,
     ListingStatus? status,
@@ -124,7 +118,6 @@ class Listing {
     return Listing(
       listingId: listingId ?? this.listingId,
       basePartId: basePartId ?? this.basePartId,
-      partId: partId ?? this.partId,
       conditionScore: conditionScore ?? this.conditionScore,
       price: price ?? this.price,
       status: status ?? this.status,
@@ -142,7 +135,7 @@ class Listing {
   entity.ListingEntity toEntity() {
     return entity.ListingEntity(
       listingId: listingId,
-      partId: partId,
+      basePartId: basePartId,
       sellerId: sellerId,
       brand: brand,
       modelName: modelName,
@@ -151,7 +144,7 @@ class Listing {
       imageUrls: imageUrls,
       status: status == ListingStatus.sold ? entity.ListingStatus.sold : entity.ListingStatus.available,
       createdAt: createdAt,
-      category: category, // ✅ 추가
+      category: category,
     );
   }
 }

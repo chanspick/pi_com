@@ -1,43 +1,49 @@
 // lib/features/web_public/presentation/screens/terms_page.dart
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:webview_flutter/webview_flutter.dart';
+import '../../../../core/utils/responsive_helper.dart';
+import '../widgets/web_navbar_v2.dart';
 
-class TermsPage extends StatelessWidget {
+class TermsPage extends StatefulWidget {
   const TermsPage({super.key});
 
   @override
+  State<TermsPage> createState() => _TermsPageState();
+}
+
+class _TermsPageState extends State<TermsPage> {
+  late final WebViewController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!kIsWeb) {
+      _controller = WebViewController()
+        ..setJavaScriptMode(JavaScriptMode.unrestricted)
+        ..loadFlutterAsset('assets/html/termsofuse.html');
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // 웹에서는 웹 네비게이션 바와 함께 표시
+    if (kIsWeb) {
+      return Scaffold(
+        appBar: const WebNavBarV2(),
+        body: ResponsiveHelper.centeredMaxWidthContainer(
+          context: context,
+          child: WebViewWidget(controller: _controller),
+        ),
+      );
+    }
+
+    // 모바일에서는 WebView로 HTML 표시
     return Scaffold(
       appBar: AppBar(
         title: const Text('이용약관'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.go('/'),
-        ),
       ),
-      body: const SingleChildScrollView(
-        padding: EdgeInsets.all(48),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '이용약관',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 24),
-            Text(
-              '제1조 (목적)\n'
-                  '본 약관은 PiCom(이하 "회사")이 제공하는 서비스의 이용과 관련하여\n'
-                  '회사와 이용자의 권리, 의무 및 책임사항을 규정함을 목적으로 합니다.\n\n'
-                  '제2조 (정의)\n'
-                  '1. "서비스"란 회사가 제공하는 중고 컴퓨터 부품 거래 플랫폼을 의미합니다.\n'
-                  '2. "이용자"란 본 약관에 따라 회사가 제공하는 서비스를 이용하는 자를 말합니다.\n\n'
-                  '(추가 약관 내용은 사업자등록 후 보완 예정)',
-              style: TextStyle(fontSize: 16, height: 1.8),
-            ),
-          ],
-        ),
-      ),
+      body: WebViewWidget(controller: _controller),
     );
   }
 }

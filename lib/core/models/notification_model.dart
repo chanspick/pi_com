@@ -72,8 +72,10 @@ class NotificationModel {
   final String message;             // 알림 메시지
 
   // 관련 데이터
-  final String? relatedSellRequestId;  // 판매 요청 ID
-  final String? relatedListingId;      // 리스팅 ID
+  final String? relatedSellRequestId;  // 판매 요청 ID (statusChanged 알람용)
+  final String? relatedListingId;      // 리스팅 ID 또는 주문(Order) ID
+                                        // - listingSold: Listing ID
+                                        // - paymentCompleted, purchaseConfirmed: Order ID
 
   // 메타데이터
   final bool isRead;                // 읽음 여부

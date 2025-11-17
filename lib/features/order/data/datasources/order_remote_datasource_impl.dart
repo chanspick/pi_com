@@ -11,7 +11,13 @@ class OrderRemoteDataSourceImpl implements OrderRemoteDataSource {
   OrderRemoteDataSourceImpl({FirebaseFirestore? firestore}) : _firestore = firestore ?? FirebaseFirestore.instance;
 
   @override
-  Future<void> createOrder(OrderModel order) {
-    return _firestore.collection('orders').doc(order.orderId).set(order.toFirestore());
+  Future<void> createOrder(OrderModel order) async {
+    try {
+      await _firestore.collection('orders').doc(order.orderId).set(order.toFirestore());
+    } on FirebaseException catch (e) {
+      throw Exception('주문 생성 실패 (Firebase 오류): ${e.message}');
+    } catch (e) {
+      throw Exception('주문 생성 중 오류 발생: $e');
+    }
   }
 }

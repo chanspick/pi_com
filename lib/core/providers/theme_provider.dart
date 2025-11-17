@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 /// 다크모드 상태 관리 Provider
 class ThemeNotifier extends StateNotifier<ThemeMode> {
@@ -64,6 +65,11 @@ final darkTheme = ThemeData(
   ),
   useMaterial3: true,
   brightness: Brightness.dark,
+  // 한글 폰트 적용
+  textTheme: GoogleFonts.notoSansKrTextTheme(
+    ThemeData.dark().textTheme,
+  ),
+  fontFamily: GoogleFonts.notoSansKr().fontFamily,
 );
 
 /// 라이트 테마 정의
@@ -74,4 +80,9 @@ final lightTheme = ThemeData(
   ),
   useMaterial3: true,
   brightness: Brightness.light,
+  // 한글 폰트 적용
+  textTheme: GoogleFonts.notoSansKrTextTheme(
+    ThemeData.light().textTheme,
+  ),
+  fontFamily: GoogleFonts.notoSansKr().fontFamily,
 );

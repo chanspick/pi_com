@@ -37,15 +37,37 @@ class NotificationItem extends ConsumerWidget {
               .markAsRead(notification.notificationId);
         }
 
+        if (!context.mounted) return;
+
         // 2. 관련 화면으로 이동
+        // 판매 요청 관련 알람 (statusChanged)
         if (notification.relatedSellRequestId != null) {
-          if (!context.mounted) return;
-          // ✅ Navigator.pushNamed 사용
           Navigator.pushNamed(
             context,
             Routes.sellRequestDetails,
             arguments: notification.relatedSellRequestId,
           );
+        }
+        // 구매 관련 알람 (paymentCompleted, listingSold, purchaseConfirmed)
+        else if (notification.relatedListingId != null) {
+          // relatedListingId가 실제로는 orderId일 수 있음
+          // type에 따라 다르게 처리
+          if (notification.type == NotificationType.paymentCompleted ||
+              notification.type == NotificationType.purchaseConfirmed) {
+            // 구매자 알람 → 구매 상세로
+            Navigator.pushNamed(
+              context,
+              Routes.purchaseDetail,
+              arguments: notification.relatedListingId,
+            );
+          } else if (notification.type == NotificationType.listingSold) {
+            // 판매자 알람 → 매물 상세로
+            Navigator.pushNamed(
+              context,
+              Routes.listingDetail,
+              arguments: notification.relatedListingId,
+            );
+          }
         }
       },
       child: Container(

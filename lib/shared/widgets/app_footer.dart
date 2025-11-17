@@ -1,6 +1,9 @@
 //lib/shared/widgets/app_footer.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:url_launcher/url_launcher.dart';
+import '../../core/constants/routes.dart';
 
 /// 전자상거래법 필수 정보 표시 Footer
 /// 웹 배포 시 사업자등록에 필요
@@ -34,12 +37,12 @@ class AppFooter extends StatelessWidget {
           // 사업자 정보
           _buildInfoText('대표자: 최진규'), // ⭐️ 실제 이름으로 변경
           _buildInfoText('사업자등록번호: 207-87-03690'), // ⭐️ 실제 번호
-          _buildInfoText('통신판매업 신고번호: 제XXXX-서울-XXXX호'), // ⭐️ 신고 후
+          _buildInfoText('통신판매업 신고번호: 2025-서울서대문-1006'),
           _buildInfoText('사업장 주소: 서울특별시 서대문구 연세로2나길 61'), // ⭐️ 실제 주소
           _buildInfoText('창천동 캠퍼스타운 에스큐브'), // ⭐️ 실제 주소
 
-          _buildInfoText('대표전화: 02-XXXX-XXXX'),
-          _buildInfoText('이메일: contact@picom.team'),
+          _buildInfoText('대표전화: 02-6402-0025'),
+          _buildInfoText('이메일: wlsrb00g@gmail.com'),
 
           const SizedBox(height: 12),
 
@@ -53,9 +56,9 @@ class AppFooter extends StatelessWidget {
             spacing: 16,
             runSpacing: 8,
             children: [
-              _buildLinkButton(context, '이용약관'),
-              _buildLinkButton(context, '개인정보처리방침'),
-              _buildLinkButton(context, '환불정책'),
+              _buildLinkButton(context, '이용약관', 'termsofuse.html'),
+              _buildLinkButton(context, '개인정보처리방침', 'privacy_policy.html'),
+              _buildLinkButton(context, '환불정책', 'refund.html'),
             ],
           ),
 
@@ -87,12 +90,30 @@ class AppFooter extends StatelessWidget {
     );
   }
 
-  Widget _buildLinkButton(BuildContext context, String label) {
+  Widget _buildLinkButton(BuildContext context, String label, String htmlFile) {
     return TextButton(
-      onPressed: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$label 페이지는 준비 중입니다.')),
-        );
+      onPressed: () async {
+        if (kIsWeb) {
+          // 웹에서는 HTML 파일로 직접 이동
+          // Uri.base는 현재 URL (예: http://localhost:8081/)
+          final currentUrl = Uri.base;
+          final targetUrl = currentUrl.replace(path: '/$htmlFile');
+
+          // 현재 탭에서 HTML 페이지 열기
+          await launchUrl(
+            targetUrl,
+            webOnlyWindowName: '_self', // 현재 탭에서 열기
+          );
+        } else {
+          // 모바일에서는 라우트 사용
+          String route = Routes.privacy;
+          if (htmlFile.contains('terms')) {
+            route = Routes.terms;
+          } else if (htmlFile.contains('refund')) {
+            route = Routes.refund;
+          }
+          Navigator.pushNamed(context, route);
+        }
       },
       style: TextButton.styleFrom(
         padding: EdgeInsets.zero,

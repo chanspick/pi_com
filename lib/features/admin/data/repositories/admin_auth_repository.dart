@@ -53,18 +53,26 @@ class AdminAuthRepository {
   /// Firestore에서 User 조회 + Admin 체크 (내부 메서드)
   Future<(UserModel?, String)> _checkAdminAndGetUser(String uid) async {
     try {
+      print('🔍 [DEBUG] Checking admin for UID: $uid');
       final doc = await _firestore.collection('users').doc(uid).get();
 
+      print('🔍 [DEBUG] Document exists: ${doc.exists}');
       if (!doc.exists) {
         await _auth.signOut();
-        return (null, '사용자 정보를 찾을 수 없습니다.');
+        return (null, '사용자 정보를 찾을 수 없습니다. UID: $uid');
       }
 
+      final data = doc.data();
+      print('🔍 [DEBUG] Document data: $data');
+      print('🔍 [DEBUG] isAdmin value: ${data?['isAdmin']}');
+      print('🔍 [DEBUG] isAdmin type: ${data?['isAdmin'].runtimeType}');
+
       final userModel = UserModel.fromFirestore(doc);
+      print('🔍 [DEBUG] UserModel created - isAdmin: ${userModel.isAdmin}');
 
       if (!userModel.isAdmin) {
         await _auth.signOut();
-        return (null, '관리자 권한이 없습니다.');
+        return (null, '관리자 권한이 없습니다. isAdmin=${userModel.isAdmin}');
       }
 
       // lastLoginAt 업데이트
@@ -73,8 +81,11 @@ class AdminAuthRepository {
           .doc(uid)
           .update({'lastLoginAt': FieldValue.serverTimestamp()});
 
+      print('✅ [DEBUG] Admin check passed!');
       return (userModel, '');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ [DEBUG] Error: $e');
+      print('❌ [DEBUG] StackTrace: $stackTrace');
       await _auth.signOut();
       return (null, '권한 확인 실패: $e');
     }

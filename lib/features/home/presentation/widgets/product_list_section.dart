@@ -42,6 +42,12 @@ class ProductListSection extends ConsumerWidget {
           // Listing 데이터 표시
           listingsAsync.when(
             data: (listings) {
+              // 🔍 디버그: Home 화면에 표시되는 listings 확인
+              print('🏠 [Home] Loaded ${listings.length} listings:');
+              for (var listing in listings) {
+                print('   - ${listing.listingId}: ${listing.brand} ${listing.modelName}');
+              }
+
               if (listings.isEmpty) {
                 // 기존 empty state 유지
                 return Center(

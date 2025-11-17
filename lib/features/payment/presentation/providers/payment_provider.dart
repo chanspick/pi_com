@@ -15,9 +15,8 @@ import 'package:pi_com/features/payment/domain/entities/payment_entity.dart';
 /// Payment Remote DataSource Provider
 final paymentRemoteDataSourceProvider = Provider<PaymentRemoteDataSource>((ref) {
   return PaymentRemoteDataSourceImpl(
-    // TODO: 실제 백엔드 URL 설정
-    baseUrl: 'http://localhost:3000', // 개발 환경
-    // baseUrl: 'https://yourapi.com', // 프로덕션 환경
+    // Firebase Functions URL
+    baseUrl: 'https://asia-northeast3-picom-team.cloudfunctions.net/api',
   );
 });
 

@@ -12,20 +12,20 @@ abstract class AuthRepository {
   /// Firebase Auth 상태 변경 스트림
   Stream<User?> get authStateChanges;
 
-  /// 익명 로그인
-  Future<UserModel> signInAnonymously();
+  /// 카카오 로그인
+  Future<UserModel> signInWithKakao();
 
-  /// Google 로그인
-  Future<UserModel> signInWithGoogle();
+  /// 이메일/비밀번호 로그인
+  Future<UserModel> signInWithEmail(String email, String password);
+
+  /// 이메일/비밀번호 회원가입
+  Future<UserModel> signUpWithEmail(String email, String password, String displayName);
 
   /// 로그아웃
   Future<void> signOut();
 
   /// 계정 삭제
   Future<void> deleteAccount();
-
-  /// Google 재인증 (계정 삭제 전 필수)
-  Future<void> reauthenticateWithGoogle();
 
   /// Admin 여부 확인
   Future<bool> isAdmin(String uid);

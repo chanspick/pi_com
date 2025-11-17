@@ -56,7 +56,14 @@ class _SellRequestDetailsScreenState
     // 각 부품별 가격 입력 컨트롤러 생성
     _priceControllers = List.generate(
       widget.selectedBaseParts.length,
-          (index) => TextEditingController(),
+          (index) {
+        final part = widget.selectedBaseParts[index];
+        // 고정 가격 부품은 20,000원으로 초기화
+        if (part.basePartId.startsWith('virtual_')) {
+          return TextEditingController(text: '20000');
+        }
+        return TextEditingController();
+      },
     );
   }
 
@@ -315,28 +322,66 @@ class _SellRequestDetailsScreenState
         const SizedBox(height: 16),
         ...List.generate(widget.selectedBaseParts.length, (index) {
           final part = widget.selectedBaseParts[index];
+          final isFixedPrice = part.basePartId.startsWith('virtual_');
+
           return Padding(
             padding: const EdgeInsets.only(bottom: 12.0),
-            child: TextFormField(
-              controller: _priceControllers[index],
-              decoration: InputDecoration(
-                labelText: part.modelName,
-                hintText: '희망 판매 가격 입력',
-                border: const OutlineInputBorder(),
-                suffixText: '원',
-                prefixIcon: const Icon(Icons.attach_money),
-              ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return '가격을 입력해주세요.';
-                }
-                if (int.tryParse(value) == null || int.parse(value) <= 0) {
-                  return '유효한 가격을 입력해주세요.';
-                }
-                return null;
-              },
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isFixedPrice)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4.0),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade100,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text(
+                            '고정 가격 (임의 매집)',
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.blue,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                TextFormField(
+                  controller: _priceControllers[index],
+                  enabled: !isFixedPrice,
+                  decoration: InputDecoration(
+                    labelText: part.modelName,
+                    hintText: isFixedPrice ? '고정 가격' : '희망 판매 가격 입력',
+                    border: const OutlineInputBorder(),
+                    suffixText: '원',
+                    prefixIcon: Icon(
+                      isFixedPrice ? Icons.lock : Icons.attach_money,
+                    ),
+                    filled: isFixedPrice,
+                    fillColor: isFixedPrice ? Colors.grey.shade100 : null,
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return '가격을 입력해주세요.';
+                    }
+                    if (int.tryParse(value) == null || int.parse(value) <= 0) {
+                      return '유효한 가격을 입력해주세요.';
+                    }
+                    return null;
+                  },
+                ),
+              ],
             ),
           );
         }),

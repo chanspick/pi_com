@@ -6,18 +6,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:pi_com/features/dragon_ball/presentation/providers/dragon_ball_provider.dart';
 import 'package:pi_com/features/dragon_ball/domain/entities/dragon_ball_entity.dart';
 import 'package:pi_com/core/models/batch_shipment_model.dart';
+import 'package:pi_com/core/constants/storage_policy.dart';
 import 'package:pi_com/shared/utils/snackbar_helper.dart';
 
 /// 일괄 배송 요청 화면
 class BatchShipmentRequestScreen extends ConsumerStatefulWidget {
   final List<String> dragonBallIds;
-  final List<String> additionalServices;
-  final int additionalServicesCost;
 
   const BatchShipmentRequestScreen({
     required this.dragonBallIds,
-    this.additionalServices = const [],
-    this.additionalServicesCost = 0,
     super.key,
   });
 
@@ -30,6 +27,9 @@ class _BatchShipmentRequestScreenState extends ConsumerState<BatchShipmentReques
   final _recipientController = TextEditingController();
   final _addressController = TextEditingController();
   final _phoneController = TextEditingController();
+
+  // 추가 서비스 선택 상태 (이제 여기서 관리)
+  final Set<AdditionalService> _selectedServices = {};
 
   bool _isLoading = false;
 
@@ -53,7 +53,8 @@ class _BatchShipmentRequestScreenState extends ConsumerState<BatchShipmentReques
     setState(() => _isLoading = true);
 
     try {
-      final shippingCost = ShippingCostCalculator.calculateBatchShippingCost(widget.dragonBallIds.length);
+      final shippingCost = StoragePolicy.calculateBatchShippingCost(widget.dragonBallIds.length);
+      final servicesCost = _selectedServices.fold<int>(0, (sum, service) => sum + service.price);
 
       final createBatchShipmentUseCase = ref.read(createBatchShipmentUseCaseProvider);
       await createBatchShipmentUseCase(
@@ -63,8 +64,8 @@ class _BatchShipmentRequestScreenState extends ConsumerState<BatchShipmentReques
         shippingAddress: _addressController.text.trim(),
         phoneNumber: _phoneController.text.trim(),
         shippingCost: shippingCost,
-        additionalServices: widget.additionalServices,
-        additionalServicesCost: widget.additionalServicesCost,
+        additionalServices: _selectedServices.map((s) => s.title).toList(),
+        additionalServicesCost: servicesCost,
       );
 
       // 선택 초기화
@@ -88,8 +89,9 @@ class _BatchShipmentRequestScreenState extends ConsumerState<BatchShipmentReques
   @override
   Widget build(BuildContext context) {
     final dragonBallsAsync = ref.watch(userDragonBallsStreamProvider);
-    final shippingCost = ShippingCostCalculator.calculateBatchShippingCost(widget.dragonBallIds.length);
-    final savings = ShippingCostCalculator.calculateSavings(widget.dragonBallIds.length);
+    final shippingCost = StoragePolicy.calculateBatchShippingCost(widget.dragonBallIds.length);
+    final savings = StoragePolicy.calculateShippingSavings(widget.dragonBallIds.length);
+    final servicesCost = _selectedServices.fold<int>(0, (sum, service) => sum + service.price);
 
     return Scaffold(
       appBar: AppBar(
@@ -185,11 +187,27 @@ class _BatchShipmentRequestScreenState extends ConsumerState<BatchShipmentReques
                     ),
                     const SizedBox(height: 24),
 
+                    // 추가 서비스 선택
+                    _AdditionalServicesSection(
+                      selectedServices: _selectedServices,
+                      onServiceToggle: (service) {
+                        setState(() {
+                          if (_selectedServices.contains(service)) {
+                            _selectedServices.remove(service);
+                          } else {
+                            _selectedServices.add(service);
+                          }
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 24),
+
                     // 배송비 정보
                     _ShippingCostInfo(
                       itemCount: widget.dragonBallIds.length,
                       shippingCost: shippingCost,
                       savings: savings,
+                      servicesCost: servicesCost,
                     ),
                     const SizedBox(height: 24),
 
@@ -296,16 +314,19 @@ class _ShippingCostInfo extends StatelessWidget {
   final int itemCount;
   final int shippingCost;
   final int savings;
+  final int servicesCost;
 
   const _ShippingCostInfo({
     required this.itemCount,
     required this.shippingCost,
     required this.savings,
+    this.servicesCost = 0,
   });
 
   @override
   Widget build(BuildContext context) {
-    final individualCost = ShippingCostCalculator.calculateIndividualShippingCost(itemCount);
+    final individualCost = StoragePolicy.calculateIndividualShippingCost(itemCount);
+    final totalCost = shippingCost + servicesCost;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -340,13 +361,51 @@ class _ShippingCostInfo extends StatelessWidget {
               Text(
                 '${_formatPrice(shippingCost)}원',
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue,
                 ),
               ),
             ],
           ),
+          if (servicesCost > 0) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  '추가 서비스',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  '${_formatPrice(servicesCost)}원',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Divider(),
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  '총 결제금액',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  '${_formatPrice(totalCost)}원',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue,
+                  ),
+                ),
+              ],
+            ),
+          ],
           if (savings > 0) ...[
             const SizedBox(height: 8),
             const Divider(),
@@ -368,6 +427,157 @@ class _ShippingCostInfo extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+
+  String _formatPrice(int price) {
+    return price.toString().replaceAllMapped(
+          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (Match m) => '${m[1]},',
+        );
+  }
+}
+
+/// 추가 서비스 선택 섹션
+class _AdditionalServicesSection extends StatelessWidget {
+  final Set<AdditionalService> selectedServices;
+  final void Function(AdditionalService) onServiceToggle;
+
+  const _AdditionalServicesSection({
+    required this.selectedServices,
+    required this.onServiceToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final totalCost = selectedServices.fold<int>(0, (sum, service) => sum + service.price);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              '추가 서비스',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            if (totalCost > 0)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.blue[200]!),
+                ),
+                child: Text(
+                  '+${_formatPrice(totalCost)}원',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blue[700],
+                  ),
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              _buildServiceItem(
+                context,
+                service: AdditionalService.windowsHome,
+                icon: Icons.window,
+              ),
+              Divider(height: 1, color: Colors.grey[300]),
+              _buildServiceItem(
+                context,
+                service: AdditionalService.windowsPro,
+                icon: Icons.window_outlined,
+              ),
+              Divider(height: 1, color: Colors.grey[300]),
+              _buildServiceItem(
+                context,
+                service: AdditionalService.windowsInstallOnly,
+                icon: Icons.download,
+              ),
+              Divider(height: 1, color: Colors.grey[300]),
+              _buildServiceItem(
+                context,
+                service: AdditionalService.assembly,
+                icon: Icons.build,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildServiceItem(
+    BuildContext context, {
+    required AdditionalService service,
+    required IconData icon,
+  }) {
+    final isSelected = selectedServices.contains(service);
+
+    return InkWell(
+      onTap: () => onServiceToggle(service),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Row(
+          children: [
+            Checkbox(
+              value: isSelected,
+              onChanged: (value) => onServiceToggle(service),
+              visualDensity: VisualDensity.compact,
+            ),
+            const SizedBox(width: 12),
+            Icon(icon, size: 24, color: isSelected ? Colors.blue : Colors.grey[600]),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    service.title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected ? Colors.black : Colors.grey[800],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    service.description,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '+${_formatPrice(service.price)}원',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: isSelected ? Colors.blue : Colors.grey[600],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

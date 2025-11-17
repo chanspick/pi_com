@@ -3,7 +3,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import 'password_change_screen.dart';
 
 /// 프로필 수정 화면
 class ProfileEditScreen extends ConsumerStatefulWidget {
@@ -17,8 +22,9 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   final _formKey = GlobalKey<FormState>();
   final _displayNameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _addressController = TextEditingController();
   bool _isLoading = false;
+  String? _profileImageUrl;
+  File? _selectedImage;
 
   @override
   void initState() {
@@ -41,11 +47,12 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       setState(() {
         _displayNameController.text = data['displayName'] ?? currentUser.displayName ?? '';
         _phoneController.text = data['phone'] ?? '';
-        _addressController.text = data['address'] ?? '';
+        _profileImageUrl = data['profileImageUrl'];
       });
     } else {
       setState(() {
         _displayNameController.text = currentUser.displayName ?? '';
+        _profileImageUrl = currentUser.photoURL;
       });
     }
   }
@@ -54,8 +61,41 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
   void dispose() {
     _displayNameController.dispose();
     _phoneController.dispose();
-    _addressController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 85,
+    );
+
+    if (image != null) {
+      setState(() {
+        _selectedImage = File(image.path);
+      });
+    }
+  }
+
+  Future<String?> _uploadProfileImage(String userId) async {
+    if (_selectedImage == null) return null;
+
+    try {
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('profile_images')
+          .child('$userId.jpg');
+
+      await ref.putFile(_selectedImage!);
+      final downloadUrl = await ref.getDownloadURL();
+      return downloadUrl;
+    } catch (e) {
+      print('프로필 이미지 업로드 실패: $e');
+      return null;
+    }
   }
 
   Future<void> _saveProfile() async {
@@ -67,16 +107,27 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
     setState(() => _isLoading = true);
 
     try {
+      // 프로필 이미지 업로드
+      String? uploadedImageUrl;
+      if (_selectedImage != null) {
+        uploadedImageUrl = await _uploadProfileImage(currentUser.uid);
+      }
+
       // Firestore 업데이트
+      final updateData = {
+        'displayName': _displayNameController.text.trim(),
+        'phone': _phoneController.text.trim(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+      if (uploadedImageUrl != null) {
+        updateData['profileImageUrl'] = uploadedImageUrl;
+      }
+
       await FirebaseFirestore.instance
           .collection('users')
           .doc(currentUser.uid)
-          .update({
-        'displayName': _displayNameController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'address': _addressController.text.trim(),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+          .set(updateData, SetOptions(merge: true));
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -141,23 +192,28 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            // 프로필 사진 (향후 구현)
+            // 프로필 사진
             Center(
               child: Stack(
                 children: [
                   CircleAvatar(
                     radius: 60,
                     backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                    child: Text(
-                      _displayNameController.text.isNotEmpty
-                          ? _displayNameController.text.substring(0, 1).toUpperCase()
-                          : 'U',
-                      style: TextStyle(
-                        fontSize: 48,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
+                    backgroundImage: _selectedImage != null
+                        ? FileImage(_selectedImage!)
+                        : (_profileImageUrl != null ? NetworkImage(_profileImageUrl!) : null),
+                    child: (_selectedImage == null && _profileImageUrl == null)
+                        ? Text(
+                            _displayNameController.text.isNotEmpty
+                                ? _displayNameController.text.substring(0, 1).toUpperCase()
+                                : 'U',
+                            style: TextStyle(
+                              fontSize: 48,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          )
+                        : null,
                   ),
                   Positioned(
                     bottom: 0,
@@ -168,11 +224,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
                       child: IconButton(
                         icon: const Icon(Icons.camera_alt, size: 20, color: Colors.white),
                         padding: EdgeInsets.zero,
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('프로필 사진 기능은 개발 예정입니다')),
-                          );
-                        },
+                        onPressed: _pickImage,
                       ),
                     ),
                   ),
@@ -236,20 +288,6 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
               },
             ),
 
-            const SizedBox(height: 16),
-
-            // 주소
-            TextFormField(
-              controller: _addressController,
-              decoration: const InputDecoration(
-                labelText: '주소',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.home_outlined),
-                hintText: '배송 받을 주소를 입력하세요',
-              ),
-              maxLines: 2,
-            ),
-
             const SizedBox(height: 24),
 
             // 계정 관리 섹션
@@ -265,12 +303,15 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 비밀번호 변경 (이메일 로그인인 경우만)
-            if (currentUser.email != null)
+            // 비밀번호 변경 (이메일/비밀번호 로그인 사용자만)
+            if (_isPasswordProvider(currentUser))
               OutlinedButton.icon(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('비밀번호 변경 기능은 개발 예정입니다')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PasswordChangeScreen(),
+                    ),
                   );
                 },
                 icon: const Icon(Icons.lock_outline),
@@ -295,6 +336,14 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  /// 이메일/비밀번호 로그인 사용자인지 확인
+  bool _isPasswordProvider(User user) {
+    // providerData에서 password provider 확인
+    return user.providerData.any(
+      (info) => info.providerId == EmailAuthProvider.PROVIDER_ID,
     );
   }
 

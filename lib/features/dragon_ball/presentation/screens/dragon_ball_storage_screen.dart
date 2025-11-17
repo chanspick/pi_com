@@ -153,15 +153,10 @@ class DragonBallStorageScreen extends ConsumerWidget {
                 shippingCost: shippingCost,
                 savings: savings,
                 onRequestShipment: () {
-                  final selectedServices = ref.read(selectedAdditionalServicesProvider);
-                  final servicesCost = ref.read(selectedServicesCostProvider);
-
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => BatchShipmentRequestScreen(
                         dragonBallIds: selectedIds.toList(),
-                        additionalServices: selectedServices.map((s) => s.name).toList(),
-                        additionalServicesCost: servicesCost,
                       ),
                     ),
                   );

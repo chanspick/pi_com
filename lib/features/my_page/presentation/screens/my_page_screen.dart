@@ -1,9 +1,36 @@
 // lib/features/my_page/presentation/screens/my_page_screen.dart
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:go_router/go_router.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../core/constants/routes.dart';
+import 'notification_settings_screen.dart';
+
+/// 플랫폼에 맞는 네비게이션 헬퍼
+void _navigateTo(BuildContext context, String route) {
+  if (kIsWeb) {
+    context.go(route);
+  } else {
+    Navigator.pushNamed(context, route);
+  }
+}
+
+/// 사용자 프로필 정보 Provider
+final userProfileProvider = StreamProvider.autoDispose<Map<String, dynamic>?>((ref) {
+  final currentUser = ref.watch(currentUserProvider);
+  if (currentUser == null) {
+    return Stream.value(null);
+  }
+
+  return FirebaseFirestore.instance
+      .collection('users')
+      .doc(currentUser.uid)
+      .snapshots()
+      .map((doc) => doc.exists ? doc.data() : null);
+});
 
 /// 마이페이지 메인 화면
 class MyPageScreen extends ConsumerWidget {
@@ -26,10 +53,7 @@ class MyPageScreen extends ConsumerWidget {
               const SizedBox(height: 24),
               ElevatedButton(
                 onPressed: () {
-                  // TODO: 로그인 화면으로 이동
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('로그인 화면으로 이동 - 라우팅 설정 필요')),
-                  );
+                  _navigateTo(context, Routes.auth);
                 },
                 child: const Text('로그인하기'),
               ),
@@ -46,7 +70,7 @@ class MyPageScreen extends ConsumerWidget {
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () {
-              Navigator.pushNamed(context, Routes.settings);
+              _navigateTo(context, Routes.settings);
             },
           ),
         ],
@@ -68,41 +92,41 @@ class MyPageScreen extends ConsumerWidget {
                   icon: Icons.shopping_bag_outlined,
                   title: '구매 내역',
                   subtitle: '내가 구매한 상품',
-                  onTap: () => Navigator.pushNamed(context, Routes.purchaseHistory),
+                  onTap: () => _navigateTo(context, Routes.purchaseHistory),
                 ),
                 _MenuItem(
                   icon: Icons.sell_outlined,
                   title: '판매 내역',
                   subtitle: '내가 판매한 상품',
-                  onTap: () => Navigator.pushNamed(context, Routes.salesHistory),
+                  onTap: () => _navigateTo(context, Routes.salesHistory),
                 ),
                 _MenuItem(
                   icon: Icons.request_page_outlined,
                   title: '판매 요청 내역',
                   subtitle: '판매 요청 상태 확인',
-                  onTap: () => Navigator.pushNamed(context, Routes.sellRequestHistory),
+                  onTap: () => _navigateTo(context, Routes.sellRequestHistory),
                 ),
               ],
             ),
 
             const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
 
-            // 드래곤볼 섹션
+            // 보관 PC 섹션
             _buildSection(
               context,
-              title: '드래곤볼',
+              title: '보관 PC',
               items: [
                 _MenuItem(
                   icon: Icons.inventory_2_outlined,
-                  title: '드래곤볼 보관함',
+                  title: '보관 PC',
                   subtitle: '보관 중인 부품 확인 및 배송 요청',
-                  onTap: () => Navigator.pushNamed(context, Routes.dragonBallStorage),
+                  onTap: () => _navigateTo(context, Routes.dragonBallStorage),
                 ),
                 _MenuItem(
                   icon: Icons.local_shipping_outlined,
                   title: '일괄 배송 내역',
                   subtitle: '배송 요청 상태 확인',
-                  onTap: () => Navigator.pushNamed(context, Routes.batchShipmentHistory),
+                  onTap: () => _navigateTo(context, Routes.batchShipmentHistory),
                 ),
               ],
             ),
@@ -118,13 +142,29 @@ class MyPageScreen extends ConsumerWidget {
                   icon: Icons.favorite_outline,
                   title: '찜한 상품',
                   subtitle: '관심 있는 상품 모음',
-                  onTap: () => Navigator.pushNamed(context, Routes.favorites),
+                  onTap: () => _navigateTo(context, Routes.favorites),
                 ),
                 _MenuItem(
                   icon: Icons.notifications_outlined,
                   title: '가격 알림',
                   subtitle: '목표 가격 도달 시 알림',
-                  onTap: () => Navigator.pushNamed(context, Routes.priceAlerts),
+                  onTap: () => _navigateTo(context, Routes.priceAlerts),
+                ),
+              ],
+            ),
+
+            const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
+
+            // 배송지 관리
+            _buildSection(
+              context,
+              title: '배송지',
+              items: [
+                _MenuItem(
+                  icon: Icons.location_on_outlined,
+                  title: '배송지 관리',
+                  subtitle: '배송지 추가 및 수정',
+                  onTap: () => _navigateTo(context, Routes.addressList),
                 ),
               ],
             ),
@@ -140,15 +180,16 @@ class MyPageScreen extends ConsumerWidget {
                   icon: Icons.person_outline,
                   title: '회원 정보 수정',
                   subtitle: '프로필 및 계정 정보',
-                  onTap: () => Navigator.pushNamed(context, Routes.profileEdit),
+                  onTap: () => _navigateTo(context, Routes.profileEdit),
                 ),
                 _MenuItem(
                   icon: Icons.notifications_outlined,
                   title: '알림 설정',
                   subtitle: '알림 수신 관리',
                   onTap: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('알림 설정 화면 - 개발 예정')),
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const NotificationSettingsScreen()),
                     );
                   },
                 ),
@@ -170,53 +211,159 @@ class MyPageScreen extends ConsumerWidget {
   }
 
   Widget _buildUserProfileHeader(BuildContext context, dynamic user) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 40,
-            backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-            child: Text(
-              user.displayName?.substring(0, 1).toUpperCase() ?? 'U',
-              style: TextStyle(
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).primaryColor,
+    return Consumer(
+      builder: (context, ref, child) {
+        final userProfileAsync = ref.watch(userProfileProvider);
+
+        return userProfileAsync.when(
+          data: (profileData) {
+            final profileImageUrl = profileData?['profileImageUrl'] as String?;
+            final displayName = profileData?['displayName'] as String? ?? user.displayName ?? '사용자';
+
+            return Container(
+              padding: const EdgeInsets.all(24),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 40,
+                    backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                    backgroundImage: profileImageUrl != null ? NetworkImage(profileImageUrl) : null,
+                    child: profileImageUrl == null
+                        ? Text(
+                            displayName.substring(0, 1).toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 32,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayName,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          user.email ?? '',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            );
+          },
+          loading: () => Container(
+            padding: const EdgeInsets.all(24),
+            child: Row(
               children: [
-                Text(
-                  user.displayName ?? '사용자',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                  child: Text(
+                    user.displayName?.substring(0, 1).toUpperCase() ?? 'U',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  user.email ?? '',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.displayName ?? '사용자',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        user.email ?? '',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: () {
+                    _navigateTo(context, Routes.profileEdit);
+                  },
                 ),
               ],
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () {
-              Navigator.pushNamed(context, Routes.profileEdit);
-            },
+          error: (error, stack) => Container(
+            padding: const EdgeInsets.all(24),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 40,
+                  backgroundColor: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                  child: Text(
+                    user.displayName?.substring(0, 1).toUpperCase() ?? 'U',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        user.displayName ?? '사용자',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        user.email ?? '',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[600],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit_outlined),
+                  onPressed: () {
+                    _navigateTo(context, Routes.profileEdit);
+                  },
+                ),
+              ],
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

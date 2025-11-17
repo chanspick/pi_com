@@ -22,9 +22,8 @@ class SellRequest {
   final String sellerId;
 
   // 부품 정보
-  final String partId;        // Part의 ID (제조사 포함 상세)
-  final String basePartId;    // BasePart ID (검색/통계용)
-  final String brand;         // 🆕 제조사 (예: Samsung, Intel)
+  final String basePartId;    // BasePart ID
+  final String brand;         // 제조사 (예: Samsung, Intel)
   final String category;
   final String modelName;
 
@@ -51,9 +50,8 @@ class SellRequest {
   SellRequest({
     required this.requestId,
     required this.sellerId,
-    required this.partId,
     required this.basePartId,
-    required this.brand,          // 🆕 필수 파라미터
+    required this.brand,
     required this.category,
     required this.modelName,
     required this.ageInfoType,
@@ -76,9 +74,8 @@ class SellRequest {
     return {
       'requestId': requestId,
       'sellerId': sellerId,
-      'partId': partId,
       'basePartId': basePartId,
-      'brand': brand,           // 🆕
+      'brand': brand,
       'category': category,
       'modelName': modelName,
       'ageInfoType': ageInfoType.name,
@@ -103,9 +100,8 @@ class SellRequest {
     return SellRequest(
       requestId: doc.id,
       sellerId: data['sellerId'] ?? '',
-      partId: data['partId'] ?? '',
-      basePartId: data['basePartId'] ?? '',
-      brand: data['brand'] ?? '',  // 🆕 기본값 빈 문자열
+      basePartId: data['basePartId'] ?? data['partId'] ?? '',  // basePartId 우선, fallback으로 partId
+      brand: data['brand'] ?? '',
       category: data['category'] ?? '',
       modelName: data['modelName'] ?? '',
       ageInfoType: AgeInfoType.values.firstWhere(
@@ -134,9 +130,8 @@ class SellRequest {
   SellRequest copyWith({
     String? requestId,
     String? sellerId,
-    String? partId,
     String? basePartId,
-    String? brand,              // 🆕
+    String? brand,
     String? category,
     String? modelName,
     AgeInfoType? ageInfoType,
@@ -157,9 +152,8 @@ class SellRequest {
     return SellRequest(
       requestId: requestId ?? this.requestId,
       sellerId: sellerId ?? this.sellerId,
-      partId: partId ?? this.partId,
       basePartId: basePartId ?? this.basePartId,
-      brand: brand ?? this.brand,  // 🆕
+      brand: brand ?? this.brand,
       category: category ?? this.category,
       modelName: modelName ?? this.modelName,
       ageInfoType: ageInfoType ?? this.ageInfoType,

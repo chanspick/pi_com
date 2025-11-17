@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/models/sell_request_model.dart';
 import '../providers/admin_sell_request_provider.dart';
 import 'image_gallery_viewer.dart';
+import '../../domain/services/condition_score_calculator.dart';
 
 class AdminReviewDialog extends ConsumerStatefulWidget {
   final SellRequest request;
@@ -24,12 +25,24 @@ class _AdminReviewDialogState extends ConsumerState<AdminReviewDialog> {
   final _conditionScoreController = TextEditingController();
   final _adminNotesController = TextEditingController();
 
+  // 추천 컨디션 스코어
+  late double _recommendedScore;
+  late String _scoreExplanation;
+
   @override
   void initState() {
     super.initState();
+
+    // 추천 컨디션 스코어 계산
+    final scoreResult = ConditionScoreCalculator.calculateScore(
+      widget.request,
+    );
+    _recommendedScore = scoreResult.score;
+    _scoreExplanation = scoreResult.explanation;
+
     // 기본값 설정
     _finalPriceController.text = widget.request.requestedPrice.toString();
-    _conditionScoreController.text = '70';
+    _conditionScoreController.text = _recommendedScore.toStringAsFixed(1);
   }
 
   @override
@@ -302,6 +315,10 @@ class _AdminReviewDialogState extends ConsumerState<AdminReviewDialog> {
         ),
         const SizedBox(height: 12),
 
+        // ✨ 추천 컨디션 스코어 카드
+        _buildRecommendedScoreCard(),
+        const SizedBox(height: 16),
+
         // 최종 가격
         TextFormField(
           controller: _finalPriceController,
@@ -444,6 +461,105 @@ class _AdminReviewDialogState extends ConsumerState<AdminReviewDialog> {
   String _formatDate(DateTime date) {
     return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
         '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  // ============================================
+  // 추천 컨디션 스코어 카드
+  // ============================================
+
+  Widget _buildRecommendedScoreCard() {
+    final gradeText = ConditionScoreCalculator.getGradeText(_recommendedScore);
+    final colorHex = ConditionScoreCalculator.getGradeColor(_recommendedScore);
+    final color = Color(int.parse(colorHex.substring(1), radix: 16) + 0xFF000000);
+
+    return Card(
+      elevation: 2,
+      color: color.withOpacity(0.1),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: color, width: 2),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.auto_awesome, color: color, size: 24),
+                const SizedBox(width: 8),
+                const Text(
+                  'AI 추천 컨디션 스코어',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    '${_recommendedScore.toStringAsFixed(1)}점',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              gradeText,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              '계산 근거:',
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _scoreExplanation,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[700],
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    '이 점수는 참고용입니다. 실제 상품 상태를 확인 후 조정하세요.',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

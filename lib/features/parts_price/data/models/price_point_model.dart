@@ -3,19 +3,22 @@ import '../../domain/entities/price_point_entity.dart';
 
 class PricePointModel {
   final DateTime date;
-  final double price;
+  final double lowestPrice;
+  final double averagePrice;
   final int count;
 
   PricePointModel({
     required this.date,
-    required this.price,
+    required this.lowestPrice,
+    required this.averagePrice,
     required this.count,
   });
 
   factory PricePointModel.fromMap(Map<String, dynamic> data) {
     return PricePointModel(
       date: DateTime.parse(data['date']),
-      price: (data['price'] ?? 0).toDouble(),
+      lowestPrice: (data['lowestPrice'] ?? 0).toDouble(),
+      averagePrice: (data['averagePrice'] ?? 0).toDouble(),
       count: data['count'] ?? 0,
     );
   }
@@ -23,7 +26,8 @@ class PricePointModel {
   Map<String, dynamic> toMap() {
     return {
       'date': date.toIso8601String(),
-      'price': price,
+      'lowestPrice': lowestPrice,
+      'averagePrice': averagePrice,
       'count': count,
     };
   }
@@ -31,7 +35,8 @@ class PricePointModel {
   PricePointEntity toEntity() {
     return PricePointEntity(
       date: date,
-      price: price,
+      lowestPrice: lowestPrice,
+      averagePrice: averagePrice,
       count: count,
     );
   }
@@ -39,7 +44,8 @@ class PricePointModel {
   factory PricePointModel.fromEntity(PricePointEntity entity) {
     return PricePointModel(
       date: entity.date,
-      price: entity.price,
+      lowestPrice: entity.lowestPrice,
+      averagePrice: entity.averagePrice,
       count: entity.count,
     );
   }

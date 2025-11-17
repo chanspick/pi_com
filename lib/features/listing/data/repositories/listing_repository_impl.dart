@@ -16,8 +16,12 @@ class ListingRepositoryImpl implements ListingRepository {
 
   @override
   // ✅ Stream → Future, Listing → ListingEntity
-  Future<List<ListingEntity>> getListings({String? category, String? sortBy}) async {
-    final models = await remoteDataSource.getListings(category: category, sortBy: sortBy);
+  Future<List<ListingEntity>> getListings({String? category, String? sortBy, String? searchQuery}) async {
+    final models = await remoteDataSource.getListings(
+      category: category,
+      sortBy: sortBy,
+      searchQuery: searchQuery,
+    );
     return models.map((model) => model.toEntity()).toList();
   }
 

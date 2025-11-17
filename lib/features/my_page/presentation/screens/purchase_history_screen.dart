@@ -2,62 +2,384 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../order/domain/entities/order_entity.dart';
+import '../../../order/data/models/order_model.dart';
 import '../../../../core/constants/routes.dart';
 
+/// 구매 내역 Provider
+final purchaseHistoryProvider = StreamProvider.autoDispose<List<OrderEntity>>((ref) {
+  final currentUser = ref.watch(currentUserProvider);
+  if (currentUser == null) {
+    return Stream.value([]);
+  }
+
+  return FirebaseFirestore.instance
+      .collection('orders')
+      .where('userId', isEqualTo: currentUser.uid)
+      .orderBy('createdAt', descending: true)
+      .snapshots()
+      .map((snapshot) {
+    return snapshot.docs.map((doc) => OrderModel.fromFirestore(doc).toEntity()).toList();
+  });
+});
+
 /// 구매 내역 화면
-/// TODO: Transaction 컬렉션 완성 후 실제 데이터 연동
 class PurchaseHistoryScreen extends ConsumerWidget {
   const PurchaseHistoryScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final purchaseHistoryAsync = ref.watch(purchaseHistoryProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('구매 내역'),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.shopping_bag_outlined, size: 80, color: Colors.grey[400]),
-            const SizedBox(height: 16),
-            Text(
-              '구매 내역이 없습니다',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '결제 시스템 연동 후 사용 가능합니다',
-              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
-            ),
-            const SizedBox(height: 24),
-            OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, Routes.partShop);
-              },
-              icon: const Icon(Icons.store),
-              label: const Text('상품 둘러보기'),
-            ),
-          ],
+      body: purchaseHistoryAsync.when(
+        data: (orders) {
+          if (orders.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.shopping_bag_outlined, size: 80, color: Colors.grey[400]),
+                  const SizedBox(height: 16),
+                  Text(
+                    '구매 내역이 없습니다',
+                    style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '상품을 구매하면 여기에 표시됩니다',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                  ),
+                  const SizedBox(height: 24),
+                  OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.pushNamed(context, Routes.partShop);
+                    },
+                    icon: const Icon(Icons.store),
+                    label: const Text('상품 둘러보기'),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: orders.length,
+            separatorBuilder: (context, index) => const SizedBox(height: 16),
+            itemBuilder: (context, index) {
+              final order = orders[index];
+              return _OrderCard(order: order);
+            },
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              Text('오류: $error'),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// TODO: 실제 구현
-// final purchaseHistoryProvider = StreamProvider.autoDispose<List<Transaction>>((ref) {
-//   final currentUser = ref.watch(currentUserProvider);
-//   if (currentUser == null) {
-//     return Stream.value([]);
-//   }
-//
-//   return FirebaseFirestore.instance
-//       .collection('transactions')
-//       .where('buyerId', isEqualTo: currentUser.uid)
-//       .orderBy('createdAt', descending: true)
-//       .snapshots()
-//       .map((snapshot) {
-//     return snapshot.docs.map((doc) => Transaction.fromFirestore(doc)).toList();
-//   });
-// });
+/// 주문 카드 위젯
+class _OrderCard extends StatelessWidget {
+  final OrderEntity order;
+
+  const _OrderCard({required this.order});
+
+  String _formatPrice(num price) {
+    return NumberFormat('#,###').format(price.toInt());
+  }
+
+  String _formatDate(DateTime date) {
+    return DateFormat('yyyy.MM.dd HH:mm').format(date);
+  }
+
+  Color _getStatusColor(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.pending:
+        return Colors.orange;
+      case OrderStatus.processing:
+        return Colors.blue;
+      case OrderStatus.shipped:
+        return Colors.purple;
+      case OrderStatus.delivered:
+        return Colors.green;
+      case OrderStatus.cancelled:
+        return Colors.red;
+    }
+  }
+
+  String _getStatusText(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.pending:
+        return '결제 완료';
+      case OrderStatus.processing:
+        return '배송 준비중';
+      case OrderStatus.shipped:
+        return '배송중';
+      case OrderStatus.delivered:
+        return '배송 완료';
+      case OrderStatus.cancelled:
+        return '취소됨';
+    }
+  }
+
+  IconData _getStatusIcon(OrderStatus status) {
+    switch (status) {
+      case OrderStatus.pending:
+        return Icons.payment;
+      case OrderStatus.processing:
+        return Icons.inventory_2_outlined;
+      case OrderStatus.shipped:
+        return Icons.local_shipping_outlined;
+      case OrderStatus.delivered:
+        return Icons.check_circle_outline;
+      case OrderStatus.cancelled:
+        return Icons.cancel_outlined;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 헤더: 주문 날짜와 상태
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _formatDate(order.createdAt),
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _getStatusColor(order.status).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _getStatusIcon(order.status),
+                        size: 16,
+                        color: _getStatusColor(order.status),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        _getStatusText(order.status),
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: _getStatusColor(order.status),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const Divider(height: 24),
+
+            // 주문 상품 목록
+            ...order.items.map((item) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Row(
+                children: [
+                  // 상품 이미지
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      item.imageUrl,
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 60,
+                          height: 60,
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.image, size: 30),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // 상품 정보
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item.partName,
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '수량: ${item.quantity}개',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  // 가격
+                  Text(
+                    '${_formatPrice(item.price * item.quantity)}원',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            )),
+
+            const Divider(height: 16),
+
+            // 가격 정보
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '상품 금액',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                ),
+                Text(
+                  '${_formatPrice(order.totalPrice)}원',
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '배송비',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                ),
+                Text(
+                  '${_formatPrice(order.shippingFee)}원',
+                  style: const TextStyle(fontSize: 14),
+                ),
+              ],
+            ),
+            const Divider(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  '총 결제 금액',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '${_formatPrice(order.finalTotal)}원',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+              ],
+            ),
+
+            // 배송지 정보
+            if (order.shippingAddress != 'DragonBall Storage') ...[
+              const Divider(height: 24),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.location_on_outlined, size: 20, color: Colors.grey[600]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '배송지',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          order.shippingAddress,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ] else ...[
+              const Divider(height: 24),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.inventory_2, color: Colors.blue[700], size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '드래곤볼 보관함에 보관 중',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.blue[700],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}

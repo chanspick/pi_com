@@ -15,7 +15,7 @@ final sellRequestHistoryProvider = StreamProvider.autoDispose<List<SellRequest>>
   }
 
   return FirebaseFirestore.instance
-      .collection('sellRequests')
+      .collection('sell_requests')  // ✅ 수정: sellRequests → sell_requests
       .where('sellerId', isEqualTo: currentUser.uid)
       .orderBy('createdAt', descending: true)
       .snapshots()

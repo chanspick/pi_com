@@ -208,44 +208,22 @@ class _AdminDashboardState extends State<AdminDashboard> {
   /// 가격 스냅샷 생성 (6시간 간격)
   Future<void> _createPriceSnapshots() async {
     try {
-      // 로딩 다이얼로그 표시
+      // NOTE: Cloud Functions가 listing 변경 시 자동으로 PriceHistory를 생성합니다.
+      // 수동 스냅샷 생성 기능은 더 이상 필요하지 않습니다.
       if (!mounted) return;
       showDialog(
         context: context,
-        barrierDismissible: false,
-        builder: (context) => const AlertDialog(
-          content: Row(
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(width: 20),
-              Text('가격 스냅샷을 생성하는 중...'),
-            ],
-          ),
+        builder: (context) => AlertDialog(
+          title: const Text('알림'),
+          content: const Text('가격 스냅샷은 Cloud Functions가 listing 변경 시 자동으로 생성됩니다.\n수동 생성 기능은 제거되었습니다.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('확인'),
+            ),
+          ],
         ),
       );
-
-      // 모든 basePart의 가격 스냅샷 생성
-      await _priceHistoryRepo.createAllPriceSnapshots();
-
-      // 다이얼로그 닫기
-      if (mounted) Navigator.pop(context);
-
-      // 성공 메시지
-      if (mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('완료'),
-            content: const Text('모든 부품의 가격 스냅샷을 생성했습니다.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('확인'),
-              ),
-            ],
-          ),
-        );
-      }
     } catch (e) {
       // 다이얼로그 닫기
       if (mounted) Navigator.pop(context);
@@ -389,23 +367,25 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     title: '사용자 관리',
                     icon: Icons.people,
                     color: Colors.blue,
-                    onTap: () => context.go('/admin/users'),
+                    onTap: () => context.go('/admin/users-improved'),
                   ),
                   _AdminMenuCard(
                     title: '매물 관리',
                     icon: Icons.inventory,
                     color: Colors.green,
-                    onTap: () => context.go('/admin/listings'),
+                    onTap: () => context.go('/admin/listings-improved'),
                   ),
                   _AdminMenuCard(
                     title: '통계',
                     icon: Icons.analytics,
                     color: Colors.purple,
-                    onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('개발 예정')),
-                      );
-                    },
+                    onTap: () => context.go('/admin/statistics'),
+                  ),
+                  _AdminMenuCard(
+                    title: '송장 관리',
+                    icon: Icons.local_shipping,
+                    color: Colors.teal,
+                    onTap: () => context.go('/admin/shipping'),
                   ),
                   _AdminMenuCard(
                     title: '검색 키워드 추가',

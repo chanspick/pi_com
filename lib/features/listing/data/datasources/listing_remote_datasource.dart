@@ -8,7 +8,7 @@ abstract class ListingRemoteDataSource {
   Stream<ListingModel> getListing(String listingId);
 
   // ✅ Stream → Future로 변경
-  Future<List<ListingModel>> getListings({String? category, String? sortBy});
+  Future<List<ListingModel>> getListings({String? category, String? sortBy, String? searchQuery});
 
   // basePartId로 필터링된 active listings만 가져오기
   Future<List<ListingModel>> getListingsByBasePartId(String basePartId, {String? sortBy});
@@ -24,52 +24,107 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
 
   @override
   Stream<ListingModel> getListing(String listingId) {
+    // 로깅 추가: 조회하는 listingId 확인 + 호출 스택
+    print('🔍 [ListingDataSource] Fetching listing with ID: $listingId');
+    print('📞 [ListingDataSource] Called from:\n${StackTrace.current.toString().split('\n').take(5).join('\n')}');
+
     return _firestore
         .collection('listings')
         .doc(listingId)
-        .snapshots()
+        .snapshots(includeMetadataChanges: false)  // 메타데이터 변경 무시
         .map((doc) {
+      // 문서 존재 여부 확인
       if (!doc.exists) {
-        throw Exception('Listing not found');
+        print('❌ [ListingDataSource] Document not found: $listingId');
+        print('💡 Tip: Firebase Console에서 listings/$listingId 경로를 확인하세요');
+        throw Exception('Listing not found: $listingId');
       }
-      return ListingModel.fromFirestore(doc);
+
+      // 문서 데이터 확인
+      print('✅ [ListingDataSource] Document found: $listingId');
+
+      try {
+        // 데이터 파싱 시도
+        final model = ListingModel.fromFirestore(doc);
+        print('✅ [ListingDataSource] Successfully parsed listing: ${model.listingId}');
+        return model;
+      } catch (e, stackTrace) {
+        // 파싱 에러 상세 로그
+        print('❌ [ListingDataSource] Parse error for listing $listingId');
+        print('Error: $e');
+        print('Data: ${doc.data()}');
+        print('StackTrace: $stackTrace');
+        throw Exception('Failed to parse listing $listingId: $e');
+      }
     });
   }
 
   @override
   // ✅✅✅ 이 부분을 꼭 수정하세요!
-  Future<List<ListingModel>> getListings({String? category, String? sortBy}) async {
-    Query query = _firestore.collection('listings').where('status', isEqualTo: 'available');
+  Future<List<ListingModel>> getListings({String? category, String? sortBy, String? searchQuery}) async {
+    print('🔍 [ListingDataSource] Fetching listings with category: $category, sortBy: $sortBy, searchQuery: $searchQuery');
+    print('🌐 [ListingDataSource] Force fetching from SERVER (no cache)');
+    print('📊 [ListingDataSource] Firestore instance: ${_firestore.hashCode}');
+    print('⚙️  [ListingDataSource] Firestore settings: ${_firestore.settings}');
+
+    // available 상태인 리스트만 가져오는 기본 쿼리
+    final snapshot = await _firestore
+        .collection('listings')
+        .where('status', isEqualTo: 'available')
+        .get(const GetOptions(source: Source.server));
+
+    var listings = snapshot.docs.map((doc) {
+      try {
+        return ListingModel.fromFirestore(doc);
+      } catch (e) {
+        print('❌ [ListingDataSource] Failed to parse listing ${doc.id}: $e');
+        rethrow;
+      }
+    }).toList();
+
+    // 검색어 필터링 (클라이언트 사이드)
+    if (searchQuery != null && searchQuery.isNotEmpty) {
+      final query = searchQuery.toLowerCase();
+      listings = listings.where((listing) {
+        final modelNameLower = listing.modelName.toLowerCase();
+        final brandLower = listing.brand.toLowerCase();
+        final combinedName = '$brandLower $modelNameLower';
+
+        return modelNameLower.contains(query) ||
+               brandLower.contains(query) ||
+               combinedName.contains(query);
+      }).toList();
+      print('🔍 [ListingDataSource] Filtered to ${listings.length} listings matching: $searchQuery');
+    }
 
     // 카테고리 필터 (All이 아닐 때만)
     if (category != null && category != 'All') {
-      query = query.where('category', isEqualTo: category);
+      listings = listings.where((listing) => listing.category == category).toList();
+      print('📂 [ListingDataSource] Filtered to ${listings.length} listings in category: $category');
     }
 
     // 정렬
     if (sortBy == '낮은 가격순') {
-      query = query.orderBy('price', descending: false);
+      listings.sort((a, b) => a.price.compareTo(b.price));
     } else if (sortBy == '높은 가격순') {
-      query = query.orderBy('price', descending: true);
+      listings.sort((a, b) => b.price.compareTo(a.price));
     } else {
       // 기본값: 최신순
-      query = query.orderBy('createdAt', descending: true);
+      listings.sort((a, b) => b.createdAt.toDate()
+          .compareTo(a.createdAt.toDate()));
     }
 
-    // ✅✅✅ snapshots() → get()으로 변경!
-    final snapshot = await query.get();
+    print('✅ [ListingDataSource] Returning ${listings.length} listings');
+    print('📋 [ListingDataSource] First 10 listings:');
+    for (var i = 0; i < listings.length && i < 10; i++) {
+      final listing = listings[i];
+      print('  ${i + 1}. ID: ${listing.listingId}');
+      print('     Brand: ${listing.brand}, Model: ${listing.modelName}');
+      print('     Status: ${listing.status}, Price: ${listing.price}');
+      print('     CreatedAt: ${listing.createdAt}');
+    }
 
-
-
-    return snapshot.docs.map((doc) {
-      try {
-
-        return ListingModel.fromFirestore(doc);
-      } catch (e) {
-
-        rethrow;
-      }
-    }).toList();
+    return listings;
   }
 
   @override
@@ -90,7 +145,8 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
       query = query.orderBy('createdAt', descending: true);
     }
 
-    final snapshot = await query.get();
+    // 🔥 강제로 서버에서 가져오기 (캐시 무시)
+    final snapshot = await query.get(const GetOptions(source: Source.server));
 
     return snapshot.docs.map((doc) {
       try {

@@ -52,3 +52,108 @@ android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
 .env
 secrets/
+
+# Release signing
+android/key.properties
+android/app/upload-keystore.jks
+android/app/*.jks
+*.keystore
+
+# Logs
+logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+dev-debug.log
+# Dependency directories
+node_modules/
+# Environment variables
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# OS specific
+
+# Task files
+# tasks.json
+# tasks/
+
+# ==========================================
+# Firebase 빌드 결과물 및 캐시
+# ==========================================
+.firebase/
+firebase-debug.log
+firestore-debug.log
+
+# ==========================================
+# Claude Code 개인 설정
+# ==========================================
+.claude/settings.local.json
+
+# ==========================================
+# Task Master AI
+# ==========================================
+.taskmaster/
+
+# ==========================================
+# MCP 설정 (API 키 포함 가능)
+# ==========================================
+.mcp.json
+
+# ==========================================
+# AI 설정 파일들
+# ==========================================
+.gemini/
+
+# ==========================================
+# Excel 데이터 파일 (용량 크고 변경 잦음)
+# ==========================================
+datas/*.xlsx
+datas/images/
+
+# ==========================================
+# Scripts 디렉토리
+# ==========================================
+scripts/serviceAccountKey.json
+scripts/check_firestore_data.js
+scripts/query_*.js
+
+# ==========================================
+# Functions 빌드 결과물
+# ==========================================
+functions/lib/
+functions/.runtimeconfig.json
+
+# ==========================================
+# 임시 파일들
+# ==========================================
+nul
+*.tmp
+img.png
+img_*.png
+loginbutton.png
+
+# ==========================================
+# 문서 파일 (선택사항 - 주석 해제하면 포함)
+# ==========================================
+# *.md
+# !README.md
+
+# ==========================================
+# 배치 스크립트 (개인 환경 설정)
+# ==========================================
+*.bat
+
+# ==========================================
+# Task 파일
+# ==========================================
+tasks/
+
+# ==========================================
+# CORS 설정 (Firebase Storage)
+# ==========================================
+cors.json

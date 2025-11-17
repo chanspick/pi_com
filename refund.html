@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PiCom 환불 정책</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+            line-height: 1.8;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            color: #333;
+            background-color: #f9f9f9;
+        }
+        .container {
+            background: white;
+            padding: 50px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 32px;
+            margin-bottom: 10px;
+            border-bottom: 3px solid #e74c3c;
+            padding-bottom: 15px;
+        }
+        .version {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #34495e;
+            font-size: 24px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-left: 4px solid #e74c3c;
+            padding-left: 15px;
+        }
+        h3 {
+            color: #2c3e50;
+            font-size: 18px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        p {
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+        ul, ol {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        .notice-box {
+            background-color: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .notice-box h4 {
+            color: #856404;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .important-box {
+            background-color: #f8d7da;
+            border: 2px solid #dc3545;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .important-box h4 {
+            color: #721c24;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .info-box {
+            background-color: #d1ecf1;
+            border: 2px solid #17a2b8;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 25px 0;
+        }
+        .info-box h4 {
+            color: #0c5460;
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        .table-responsive {
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            background: white;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #e74c3c;
+            color: white;
+            font-weight: 600;
+        }
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .process-step {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-weight: 600;
+        }
+        .contact-info {
+            background-color: #e8f4f8;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 30px;
+        }
+        .example {
+            background-color: #f4f4f4;
+            border-left: 4px solid #95a5a6;
+            padding: 15px;
+            margin: 20px 0;
+            font-style: italic;
+        }
+        .calculation {
+            background-color: #e8f8f5;
+            border: 1px solid #1abc9c;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+            }
+            h1 {
+                font-size: 26px;
+            }
+            h2 {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PiCom 환불 정책</h1>
+        <p class="version">버전 0.0.01 | 최종 수정일: 2025년 11월</p>
+
+        <div class="notice-box">
+            <h4>📢 중요 안내</h4>
+            <p>본 환불 정책은 PiCom 서비스 이용약관의 일부를 구성하며, 전자상거래 등에서의 소비자보호에 관한 법률 및 관련 법령을 준수합니다.</p>
+        </div>
+
+        <h2>제1조 (환불 정책의 목적)</h2>
+        <p>본 정책은 PiCom 플랫폼을 통한 중고 컴퓨터 부품 거래에서 발생할 수 있는 환불 요청에 대한 처리 기준과 절차를 명확히 하여, 구매자와 판매자 모두의 권익을 보호하고 공정한 거래 환경을 조성하기 위함입니다.</p>
+
+        <h2>제2조 (환불 가능 사유)</h2>
+        <h3>1. 검수 결과 이상 발견 시 (전액 환불)</h3>
+        <p>회사의 공식 검수 과정에서 제품에 다음과 같은 이상이 발견된 경우, 구매자는 전액 환불을 받을 수 있습니다:</p>
+        <ul>
+            <li>팬 소음 이상 또는 고주파음 발생</li>
+            <li>부팅 불가 또는 BIOS 진입 불가</li>
+            <li>CPU/GPU 스트레스 테스트 시 온도 85°C 초과</li>
+            <li>GPU 벤치마크 점수가 동일 등급 대비 ±10%점 범위를 벗어나는 경우</li>
+            <li>RAM 테스트(TestMem5) 시 오류 1개 이상 발생</li>
+            <li>SSD/HDD SMART 값에 임계값 문제 발견</li>
+            <li>SSD/HDD 성능이 기대 성능 대비 ±10% 초과 편차 발생</li>
+        </ul>
+        
+        <div class="info-box">
+            <h4>✅ 전액 환불 범위</h4>
+            <p>검수 이상 시 환불 범위에는 다음이 포함됩니다:</p>
+            <ul>
+                <li>제품 구매 대금 (100% 환불)</li>
+                <li>플랫폼 이용 수수료 (100% 환불)</li>
+                <li>배송비 (100% 환불)</li>
+                <li>보증 수수료 (선택한 경우, 100% 환불)</li>
+            </ul>
+        </div>
+
+        <h3>2. 단순 변심에 의한 환불</h3>
+        <p>구매자의 단순 변심으로 인한 환불 요청 시, 다음 조건이 적용됩니다:</p>
+        
+        <div class="important-box">
+            <h4>⚠️ 단순 변심 환불 조건</h4>
+            <ul>
+                <li><strong>추가 수수료:</strong> 구매 금액의 10% 추가 발생</li>
+                <li><strong>배송비 부담:</strong> 왕복 배송비 구매자 부담</li>
+                <li><strong>신청 시점:</strong> 거래 확정 전에만 가능 (거래 확정 후에는 보증 서비스 대상)</li>
+            </ul>
+        </div>
+
+        <div class="example">
+            <strong>📝 예시:</strong> 구매 금액 200,000원 제품을 단순 변심으로 환불하는 경우
+            <div class="calculation">
+                <p>• 구매 금액: 200,000원</p>
+                <p>• 추가 수수료 (10%): 20,000원</p>
+                <p>• 왕복 배송비 (예시): 8,000원</p>
+                <p>• <strong>실제 환불 금액: 172,000원</strong></p>
+            </div>
+        </div>
+
+        <h2>제3조 (법적 근거 및 수수료 부과 사유)</h2>
+        <p>본 서비스는 구매자의 개별적인 청약에 따라 재화를 확보하고, 회사의 독점적인 검수 및 보관 서비스를 결합하여 제공하는 '소비자의 주문에 따라 개별적으로 생산되는 재화 등과 유사한 재화 등'의 성격을 가집니다.</p>
+        
+        <p>전자상거래 등에서의 소비자보호에 관한 법률 제17조 제2항 제6호 및 시행령 제21조에 따라, 청약 철회 시 발생하는 다음의 플랫폼 운영 손실에 대하여 10%의 수수료를 부과합니다:</p>
+        <ul>
+            <li>공식 검수 및 테스트 비용 (인건비, 장비 사용료 등)</li>
+            <li>재고 회전 비용 (보관료, 재등록 비용 등)</li>
+            <li>거래 중개 및 시스템 운영 비용</li>
+        </ul>
+
+        <h2>제4조 (환불 불가 사유)</h2>
+        <p>다음의 경우 환불이 제한될 수 있습니다:</p>
+        <ol>
+            <li><strong>거래 확정 후:</strong> 구매자가 검수 결과를 확인하고 거래를 확정한 이후에는 환불이 불가하며, 보증 서비스 대상이 됩니다.</li>
+            <li><strong>자동 거래 확정 후:</strong> 검수 결과 통보 후 24시간 이내에 거래 확정 또는 환불/철회 요청이 없어 자동으로 거래가 확정된 경우</li>
+            <li><strong>제품 수령 후 파손:</strong> 구매자가 제품을 수령한 후 발생한 파손, 훼손, 분해 등</li>
+            <li><strong>봉인 씰 훼손:</strong> 회사가 부착한 검수 완료 봉인 씰이 훼손된 경우</li>
+            <li><strong>사용 흔적 발생:</strong> 제품 사용으로 인해 가치가 현저히 감소한 경우</li>
+        </ol>
+
+        <h2>제5조 (환불 처리 절차)</h2>
+        
+        <h3>1. 검수 결과 이상 시 환불 절차</h3>
+        <div class="process-step">1단계: 검수 결과 이상 발견</div>
+        <p>회사의 공식 검수 과정에서 제품 이상 발견</p>
+        
+        <div class="process-step">2단계: 구매자 통보</div>
+        <p>검수 결과 보고서 전달 및 환불 안내</p>
+        
+        <div class="process-step">3단계: 환불 신청</div>
+        <p>구매자의 환불 신청 (자동 처리 가능)</p>
+        
+        <div class="process-step">4단계: 환불 처리</div>
+        <p>전액 환불 처리 (영업일 기준 3~5일 소요)</p>
+        
+        <div class="process-step">5단계: 판매자 반송</div>
+        <p>제품은 판매자에게 반송 (반송비 판매자 부담)</p>
+
+        <h3>2. 단순 변심 환불 절차</h3>
+        <div class="process-step">1단계: 환불 신청</div>
+        <p>구매자가 단순 변심 환불 신청 (거래 확정 전에만 가능)</p>
+        
+        <div class="process-step">2단계: 수수료 안내</div>
+        <p>추가 수수료 10% 및 배송비 부담 안내</p>
+        
+        <div class="process-step">3단계: 환불 승인</div>
+        <p>구매자가 수수료 조건 확인 및 승인</p>
+        
+        <div class="process-step">4단계: 환불 처리</div>
+        <p>수수료 공제 후 환불 처리 (영업일 기준 3~5일 소요)</p>
+        
+        <div class="process-step">5단계: 제품 반환</div>
+        <p>제품은 판매자에게 반환 또는 재등록</p>
+
+        <h2>제6조 (환불 처리 기간)</h2>
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>환불 사유</th>
+                        <th>환불 처리 기간</th>
+                        <th>환불 방법</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>검수 이상 발견</td>
+                        <td>승인 후 영업일 기준 3~5일</td>
+                        <td>카카오페이 결제 취소</td>
+                    </tr>
+                    <tr>
+                        <td>단순 변심</td>
+                        <td>승인 후 영업일 기준 3~5일</td>
+                        <td>카카오페이 결제 취소</td>
+                    </tr>
+                    <tr>
+                        <td>보증 서비스 환불</td>
+                        <td>보증 정책에 따름</td>
+                        <td>카카오페이 결제 취소 또는 계좌 입금</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <h2>제7조 (환불 비용 부담)</h2>
+        <h3>1. 검수 이상 발견 시</h3>
+        <ul>
+            <li>구매자: 비용 부담 없음 (전액 환불)</li>
+            <li>판매자: 왕복 배송비 부담</li>
+        </ul>
+        
+        <h3>2. 단순 변심 시</h3>
+        <ul>
+            <li>구매자: 10% 수수료 + 왕복 배송비 부담</li>
+            <li>판매자: 비용 부담 없음</li>
+        </ul>
+
+        <h2>제8조 (특수 상황에 따른 환불)</h2>
+        <h3>1. 배송 지연으로 인한 환불</h3>
+        <p>판매자의 귀책사유로 배송이 3일 이상 지연되어 구매자가 환불을 요청하는 경우:</p>
+        <ul>
+            <li>전액 환불 처리</li>
+            <li>플랫폼 이용 수수료 포함 모든 비용 환불</li>
+            <li>판매자에게 페널티 부과 (7일간 판매 불가)</li>
+        </ul>
+        
+        <h3>2. 배송 중 파손</h3>
+        <p>배송 과정에서 제품이 파손된 경우:</p>
+        <ul>
+            <li>전액 환불 처리</li>
+            <li>배송사 또는 판매자의 귀책사유에 따라 책임 분담</li>
+        </ul>
+        
+        <h3>3. 제품 불일치</h3>
+        <p>주문한 제품과 다른 제품이 배송된 경우:</p>
+        <ul>
+            <li>전액 환불 처리</li>
+            <li>모든 비용은 판매자 부담</li>
+        </ul>
+
+        <h2>제9조 (환불 후 재구매)</h2>
+        <p>1. 환불 처리 후 동일 또는 다른 제품을 재구매할 수 있습니다.</p>
+        <p>2. 단, 부당한 환불 요청을 반복하는 경우 서비스 이용이 제한될 수 있습니다.</p>
+        <p>3. 환불 이력이 3회 이상 누적되면 회사는 해당 계정의 거래 패턴을 검토할 수 있습니다.</p>
+
+        <h2>제10조 (보관 중인 제품의 환불)</h2>
+        <h3>1. 무료 보관 기간 내 환불</h3>
+        <p>무료 보관 기간(7일) 내에 환불을 요청하는 경우, 보관료는 발생하지 않습니다.</p>
+        
+        <h3>2. 보관료 발생 후 환불</h3>
+        <p>무료 보관 기간 초과 후 환불을 요청하는 경우:</p>
+        <ul>
+            <li>검수 이상 시: 보관료 없이 전액 환불</li>
+            <li>단순 변심 시: 환불 금액에서 발생한 보관료(부품 금액의 0.5%/일) 차감</li>
+        </ul>
+
+        <h2>제11조 (보증 서비스와의 관계)</h2>
+        <p>1. 거래 확정 후 발생한 제품 하자는 환불 정책이 아닌 보증 서비스 정책이 적용됩니다.</p>
+        <p>2. 보증 기간 내 제품 하자 발생 시:</p>
+        <ul>
+            <li>1차: 무상 수리 제공</li>
+            <li>수리 불가 시: 동급 제품으로 교환</li>
+            <li>교환 불가 시: 환불 (구매 금액 기준)</li>
+        </ul>
+        <p>3. 자세한 내용은 서비스 이용약관의 보증 서비스 조항을 참조하시기 바랍니다.</p>
+
+        <h2>제12조 (환불 신청 방법)</h2>
+        <h3>1. 온라인 신청</h3>
+        <p>PiCom 앱 또는 웹사이트의 '마이페이지 > 구매내역 > 환불신청' 메뉴를 통해 신청</p>
+        
+        <h3>2. 고객센터 문의</h3>
+        <p>고객센터를 통한 환불 신청 및 상담 가능</p>
+        
+        <h3>3. 필수 제공 정보</h3>
+        <ul>
+            <li>주문번호</li>
+            <li>환불 사유</li>
+            <li>환불 계좌 정보 (필요 시)</li>
+            <li>증빙 자료 (해당되는 경우)</li>
+        </ul>
+
+        <h2>제13조 (분쟁 해결)</h2>
+        <p>1. 환불과 관련하여 분쟁이 발생한 경우, 회사는 공정한 해결을 위해 노력합니다.</p>
+        <p>2. 모든 거래 내역 및 검수 결과는 기록·보존되어 분쟁 시 공식 증빙 자료로 활용됩니다.</p>
+        <p>3. 협의가 이루어지지 않을 경우, 전자상거래 등에서의 소비자보호에 관한 법률에 따른 소비자분쟁해결기준에 따라 처리됩니다.</p>
+
+        <h2>제14조 (환불 정책의 변경)</h2>
+        <p>1. 회사는 관련 법령 및 서비스 운영 상황에 따라 본 환불 정책을 변경할 수 있습니다.</p>
+        <p>2. 환불 정책 변경 시 변경 내용과 시행일을 서비스 내 공지사항을 통해 최소 7일 전에 공지합니다.</p>
+        <p>3. 변경된 환불 정책은 시행일 이후 발생한 거래부터 적용됩니다.</p>
+
+        <div class="notice-box">
+            <h4>💡 환불 관련 유의사항</h4>
+            <ul>
+                <li>환불 처리는 영업일 기준으로 진행되며, 주말 및 공휴일은 제외됩니다.</li>
+                <li>카카오페이 결제 취소는 카카오페이 정책에 따라 처리 시간이 달라질 수 있습니다.</li>
+                <li>검수 결과는 객관적인 테스트 기준에 따라 진행되며, 모든 과정은 기록됩니다.</li>
+                <li>부당한 환불 요청이 반복되는 경우 서비스 이용이 제한될 수 있습니다.</li>
+            </ul>
+        </div>
+
+        <h2>부칙</h2>
+        <p>1. 본 환불 정책은 2025년 11월부터 시행됩니다.</p>
+        <p>2. 본 정책은 PiCom 서비스 이용약관과 함께 적용되며, 약관과 상충되는 부분은 본 환불 정책이 우선 적용됩니다.</p>
+
+        <div class="contact-info">
+            <h3>📞 환불 문의 및 고객센터</h3>
+            <p>환불 관련 문의사항이 있으시면 고객센터로 연락 주시기 바랍니다.</p>
+            <p>운영 주체 및 고객센터 정보는 앱 하단에 명시되어 있습니다.</p>
+            <p>이용약관 및 개인정보 처리방침: <a href="https://picom-team.web.app" target="_blank">https://picom-team.web.app</a></p>
+        </div>
+    </div>
+</body>
+</html>

@@ -6,7 +6,7 @@ abstract class ListingRepository {
   Stream<ListingEntity> getListing(String listingId);
 
   // ✅ Stream → Future로 변경, Listing → ListingEntity로 수정
-  Future<List<ListingEntity>> getListings({String? category, String? sortBy});
+  Future<List<ListingEntity>> getListings({String? category, String? sortBy, String? searchQuery});
 
   // basePartId로 필터링된 active listings 가져오기
   Future<List<ListingEntity>> getListingsByBasePartId(String basePartId, {String? sortBy});

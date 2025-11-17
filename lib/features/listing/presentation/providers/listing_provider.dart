@@ -12,8 +12,9 @@ import '../../domain/repositories/listing_repository.dart';
 class ListingQueryParams {
   final String? category;
   final String? sortBy;
+  final String? searchQuery;  // 검색어 추가
 
-  ListingQueryParams({this.category, this.sortBy});
+  ListingQueryParams({this.category, this.sortBy, this.searchQuery});
 
   @override
   bool operator ==(Object other) =>
@@ -21,15 +22,24 @@ class ListingQueryParams {
       other is ListingQueryParams &&
           runtimeType == other.runtimeType &&
           category == other.category &&
-          sortBy == other.sortBy;
+          sortBy == other.sortBy &&
+          searchQuery == other.searchQuery;
 
   @override
-  int get hashCode => category.hashCode ^ sortBy.hashCode;
+  int get hashCode => category.hashCode ^ sortBy.hashCode ^ searchQuery.hashCode;
 }
 
 final selectedCategoryProvider = StateProvider<String>((ref) => 'All');
 
 final selectedSortProvider = StateProvider<String>((ref) => '최신순');
+
+final searchQueryProvider = StateProvider<String?>((ref) => null);
+
+final selectedBasePartIdProvider = StateProvider<String?>((ref) => null);
+
+final selectedBasePartIdsProvider = StateProvider<List<String>>((ref) => []);
+
+final basePartSearchQueryProvider = StateProvider<String?>((ref) => null);
 
 final listingRemoteDataSourceProvider = Provider<ListingRemoteDataSource>((ref) {
   return ListingRemoteDataSourceImpl(firestore: FirebaseFirestore.instance);
@@ -49,7 +59,11 @@ final getListingProvider = Provider<GetListingUseCase>((ref) {
 
 // ✅ .first 제거 - getListings()가 이제 Future를 반환하므로 바로 사용
 final listingsFutureProvider = FutureProvider.autoDispose.family<List<ListingEntity>, ListingQueryParams>((ref, params) {
-  return ref.watch(getListingsProvider).call(category: params.category, sortBy: params.sortBy);
+  return ref.watch(getListingsProvider).call(
+    category: params.category,
+    sortBy: params.sortBy,
+    searchQuery: params.searchQuery,
+  );
 });
 
 // ✅ 단일 listing은 Stream으로 유지 (실시간 업데이트 필요할 수 있음)
@@ -61,4 +75,24 @@ final listingProvider = StreamProvider.autoDispose.family<ListingEntity, String>
 final listingsByBasePartIdProvider = FutureProvider.autoDispose.family<List<ListingEntity>, String>((ref, basePartId) async {
   final repository = ref.watch(listingRepositoryProvider);
   return repository.getListingsByBasePartId(basePartId);
+});
+
+// 여러 basePartId의 listings 합치기
+final listingsByMultipleBasePartIdsProvider = FutureProvider.autoDispose.family<List<ListingEntity>, List<String>>((ref, basePartIds) async {
+  if (basePartIds.isEmpty) {
+    return [];
+  }
+
+  final repository = ref.watch(listingRepositoryProvider);
+  final allListings = <ListingEntity>[];
+
+  for (final basePartId in basePartIds) {
+    final listings = await repository.getListingsByBasePartId(basePartId);
+    allListings.addAll(listings);
+  }
+
+  // 최신순으로 정렬
+  allListings.sort((a, b) => (b.createdAt ?? DateTime(2000)).compareTo(a.createdAt ?? DateTime(2000)));
+
+  return allListings;
 });

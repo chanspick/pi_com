@@ -4,6 +4,7 @@ import '../constants/routes.dart';
 import '../../features/notification/presentations/screens/notification_list_screen.dart';
 import '../../features/sell_request/presentation/screens/sell_request_screen.dart';
 import '../../features/sell_request/presentation/screens/finished_pc_sell_screen.dart';
+import '../../features/sell_request/presentation/screens/sell_request_detail_view_screen.dart'; // ✅ 추가
 
 // ✅ 새로 추가: Listing 피처 imports
 import '../../features/listing/presentation/screens/part_shop_screen.dart';
@@ -24,12 +25,16 @@ import '../../features/my_page/presentation/screens/sales_history_screen.dart';
 import '../../features/my_page/presentation/screens/sell_request_history_screen.dart';
 import '../../features/my_page/presentation/screens/favorites_screen.dart';
 
+// ✅ 새로 추가: Order 피처 imports
+import '../../features/order/presentation/screens/purchase_detail_screen.dart'; // ✅ 추가
+
 // ✅ 새로 추가: PriceAlert 피처 imports
 import '../../features/price_alert/presentation/screens/price_alerts_screen.dart';
 
-// ✅ 새로 추가: DragonBall 피처 imports
-import '../../features/dragon_ball/presentation/screens/dragon_ball_storage_screen.dart';
+// ✅ 새로 추가: PC Storage (DragonBall) 피처 imports
+import '../../features/dragon_ball/presentation/screens/pc_storage_screen.dart';
 import '../../features/dragon_ball/presentation/screens/batch_shipment_request_screen.dart';
+import '../../features/dragon_ball/presentation/screens/batch_shipment_history_screen.dart';
 
 // ✅ 새로 추가: Search 피처 imports
 import '../../features/sell_request/presentation/screens/part_search_screen.dart';
@@ -37,6 +42,20 @@ import '../../features/parts_price/presentation/screens/base_part_search_screen.
 
 // ✅ 새로 추가: Settings 피처 imports
 import '../../features/my_page/presentation/screens/settings_screen.dart';
+
+// ✅ 새로 추가: Address 피처 imports
+import '../../features/address/presentation/screens/address_list_screen.dart';
+import '../../features/address/presentation/screens/address_form_screen.dart';
+
+// ✅ 새로 추가: Recommendation 피처 imports
+import '../../features/recommendation/presentation/screens/my_estimate_screen.dart';
+import '../../features/recommendation/presentation/screens/pc_assembly_screen.dart';
+import '../../features/recommendation/data/models/spec_profile_model.dart';
+
+// ✅ 새로 추가: Web Public 피처 imports
+import '../../features/web_public/presentation/screens/terms_page.dart';
+import '../../features/web_public/presentation/screens/privacy_page.dart';
+import '../../features/web_public/presentation/screens/refund_page.dart';
 
 /// 앱 내부용 Navigator Route Generator
 class AppRouter {
@@ -56,10 +75,7 @@ class AppRouter {
           return _errorRoute('판매 요청 ID가 필요합니다.');
         }
         return MaterialPageRoute(
-          builder: (_) => Scaffold(
-            appBar: AppBar(title: const Text('판매 요청 상세')),
-            body: Center(child: Text('SellRequest ID: $sellRequestId\n(구현 예정)')),
-          ),
+          builder: (_) => SellRequestDetailViewScreen(requestId: sellRequestId), // ✅ 수정
           settings: settings,
         );
 
@@ -144,6 +160,17 @@ class AppRouter {
           settings: settings,
         );
 
+      // ✅ 새로 추가: 구매 상세
+      case Routes.purchaseDetail:
+        final orderId = settings.arguments as String?;
+        if (orderId == null) {
+          return _errorRoute('주문 ID가 필요합니다.');
+        }
+        return MaterialPageRoute(
+          builder: (_) => PurchaseDetailScreen(orderId: orderId),
+          settings: settings,
+        );
+
       case Routes.salesHistory:
         return MaterialPageRoute(
           builder: (_) => const SalesHistoryScreen(),
@@ -186,10 +213,23 @@ class AppRouter {
           settings: settings,
         );
 
-    // ✅ 새로 추가: DragonBall 피처
+      // ✅ 새로 추가: 배송지 관리
+      case Routes.addressList:
+        return MaterialPageRoute(
+          builder: (_) => const AddressListScreen(),
+          settings: settings,
+        );
+
+      case Routes.addressForm:
+        return MaterialPageRoute(
+          builder: (_) => const AddressFormScreen(),
+          settings: settings,
+        );
+
+    // ✅ 새로 추가: PC 보관함 (DragonBall) 피처
       case Routes.dragonBallStorage:
         return MaterialPageRoute(
-          builder: (_) => const DragonBallStorageScreen(),
+          builder: (_) => const PcStorageScreen(),
           settings: settings,
         );
 
@@ -205,10 +245,21 @@ class AppRouter {
 
       case Routes.batchShipmentHistory:
         return MaterialPageRoute(
-          builder: (_) => Scaffold(
-            appBar: AppBar(title: const Text('일괄 배송 내역')),
-            body: const Center(child: Text('일괄 배송 내역 (구현 예정)')),
-          ),
+          builder: (_) => const BatchShipmentHistoryScreen(),
+          settings: settings,
+        );
+
+    // ✅ 새로 추가: Recommendation 피처
+      case Routes.myEstimate:
+        return MaterialPageRoute(
+          builder: (_) => const MyEstimateScreen(),
+          settings: settings,
+        );
+
+      case Routes.pcAssembly:
+        final specProfile = settings.arguments as SpecProfileModel?;
+        return MaterialPageRoute(
+          builder: (_) => PcAssemblyScreen(specProfile: specProfile),
           settings: settings,
         );
 
@@ -219,6 +270,25 @@ class AppRouter {
             appBar: AppBar(title: const Text('마켓플레이스')),
             body: const Center(child: Text('마켓플레이스 (구현 예정)')),
           ),
+          settings: settings,
+        );
+
+    // ✅ 새로 추가: 약관 및 정책
+      case Routes.terms:
+        return MaterialPageRoute(
+          builder: (_) => const TermsPage(),
+          settings: settings,
+        );
+
+      case Routes.privacy:
+        return MaterialPageRoute(
+          builder: (_) => const PrivacyPage(),
+          settings: settings,
+        );
+
+      case Routes.refund:
+        return MaterialPageRoute(
+          builder: (_) => const RefundPage(),
           settings: settings,
         );
 

@@ -6,14 +6,25 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../../../core/models/user_model.dart';
 import '../../../../shared/providers.dart';
 import '../../data/repositories/auth_repository_impl.dart';
-import '../../domain/usecases/sign_in_with_google.dart';  // ✅ 추가
-import '../../domain/usecases/sign_in_anonymously.dart';  // ✅ 추가
-import '../../domain/usecases/sign_out.dart';  // ✅ 추가
+import '../../domain/usecases/sign_in_with_kakao.dart';
+import '../../domain/usecases/sign_in_with_email.dart';
+import '../../domain/usecases/sign_up_with_email.dart';
+import '../../domain/usecases/sign_out.dart';
 
 import '../../data/datasources/user_remote_datasource.dart';
+import '../../data/datasources/kakao_auth_datasource.dart';
 import '../../data/repositories/user_repository_impl.dart';
 import '../../domain/repositories/user_repository.dart';
 import '../../domain/usecases/get_users.dart';
+
+/// ========================================
+/// Data Source Providers
+/// ========================================
+
+/// KakaoAuthDataSource Provider
+final kakaoAuthDataSourceProvider = Provider<KakaoAuthDataSource>((ref) {
+  return KakaoAuthDataSource();
+});
 
 /// ========================================
 /// Auth Repository Provider
@@ -23,23 +34,28 @@ import '../../domain/usecases/get_users.dart';
 final authRepositoryProvider = Provider<AuthRepositoryImpl>((ref) {
   return AuthRepositoryImpl(
     auth: ref.watch(firebaseAuthProvider),
-    googleAuth: ref.watch(googleAuthDataSourceProvider),
+    kakaoAuth: ref.watch(kakaoAuthDataSourceProvider),
     firestoreUser: ref.watch(firestoreUserDataSourceProvider),
   );
 });
 
 /// ========================================
-/// Use Case Providers (✅ 추가)
+/// Use Case Providers
 /// ========================================
 
-/// Google 로그인 Use Case
-final signInWithGoogleUseCaseProvider = Provider<SignInWithGoogle>((ref) {
-  return SignInWithGoogle(ref.watch(authRepositoryProvider));
+/// 카카오 로그인 Use Case
+final signInWithKakaoUseCaseProvider = Provider<SignInWithKakao>((ref) {
+  return SignInWithKakao(ref.watch(authRepositoryProvider));
 });
 
-/// 익명 로그인 Use Case
-final signInAnonymouslyUseCaseProvider = Provider<SignInAnonymously>((ref) {
-  return SignInAnonymously(ref.watch(authRepositoryProvider));
+/// 이메일 로그인 Use Case
+final signInWithEmailUseCaseProvider = Provider<SignInWithEmail>((ref) {
+  return SignInWithEmail(ref.watch(authRepositoryProvider));
+});
+
+/// 이메일 회원가입 Use Case
+final signUpWithEmailUseCaseProvider = Provider<SignUpWithEmail>((ref) {
+  return SignUpWithEmail(ref.watch(authRepositoryProvider));
 });
 
 /// 로그아웃 Use Case

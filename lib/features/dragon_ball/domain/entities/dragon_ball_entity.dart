@@ -1,6 +1,7 @@
 // lib/features/dragon_ball/domain/entities/dragon_ball_entity.dart
 
 import 'package:pi_com/core/models/dragon_ball_model.dart';
+import 'package:pi_com/core/constants/storage_policy.dart';
 
 /// 드래곤볼 엔티티 (Domain Layer)
 class DragonBallEntity {
@@ -105,19 +106,22 @@ class DragonBallEntity {
 
   /// 만료까지 남은 일수
   int get daysUntilExpiration {
-    final now = DateTime.now();
-    if (expiresAt.isBefore(now)) return 0;
-    return expiresAt.difference(now).inDays;
+    return StoragePolicy.calculateDaysUntilExpiration(storedAt);
   }
 
-  /// 만료 임박 여부 (3일 이하)
+  /// 만료 임박 여부 (7일 이하)
   bool get isExpiringSoon {
-    return daysUntilExpiration <= 3 && daysUntilExpiration > 0;
+    return StoragePolicy.isExpiringSoon(storedAt);
+  }
+
+  /// 긴급 만료 경고 (3일 이하)
+  bool get isUrgentWarning {
+    return StoragePolicy.isUrgentWarning(storedAt);
   }
 
   /// 만료됨 여부
   bool get isExpired {
-    return daysUntilExpiration <= 0 && status == DragonBallStatus.stored;
+    return StoragePolicy.isExpired(storedAt) && status == DragonBallStatus.stored;
   }
 
   /// 배송 요청 가능 여부 확인
@@ -131,43 +135,32 @@ class DragonBallEntity {
   }
 
   /// 보관료 계산
-  /// 60일 이후 하루 1% 보관료 (구매가 기준)
+  /// 현재 이벤트 기간 이후 하루 1% 보관료 (구매가 기준)
+  /// 일반: 60일 무료, 이벤트: 180일 무료
   int calculateStorageFee() {
-    final now = DateTime.now();
-    final daysSinceStored = now.difference(storedAt).inDays;
-
-    // 60일 이내는 무료
-    if (daysSinceStored <= 60) {
-      return 0;
-    }
-
-    // 60일 이후 하루 1%
-    final overdueDays = daysSinceStored - 60;
-    final dailyFee = (purchasePrice * 0.01).round(); // 1%
-    return dailyFee * overdueDays;
+    return StoragePolicy.calculateStorageFee(storedAt, purchasePrice);
   }
 
   /// 보관료율 계산 (구매가 대비 %)
   double calculateStorageFeePercentage() {
-    if (purchasePrice == 0) return 0;
     final totalFee = calculateStorageFee() + accumulatedFee;
-    return (totalFee / purchasePrice) * 100;
+    return StoragePolicy.calculateStorageFeePercentage(totalFee, purchasePrice);
   }
 
   /// 소유권 이전 대상인지 (보관료 100% 초과)
   bool shouldTransferOwnership() {
-    return calculateStorageFeePercentage() >= 100;
+    final totalFee = calculateStorageFee() + accumulatedFee;
+    return StoragePolicy.shouldTransferOwnership(totalFee, purchasePrice);
   }
 
-  /// 60일 무료 기간 남은 일수
+  /// 무료 보관 기간 남은 일수 (현재 이벤트 중: 180일)
   int get freeDaysRemaining {
-    final daysSinceStored = DateTime.now().difference(storedAt).inDays;
-    final remaining = 60 - daysSinceStored;
-    return remaining > 0 ? remaining : 0;
+    final days = StoragePolicy.calculateDaysUntilExpiration(storedAt);
+    return days > 0 ? days : 0;
   }
 
-  /// 60일 무료 기간 종료일
+  /// 무료 보관 기간 종료일
   DateTime get freeStorageEndsAt {
-    return storedAt.add(const Duration(days: 60));
+    return StoragePolicy.calculateExpirationDate(storedAt);
   }
 }

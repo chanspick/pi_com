@@ -12,6 +12,168 @@ app.use(cors({origin: true}));
 app.use(express.json());
 
 // ============================================================================
+// 카카오 로그인 Custom Token 생성
+// ============================================================================
+
+interface KakaoUserInfo {
+  id: number;
+  connected_at?: string;
+  kakao_account?: {
+    profile?: {
+      nickname?: string;
+      profile_image_url?: string;
+    };
+    email?: string;
+  };
+}
+
+/**
+ * 카카오 액세스 토큰으로 사용자 정보 조회
+ */
+async function getKakaoUserInfo(kakaoAccessToken: string): Promise<KakaoUserInfo> {
+  const response = await axios.get<KakaoUserInfo>("https://kapi.kakao.com/v2/user/me", {
+    headers: {
+      Authorization: `Bearer ${kakaoAccessToken}`,
+      "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
+    },
+  });
+  return response.data;
+}
+
+/**
+ * 카카오 로그인을 위한 Firebase Custom Token 생성
+ * POST /auth/kakao
+ */
+app.post("/auth/kakao", async (req, res) => {
+  try {
+    console.log("🔍 [Kakao Auth] Request received");
+    const {kakaoAccessToken} = req.body;
+
+    if (!kakaoAccessToken) {
+      console.error("❌ Missing kakaoAccessToken in request");
+      res.status(400).json({
+        error: "Missing required parameter",
+        required: ["kakaoAccessToken"],
+      });
+      return;
+    }
+
+    console.log(`✅ Kakao access token received: ${kakaoAccessToken.substring(0, 20)}...`);
+
+    // 카카오 사용자 정보 조회
+    console.log("🔍 Fetching Kakao user info...");
+    const kakaoUser = await getKakaoUserInfo(kakaoAccessToken);
+
+    if (!kakaoUser || !kakaoUser.id) {
+      console.error("❌ Invalid Kakao user info:", kakaoUser);
+      res.status(401).json({
+        error: "Invalid Kakao token",
+        message: "Failed to get Kakao user info",
+      });
+      return;
+    }
+
+    console.log(`✅ Kakao user info: ID=${kakaoUser.id}, Email=${kakaoUser.kakao_account?.email}`);
+
+    // 이메일 기반 계정 병합: 같은 이메일의 기존 사용자 찾기
+    const email = kakaoUser.kakao_account?.email;
+    let uid = `kakao_${kakaoUser.id}`;
+
+    if (email) {
+      console.log(`🔍 Checking for existing user with email: ${email}`);
+      try {
+        // Firebase Auth에서 이메일로 기존 사용자 검색
+        const existingUser = await admin.auth().getUserByEmail(email);
+        console.log(`✅ Found existing user: ${existingUser.uid} (provider: ${existingUser.providerData[0]?.providerId})`);
+
+        // 기존 사용자의 UID 사용 (계정 병합)
+        uid = existingUser.uid;
+        console.log(`🔗 Merging accounts: Using existing UID=${uid}`);
+      } catch (error: any) {
+        if (error.code === "auth/user-not-found") {
+          console.log(`ℹ️ No existing user with email ${email}, creating new user`);
+        } else {
+          console.error(`⚠️ Error checking existing user:`, error);
+        }
+      }
+    }
+
+    console.log(`🔍 Creating custom token for UID: ${uid}`);
+
+    // Firebase Custom Token 생성
+    const customToken = await admin.auth().createCustomToken(uid, {
+      // Additional claims
+      provider: "kakao",
+      kakaoId: kakaoUser.id.toString(),
+    });
+    console.log(`✅ Custom token created: ${customToken.substring(0, 20)}...`);
+
+    // Firestore에 사용자 정보 저장/업데이트
+    console.log("🔍 Saving user to Firestore...");
+    const userRef = admin.firestore().collection("users").doc(uid);
+    const userDoc = await userRef.get();
+
+    const userData = {
+      email: kakaoUser.kakao_account?.email || `kakao_${kakaoUser.id}@kakao.user`,
+      displayName: kakaoUser.kakao_account?.profile?.nickname || userDoc.data()?.displayName || "카카오 사용자",
+      photoURL: kakaoUser.kakao_account?.profile?.profile_image_url || userDoc.data()?.photoURL || null,
+      kakaoId: kakaoUser.id.toString(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastLoginAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    if (!userDoc.exists) {
+      // 신규 사용자
+      await userRef.set({
+        uid,
+        ...userData,
+        provider: "kakao",
+        providers: ["kakao"], // 여러 provider 지원
+        isAdmin: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      console.log(`✅ New Kakao user created: ${uid}`);
+    } else {
+      // 기존 사용자 정보 업데이트 (provider 병합)
+      const existingData = userDoc.data();
+      const existingProviders = existingData?.providers || [existingData?.provider].filter(Boolean);
+
+      await userRef.update({
+        ...userData,
+        providers: Array.from(new Set([...existingProviders, "kakao"])), // provider 추가
+      });
+      console.log(`✅ Kakao user updated (merged): ${uid}, providers: ${existingProviders.join(", ")} + kakao`);
+    }
+
+    console.log("✅ [Kakao Auth] Success");
+    res.status(200).json({
+      customToken,
+      user: {
+        uid,
+        email: userData.email,
+        displayName: userData.displayName,
+        photoURL: userData.photoURL,
+        provider: "kakao",
+      },
+    });
+  } catch (error: any) {
+    console.error("❌ [Kakao Auth] Error:", error);
+    console.error("❌ Error details:", {
+      message: error.message,
+      stack: error.stack,
+      response: error.response?.data,
+      status: error.response?.status,
+    });
+    res.status(error.response?.status || 500).json({
+      error: "Kakao authentication failed",
+      message: error.message,
+      details: error.response?.data || error.toString(),
+      stack: error.stack,
+    });
+  }
+});
+
+// ============================================================================
 // 타입 정의
 // ============================================================================
 
@@ -115,9 +277,9 @@ const getKakaoPayConfig = () => {
 
 /**
  * 결제 준비 API
- * POST /api/payment/prepare
+ * POST /payment/prepare
  */
-app.post("/api/payment/prepare", async (req, res) => {
+app.post("/payment/prepare", async (req, res) => {
   try {
       const {
         partner_order_id,
@@ -205,9 +367,9 @@ app.post("/api/payment/prepare", async (req, res) => {
 
 /**
  * 결제 승인 API
- * POST /api/payment/approve
+ * POST /payment/approve
  */
-app.post("/api/payment/approve", async (req, res) => {
+app.post("/payment/approve", async (req, res) => {
   try {
       const {
         tid,
@@ -278,9 +440,9 @@ app.post("/api/payment/approve", async (req, res) => {
 
 /**
  * 결제 취소 API
- * POST /api/payment/cancel
+ * POST /payment/cancel
  */
-app.post("/api/payment/cancel", async (req, res) => {
+app.post("/payment/cancel", async (req, res) => {
   try {
       const {
         tid,
@@ -495,8 +657,33 @@ export const searchParts = functions.region("asia-northeast3").https.onCall(asyn
     throw new functions.https.HttpsError("invalid-argument", "category and query required");
   }
   const lowerQuery = query.toLowerCase().trim();
-  const snapshot = await admin.firestore().collection("parts").where("category", "==", category).where("searchKeywords", "array-contains", lowerQuery).limit(50).get();
-  const results = snapshot.docs.map((doc) => ({partId: doc.id, ...doc.data()}));
+  const lowerCategory = category.toLowerCase().trim(); // ✅ 카테고리 정규화
+
+  // base_parts 컬렉션에서 검색 (parts 사용 중단)
+  // searchKeywords가 없으므로 전체 조회 후 클라이언트 필터링
+  // ✅ SellRequest 생성 시 매물이 없는 부품도 선택 가능해야 하므로 listingCount 조건 제거
+  const snapshot = await admin.firestore()
+    .collection("base_parts")
+    .limit(500)
+    .get();
+
+  // 클라이언트 측 필터링: category(대소문자 무시) + modelName/brand 검색
+  const results = snapshot.docs
+    .map((doc) => ({
+      basePartId: doc.id,
+      partId: doc.id, // 호환성을 위해 partId도 포함
+      ...doc.data(),
+    }))
+    .filter((part: any) => {
+      const partCategory = (part.category || "").toLowerCase();
+      const modelName = (part.modelName || "").toLowerCase();
+      const brand = (part.brand || "").toLowerCase();
+
+      // ✅ 카테고리 매칭 (대소문자 무시) + 검색어 매칭
+      return partCategory === lowerCategory &&
+             (modelName.includes(lowerQuery) || brand.includes(lowerQuery));
+    })
+    .slice(0, 50); // 상위 50개만
 
   // 🔍 디버그: 검색 결과 확인
   if (results.length > 0) {
@@ -519,9 +706,15 @@ export const onPartCreated = functions.region("asia-northeast3").firestore.docum
 /**
  * BasePart의 통계 재계산 함수
  * active listings만 대상으로 lowestPrice, averagePrice, listingCount 업데이트
+ * 가격 변경 감지 시 PriceHistory에 새 포인트 추가
  */
 async function recalculateBasePartStats(basePartId: string): Promise<void> {
   const db = admin.firestore();
+
+  // 이전 BasePart 정보 조회 (가격 변경 감지용)
+  const basePartRef = db.collection("base_parts").doc(basePartId);
+  const basePartDoc = await basePartRef.get();
+  const previousStats = basePartDoc.exists ? basePartDoc.data() : null;
 
   // active listings만 조회
   const activeListingsSnapshot = await db
@@ -531,13 +724,25 @@ async function recalculateBasePartStats(basePartId: string): Promise<void> {
     .get();
 
   if (activeListingsSnapshot.empty) {
-    // active listings가 없으면 0으로 설정 (set with merge to create if doesn't exist)
-    await db.collection("baseParts").doc(basePartId).set({
+    // active listings가 없으면 0으로 설정
+    const newStats = {
       lowestPrice: 0,
       averagePrice: 0,
       listingCount: 0,
-    }, {merge: true});
+    };
+
+    await basePartRef.set(newStats, {merge: true});
     console.log(`BasePart ${basePartId}: No active listings, stats reset to 0`);
+
+    // 가격 변경 감지 및 PriceHistory 추가
+    if (previousStats && (
+      previousStats.lowestPrice !== newStats.lowestPrice ||
+      previousStats.averagePrice !== newStats.averagePrice ||
+      previousStats.listingCount !== newStats.listingCount
+    )) {
+      await addPriceHistoryPoint(basePartId, newStats, previousStats);
+    }
+
     return;
   }
 
@@ -563,14 +768,59 @@ async function recalculateBasePartStats(basePartId: string): Promise<void> {
     basePartId: basePartId,
     modelName: firstListing.modelName || "",
     category: firstListing.category || "",
-    brand: firstListing.brand || "",  // ✅ listing에서 brand 가져오기
+    brand: firstListing.brand || "",
     lowestPrice: stats.lowestPrice,
     averagePrice: stats.averagePrice,
     listingCount: stats.listingCount,
   };
-  await db.collection("baseParts").doc(basePartId).set(updateData, {merge: true});
+  await basePartRef.set(updateData, {merge: true});
 
   console.log(`BasePart ${basePartId} stats updated:`, stats, `brand: ${updateData.brand}`);
+
+  // 가격 변경 감지 및 PriceHistory 추가
+  if (!previousStats || (
+    previousStats.lowestPrice !== stats.lowestPrice ||
+    previousStats.averagePrice !== stats.averagePrice ||
+    previousStats.listingCount !== stats.listingCount
+  )) {
+    await addPriceHistoryPoint(basePartId, stats, previousStats);
+  }
+}
+
+/**
+ * PriceHistory에 새로운 가격 포인트 추가
+ */
+async function addPriceHistoryPoint(
+  basePartId: string,
+  newStats: BasePartStats,
+  previousStats: any
+): Promise<void> {
+  const db = admin.firestore();
+  const now = admin.firestore.Timestamp.now();
+
+  // 고유 ID 생성 (basePartId + timestamp)
+  const docId = `${basePartId}_${now.toMillis()}`;
+
+  const priceHistoryData = {
+    basePartId,
+    timestamp: now,
+    lowestPrice: newStats.lowestPrice,
+    averagePrice: newStats.averagePrice,
+    listingCount: newStats.listingCount,
+    createdAt: now,
+    // 변경 내역 기록 (디버깅용)
+    previousLowestPrice: previousStats?.lowestPrice ?? null,
+    previousAveragePrice: previousStats?.averagePrice ?? null,
+    previousListingCount: previousStats?.listingCount ?? null,
+  };
+
+  await db.collection("priceHistory").doc(docId).set(priceHistoryData);
+
+  console.log(`PriceHistory added for ${basePartId}:`, {
+    lowestPrice: `${previousStats?.lowestPrice ?? 'N/A'} → ${newStats.lowestPrice}`,
+    averagePrice: `${previousStats?.averagePrice ?? 'N/A'} → ${newStats.averagePrice}`,
+    listingCount: `${previousStats?.listingCount ?? 'N/A'} → ${newStats.listingCount}`,
+  });
 }
 
 /**
@@ -659,7 +909,7 @@ export const checkPriceAlerts = functions
       const alert = alertDoc.data() as PriceAlertData;
 
       // BasePart의 현재 최저가 조회
-      const basePartDoc = await db.collection("baseParts").doc(alert.basePartId).get();
+      const basePartDoc = await db.collection("base_parts").doc(alert.basePartId).get();
 
       if (!basePartDoc.exists) {
         console.log(`BasePart ${alert.basePartId} not found for alert ${alertDoc.id}`);

@@ -68,21 +68,8 @@ class PurchaseUseCase {
       final basePartIds = <String>{};
       for (final item in sellerItems) {
         await _listingRepository.updateListingStatus(item.listingId, ListingStatus.sold);
-        // basePartId 수집 (중복 제거)
-        if (item.basePartId != null) {
-          basePartIds.add(item.basePartId!);
-        }
-      }
-
-      // 3. 거래 완료된 basePartId들의 가격 스냅샷 생성
-      for (final basePartId in basePartIds) {
-        try {
-          await _priceHistoryRepository.createPriceSnapshot(basePartId);
-          print('✅ 가격 스냅샷 생성 완료: $basePartId');
-        } catch (e) {
-          print('⚠️ 가격 스냅샷 생성 실패: $basePartId - $e');
-          // 스냅샷 생성 실패해도 주문은 계속 진행
-        }
+        // NOTE: Cloud Functions의 onListingUpdated 트리거가
+        // listing 상태 변경을 감지하여 자동으로 PriceHistory를 업데이트합니다.
       }
 
       orderIndex++;

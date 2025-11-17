@@ -13,7 +13,11 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
   PaymentRemoteDataSourceImpl({
     Dio? dio,
     String? baseUrl,
-  })  : _dio = dio ?? Dio(),
+  })  : _dio = dio ?? Dio(BaseOptions(
+          connectTimeout: const Duration(seconds: 10),
+          receiveTimeout: const Duration(seconds: 15),
+          sendTimeout: const Duration(seconds: 15),
+        )),
         // Firebase Functions URL 사용
         _baseUrl = baseUrl ?? 'https://asia-northeast3-picom-team.cloudfunctions.net/api';
 
@@ -23,7 +27,7 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
   ) async {
     try {
       final response = await _dio.post(
-        '$_baseUrl/api/payment/prepare',
+        '$_baseUrl/payment/prepare',
         data: request.toJson(),
         options: Options(
           headers: {
@@ -56,7 +60,7 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
   ) async {
     try {
       final response = await _dio.post(
-        '$_baseUrl/api/payment/approve',
+        '$_baseUrl/payment/approve',
         data: request.toJson(),
         options: Options(
           headers: {
@@ -91,7 +95,7 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
   }) async {
     try {
       final response = await _dio.post(
-        '$_baseUrl/api/payment/cancel',
+        '$_baseUrl/payment/cancel',
         data: {
           'tid': tid,
           'cancel_amount': cancelAmount,

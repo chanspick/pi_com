@@ -2,133 +2,164 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // ============================================
+    // 헬퍼 함수
+    // ============================================
+
+    // 관리자 권한 확인
+    function isAdmin() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // 본인 확인
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    // 인증된 사용자 확인
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // ============================================
     // Users 컬렉션
     // ============================================
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null; // 개발 환경: 모든 인증된 사용자 쓰기 가능
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isOwner(userId) || isAdmin();
 
       // DragonBalls 서브컬렉션 - 사용자 본인만 접근 가능
       match /dragonBalls/{dragonBallId} {
-        // 로그인한 사용자가 자신의 드래곤볼만 읽을 수 있음
-        allow read: if request.auth != null && request.auth.uid == userId;
-        // 로그인한 사용자가 자신의 드래곤볼만 수정할 수 있음
-        allow write: if request.auth != null && request.auth.uid == userId;
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
       }
 
       // Cart 서브컬렉션 - 사용자 본인만 접근 가능
       match /cart/{cartItemId} {
-        // 로그인한 사용자가 자신의 장바구니만 읽을 수 있음
-        allow read: if request.auth != null && request.auth.uid == userId;
-        // 로그인한 사용자가 자신의 장바구니만 수정할 수 있음
-        allow write: if request.auth != null && request.auth.uid == userId;
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
       }
 
-      // Favorites 서브컬렉션
+      // Favorites 서브컬렉션 - 사용자 본인만 접근 가능
       match /favorites/{favoriteId} {
-        allow read: if request.auth != null && request.auth.uid == userId;
-        allow write: if request.auth != null && request.auth.uid == userId;
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
       }
 
-      // PriceAlerts 서브컬렉션
+      // PriceAlerts 서브컬렉션 - 사용자 본인만 접근 가능
       match /priceAlerts/{alertId} {
-        allow read: if request.auth != null && request.auth.uid == userId;
-        allow write: if request.auth != null && request.auth.uid == userId;
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
+      }
+
+      // Addresses 서브컬렉션 - 사용자 본인만 접근 가능
+      match /addresses/{addressId} {
+        allow read: if isOwner(userId);
+        allow write: if isOwner(userId);
       }
     }
 
     // ============================================
-    // Parts 컬렉션
+    // Parts 컬렉션 (부품 정보)
     // ============================================
     match /parts/{partId} {
-      allow read: if true;
-      allow write: if request.auth != null; // 인증된 사용자 쓰기 가능 (개발 환경)
+      allow read: if true; // 모든 사용자 읽기 가능 (공개 데이터)
+      allow write: if isAdmin(); // 관리자만 수정 가능
     }
 
     // ============================================
-    // BaseParts 컬렉션
+    // BaseParts 컬렉션 (기본 부품 정보)
     // ============================================
     match /base_parts/{basePartId} {
-      allow read: if true;
-      allow write: if request.auth != null; // 인증된 사용자 쓰기 가능 (개발 환경)
-    }
-
-    // baseParts (카멜케이스 버전)
-    match /baseParts/{basePartId} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read: if true; // 모든 사용자 읽기 가능 (공개 데이터)
+      allow write: if isAdmin(); // 관리자만 수정 가능
     }
 
     // ============================================
-    // Listings 컬렉션
+    // Listings 컬렉션 (중고 매물)
     // ============================================
     match /listings/{listingId} {
       allow read: if true; // 모든 사용자 읽기 가능
-      allow create: if request.auth != null; // 인증된 사용자만 생성
-      allow update: if request.auth != null; // 개발 환경: 모든 인증된 사용자 수정 가능
-      allow delete: if request.auth != null; // 개발 환경: 모든 인증된 사용자 삭제 가능
+      allow create: if isAuthenticated(); // 인증된 사용자만 생성
+      allow update: if isAuthenticated() &&
+                       (request.resource.data.sellerId == request.auth.uid || isAdmin()); // 본인 또는 관리자만 수정
+      allow delete: if isAuthenticated() &&
+                       (resource.data.sellerId == request.auth.uid || isAdmin()); // 본인 또는 관리자만 삭제
     }
 
     // ============================================
-    // Sell Requests 컬렉션
+    // Sell Requests 컬렉션 (판매 신청)
     // ============================================
     match /sell_requests/{requestId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null; // 개발 환경: 모든 인증된 사용자 생성 가능
-      allow update: if request.auth != null; // 개발 환경: 모든 인증된 사용자 수정 가능
-      allow delete: if request.auth != null; // 개발 환경: 모든 인증된 사용자 삭제 가능
+      allow read: if isAuthenticated() &&
+                     (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() &&
+                       (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() &&
+                       (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // sellRequests (카멜케이스 버전)
     match /sellRequests/{requestId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null;
-      allow update: if request.auth != null;
-      allow delete: if request.auth != null;
+      allow read: if isAuthenticated() &&
+                     (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() &&
+                       (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() &&
+                       (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // ============================================
-    // Orders 컬렉션
+    // Orders 컬렉션 (주문 내역)
     // ============================================
     match /orders/{orderId} {
-      allow read: if request.auth != null; // 개발 환경: 모든 인증된 사용자 읽기 가능
-      allow create: if request.auth != null; // 개발 환경: 모든 인증된 사용자 생성 가능
-      allow update: if request.auth != null; // 개발 환경: 모든 인증된 사용자 수정 가능
-      allow delete: if request.auth != null; // 개발 환경: 모든 인증된 사용자 삭제 가능
+      allow read: if isAuthenticated() &&
+                     (resource.data.buyerId == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAdmin(); // 주문 수정은 관리자만 가능
+      allow delete: if isAdmin(); // 주문 삭제는 관리자만 가능
     }
 
     // ============================================
-    // Notifications 컬렉션
+    // Notifications 컬렉션 (알림)
     // ============================================
     match /notifications/{notificationId} {
-      allow read: if request.auth != null; // 개발 환경: 모든 인증된 사용자 읽기 가능
-      allow create: if request.auth != null;
-      allow update: if request.auth != null; // 개발 환경: 모든 인증된 사용자 수정 가능
-      allow delete: if request.auth != null; // 개발 환경: 모든 인증된 사용자 삭제 가능
+      allow read: if isAuthenticated() &&
+                     (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isAdmin(); // 알림 생성은 관리자/시스템만 가능
+      allow update: if isAuthenticated() &&
+                       (resource.data.userId == request.auth.uid || isAdmin());
+      allow delete: if isAuthenticated() &&
+                       (resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // ============================================
-    // Price Alerts 컬렉션
+    // Price Alerts 컬렉션 (가격 알림)
     // ============================================
     match /priceAlerts/{alertId} {
-      allow read: if request.auth != null; // 개발 환경
-      allow write: if request.auth != null; // 개발 환경
+      allow read: if isAuthenticated() &&
+                     (resource.data.userId == request.auth.uid || isAdmin());
+      allow write: if isAuthenticated() &&
+                      (request.resource.data.userId == request.auth.uid || isAdmin());
     }
 
     // ============================================
-    // Batch Shipments 컬렉션
+    // Batch Shipments 컬렉션 (일괄 배송)
     // ============================================
     match /batchShipments/{shipmentId} {
-      allow read: if request.auth != null; // 개발 환경
-      allow write: if request.auth != null; // 개발 환경
+      allow read: if isAuthenticated();
+      allow write: if isAdmin(); // 관리자만 일괄 배송 관리 가능
     }
 
     // ============================================
-    // Cart 컬렉션
+    // Cart 컬렉션 (장바구니)
     // ============================================
     match /carts/{userId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
     }
 
     // ============================================
@@ -136,7 +167,18 @@ service cloud.firestore {
     // ============================================
     match /priceHistory/{snapshotId} {
       allow read: if true; // 모든 사용자 읽기 가능 (공개 데이터)
-      allow write: if request.auth != null; // 인증된 사용자 쓰기 가능 (개발 환경)
+      allow write: if isAdmin(); // 관리자만 가격 히스토리 관리 가능
+    }
+
+    // ============================================
+    // Payments 컬렉션 (결제 정보)
+    // ============================================
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() &&
+                     (resource.data.partner_user_id == request.auth.uid || isAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAdmin(); // 결제 정보는 관리자/시스템만 수정 가능
+      allow delete: if false; // 결제 정보는 삭제 불가 (감사 로그)
     }
 
     // 기본적으로 모든 접근 거부

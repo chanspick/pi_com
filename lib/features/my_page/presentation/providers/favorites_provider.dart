@@ -48,9 +48,12 @@ final favoritesListingsProvider = FutureProvider.autoDispose<List<Listing>>((ref
     return [];
   }
 
+  print('🔍 [FavoritesProvider] Fetching ${favoritesIds.length} favorite listings');
+
   // Firestore 제한: in 쿼리는 최대 10개까지
   // 10개씩 끊어서 조회
   final List<Listing> allListings = [];
+  final List<String> missingListingIds = []; // 존재하지 않는 listing ID 추적
 
   for (int i = 0; i < favoritesIds.length; i += 10) {
     final batch = favoritesIds.skip(i).take(10).toList();
@@ -60,6 +63,16 @@ final favoritesListingsProvider = FutureProvider.autoDispose<List<Listing>>((ref
         .where(FieldPath.documentId, whereIn: batch)
         .get();
 
+    // 조회된 listing ID들
+    final foundIds = snapshot.docs.map((doc) => doc.id).toSet();
+
+    // 조회되지 않은 listing ID 추적
+    final notFoundIds = batch.where((id) => !foundIds.contains(id)).toList();
+    if (notFoundIds.isNotEmpty) {
+      print('⚠️ [FavoritesProvider] Missing listings: $notFoundIds');
+      missingListingIds.addAll(notFoundIds);
+    }
+
     final listings = snapshot.docs
         .map((doc) => Listing.fromFirestore(doc))
         .toList();
@@ -67,6 +80,20 @@ final favoritesListingsProvider = FutureProvider.autoDispose<List<Listing>>((ref
     allListings.addAll(listings);
   }
 
+  // 🔥 자동 정리: 존재하지 않는 listings를 favorites에서 제거
+  if (missingListingIds.isNotEmpty) {
+    print('🧹 [FavoritesProvider] Auto-cleaning ${missingListingIds.length} missing listings from favorites');
+    for (final listingId in missingListingIds) {
+      try {
+        await repository.removeFavorite(currentUser.uid, listingId);
+        print('  ✅ Removed $listingId from favorites');
+      } catch (e) {
+        print('  ❌ Failed to remove $listingId: $e');
+      }
+    }
+  }
+
+  print('✅ [FavoritesProvider] Returning ${allListings.length} valid listings');
   return allListings;
 });
 

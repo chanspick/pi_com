@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../providers/favorites_provider.dart';
 import '../../../../core/models/listing_model.dart';
 import '../../../../core/constants/routes.dart';
@@ -42,10 +43,10 @@ class FavoritesScreen extends ConsumerWidget {
           }
 
           return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            padding: const EdgeInsets.all(12),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
-              childAspectRatio: 0.7,
+              childAspectRatio: MediaQuery.of(context).size.width > 600 ? 0.8 : 0.65,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
             ),
@@ -106,19 +107,25 @@ class _FavoriteCard extends ConsumerWidget {
                 AspectRatio(
                   aspectRatio: 1,
                   child: listing.imageUrls.isNotEmpty
-                      ? Image.network(
-                          listing.imageUrls.first,
+                      ? CachedNetworkImage(
+                          imageUrl: listing.imageUrls.first,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.grey[300],
-                              child: const Icon(Icons.image, size: 50),
-                            );
-                          },
+                          placeholder: (context, url) => Container(
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.image, size: 50, color: Colors.grey),
+                          ),
+                          memCacheWidth: 400, // 메모리 캐시 크기 지정으로 품질 향상
+                          maxWidthDiskCache: 800, // 디스크 캐시 크기
                         )
                       : Container(
                           color: Colors.grey[300],
-                          child: const Icon(Icons.image, size: 50),
+                          child: const Icon(Icons.image, size: 50, color: Colors.grey),
                         ),
                 ),
                 // 찜 버튼
@@ -173,47 +180,43 @@ class _FavoriteCard extends ConsumerWidget {
             ),
 
             // 상품 정보
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '${listing.brand} ${listing.modelName}',
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
+            Padding(
+              padding: const EdgeInsets.all(10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${listing.brand} ${listing.modelName}',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      height: 1.2,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${_formatPrice(listing.price)}원',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.local_shipping_outlined, size: 12, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        '배송비 별도',
+                        style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${_formatPrice(listing.price)}원',
-                      style: TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        Icon(Icons.local_shipping_outlined, size: 12, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            '배송비 별도',
-                            style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],

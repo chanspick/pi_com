@@ -28,7 +28,13 @@
     ],
     "frameworksBackend": {
       "region": "asia-east1"
-    }
+    },
+    "rewrites": [
+      {
+        "source": "/oauth/callback",
+        "destination": "/oauth/callback.html"
+      }
+    ]
   },
   "storage": {
     "rules": "storage.rules"

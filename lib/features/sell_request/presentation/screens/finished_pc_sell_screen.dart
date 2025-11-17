@@ -56,10 +56,80 @@ class _FinishedPcSellScreenState extends State<FinishedPcSellScreen> {
     PartCategory.ram: null,
     PartCategory.gpu: null,
     PartCategory.ssd: null,
-    PartCategory.psu: null,
-    PartCategory.cooler: null,
-    PartCategory.pccase: null,
+    // PartCategory.psu는 제외 (_includePower와 _selectedPowerWattage로 관리)
+    PartCategory.cooler: null, // 체크박스로 관리
+    PartCategory.pccase: null, // 체크박스로 관리
   };
+
+  // 쿨러/케이스 포함 여부 (기본값: true)
+  bool _includeCooler = true;
+  bool _includeCase = true;
+
+  // 파워 포함 여부 및 선택된 용량 (기본값: false, 없음)
+  bool _includePower = false;
+  String? _selectedPowerWattage;
+
+  /// 고정 가격 쿨러 BasePart 생성
+  BasePart _createFixedCoolerPart() {
+    return BasePart(
+      basePartId: 'virtual_cooler_fixed_20000',
+      modelName: '임의 매집 쿨러',
+      category: 'COOLER',
+      brand: '기본',
+      lowestPrice: 20000,
+      averagePrice: 20000.0,
+      listingCount: 999,
+    );
+  }
+
+  /// 고정 가격 케이스 BasePart 생성
+  BasePart _createFixedCasePart() {
+    return BasePart(
+      basePartId: 'virtual_case_fixed_20000',
+      modelName: '임의 매집 케이스',
+      category: 'CASE',
+      brand: '기본',
+      lowestPrice: 20000,
+      averagePrice: 20000.0,
+      listingCount: 999,
+    );
+  }
+
+  /// 파워 용량별 BasePart 생성
+  BasePart _createPowerPart(String wattage) {
+    final price = _getPowerPrice(wattage);
+    return BasePart(
+      basePartId: 'virtual_power_$wattage',
+      modelName: '파워 $wattage',
+      category: 'POWER',
+      brand: '기본',
+      lowestPrice: price,
+      averagePrice: price.toDouble(),
+      listingCount: 999,
+    );
+  }
+
+  /// 파워 용량별 가격 책정 (내부 관리용, 사용자에게 보이지 않음)
+  int _getPowerPrice(String wattage) {
+    switch (wattage) {
+      case '500W':
+        return 30000;
+      case '600W':
+        return 40000;
+      case '700W':
+        return 50000;
+      case '750W':
+        return 55000;
+      case '800W':
+        return 60000;
+      case '850W':
+        return 70000;
+      case '1000W':
+        return 80000;
+      default:
+        return 30000;
+    }
+  }
 
   /// ⭐️ [수정] 부품 검색 화면으로 이동 (카테고리별)
   Future<void> _selectBasePartForCategory(PartCategory category) async {
@@ -85,6 +155,18 @@ class _FinishedPcSellScreenState extends State<FinishedPcSellScreen> {
     final selectedBaseParts =
     _selectedComponents.values.whereType<BasePart>().toList();
 
+    // 쿨러/케이스 체크 시 고정 가격 부품 추가
+    if (_includeCooler) {
+      selectedBaseParts.add(_createFixedCoolerPart());
+    }
+    if (_includeCase) {
+      selectedBaseParts.add(_createFixedCasePart());
+    }
+    // 파워 체크 및 용량 선택 시 파워 부품 추가
+    if (_includePower && _selectedPowerWattage != null) {
+      selectedBaseParts.add(_createPowerPart(_selectedPowerWattage!));
+    }
+
     if (selectedBaseParts.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -107,8 +189,12 @@ class _FinishedPcSellScreenState extends State<FinishedPcSellScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 선택된 부품 개수 (쿨러/케이스/파워는 제외, 대신 체크 상태 반영)
     final selectedCount =
-        _selectedComponents.values.where((part) => part != null).length;
+        _selectedComponents.values.where((part) => part != null).length +
+        (_includeCooler ? 1 : 0) +
+        (_includeCase ? 1 : 0) +
+        (_includePower && _selectedPowerWattage != null ? 1 : 0);
 
     return Scaffold(
       appBar: AppBar(
@@ -162,6 +248,144 @@ class _FinishedPcSellScreenState extends State<FinishedPcSellScreen> {
                 final category = PartCategory.values[index];
                 final selectedPart = _selectedComponents[category];
 
+                // 파워는 용량 선택 체크박스로 표시
+                if (category == PartCategory.psu) {
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12.0),
+                    color: _includePower ? Colors.green.shade50 : null,
+                    child: Column(
+                      children: [
+                        CheckboxListTile(
+                          secondary: Icon(
+                            _getCategoryIcon(category),
+                            color: _includePower ? Colors.green : Colors.grey,
+                          ),
+                          title: Text(category.displayName),
+                          subtitle: Text(
+                            _includePower && _selectedPowerWattage != null
+                                ? '매집 보기 - $_selectedPowerWattage'
+                                : '파워 없음 (상태 보고 가격 제시)',
+                            style: TextStyle(
+                              color: _includePower ? Colors.green : Colors.grey,
+                              fontWeight: _includePower ? FontWeight.w500 : FontWeight.normal,
+                              fontSize: 13,
+                            ),
+                          ),
+                          value: _includePower,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _includePower = value ?? false;
+                              if (!_includePower) {
+                                _selectedPowerWattage = null;
+                              }
+                            });
+                          },
+                        ),
+                        if (_includePower)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  '파워 용량 선택:',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Container(
+                                  constraints: const BoxConstraints(maxHeight: 200),
+                                  child: ListView(
+                                    shrinkWrap: true,
+                                    children: ['500W', '600W', '700W', '750W', '800W', '850W', '1000W'].map((wattage) {
+                                      return RadioListTile<String>(
+                                        dense: true,
+                                        contentPadding: EdgeInsets.zero,
+                                        title: Text(wattage),
+                                        value: wattage,
+                                        groupValue: _selectedPowerWattage,
+                                        onChanged: (value) {
+                                          setState(() {
+                                            _selectedPowerWattage = value;
+                                          });
+                                        },
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  );
+                }
+
+                // 쿨러와 케이스는 체크박스로 표시
+                if (category == PartCategory.cooler) {
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12.0),
+                    color: _includeCooler ? Colors.green.shade50 : null,
+                    child: CheckboxListTile(
+                      secondary: Icon(
+                        _getCategoryIcon(category),
+                        color: _includeCooler ? Colors.green : Colors.grey,
+                      ),
+                      title: Text(category.displayName),
+                      subtitle: Text(
+                        _includeCooler
+                            ? '매집 보기 (상태 보고 가격 제시)'
+                            : '쿨러 없음 (상태 보고 가격 제시)',
+                        style: TextStyle(
+                          color: _includeCooler ? Colors.green : Colors.grey,
+                          fontWeight: _includeCooler ? FontWeight.w500 : FontWeight.normal,
+                          fontSize: 13,
+                        ),
+                      ),
+                      value: _includeCooler,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          _includeCooler = value ?? true;
+                        });
+                      },
+                    ),
+                  );
+                }
+
+                if (category == PartCategory.pccase) {
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12.0),
+                    color: _includeCase ? Colors.green.shade50 : null,
+                    child: CheckboxListTile(
+                      secondary: Icon(
+                        _getCategoryIcon(category),
+                        color: _includeCase ? Colors.green : Colors.grey,
+                      ),
+                      title: Text(category.displayName),
+                      subtitle: Text(
+                        _includeCase
+                            ? '매집 보기 (상태 보고 가격 제시)'
+                            : '케이스 없음 (상태 보고 가격 제시)',
+                        style: TextStyle(
+                          color: _includeCase ? Colors.green : Colors.grey,
+                          fontWeight: _includeCase ? FontWeight.w500 : FontWeight.normal,
+                          fontSize: 13,
+                        ),
+                      ),
+                      value: _includeCase,
+                      onChanged: (bool? value) {
+                        setState(() {
+                          _includeCase = value ?? true;
+                        });
+                      },
+                    ),
+                  );
+                }
+
+                // 일반 부품 (CPU, GPU, RAM, SSD, Mainboard)
                 return Card(
                   margin: const EdgeInsets.only(bottom: 12.0),
                   child: ListTile(

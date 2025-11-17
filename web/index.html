@@ -29,8 +29,17 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Icons" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+
   <!-- 🆕 Google Sign-In Web Client ID -->
   <meta name="google-signin-client_id" content="329187044859-d2v6bhhsormrv5on2ff2krsm271gssir.apps.googleusercontent.com">
+
+  <!-- Kakao JavaScript SDK -->
+  <script src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js"
+          integrity="sha384-DKYJZ8NLiK8MN4/C5P2dtSmLQ4KwPaoqAfyA/DfmEc1VDxu4yyC7wy6K1Hs90nka"
+          crossorigin="anonymous"></script>
 
   <title>PiCom</title>
   <link rel="manifest" href="manifest.json">
@@ -41,6 +50,102 @@
   </script>
   <!-- This script adds the flutter initialization JS code -->
   <script src="flutter.js" defer></script>
+
+  <!-- Initialize Kakao SDK and Helper Functions -->
+  <script>
+    // Initialize Kakao SDK
+    if (typeof Kakao !== 'undefined') {
+      Kakao.init('aabc80253972e0504d05951a66373200');
+      console.log('Kakao SDK initialized:', Kakao.isInitialized());
+
+      // 디버깅: Kakao.Auth의 사용 가능한 메서드 확인
+      console.log('Kakao.Auth methods:', Object.keys(Kakao.Auth));
+    } else {
+      console.error('Kakao SDK not loaded');
+    }
+
+    // 카카오 로그인은 Flutter SDK의 AuthCodeClient.instance.authorize()로 처리됨
+    // JavaScript SDK는 코드→토큰 교환 및 사용자 정보 가져오기에만 사용
+
+    window.kakaoLogout = function() {
+      return new Promise(function(resolve) {
+        if (!Kakao.Auth.getAccessToken()) {
+          resolve();
+          return;
+        }
+
+        Kakao.Auth.logout(function() {
+          console.log('✅ Kakao logout success');
+          resolve();
+        });
+      });
+    };
+
+    window.kakaoGetToken = function() {
+      return Kakao.Auth.getAccessToken();
+    };
+
+    window.kakaoIsInitialized = function() {
+      return Kakao && Kakao.isInitialized();
+    };
+
+    // 인가 코드를 액세스 토큰으로 교환하는 함수 (리다이렉트 폴백용)
+    window.kakaoExchangeCodeForToken = function(code) {
+      return new Promise(function(resolve, reject) {
+        console.log('🔍 Exchanging auth code for access token...');
+
+        var redirectUri = window.location.origin + '/oauth/callback.html';
+
+        // REST API로 토큰 요청
+        fetch('https://kauth.kakao.com/oauth/token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8'
+          },
+          body: new URLSearchParams({
+            grant_type: 'authorization_code',
+            client_id: 'aabc80253972e0504d05951a66373200',  // JavaScript 키
+            redirect_uri: redirectUri,
+            code: code
+          })
+        })
+        .then(function(response) { return response.json(); })
+        .then(function(tokenData) {
+          if (tokenData.access_token) {
+            console.log('✅ Access token received:', tokenData.access_token.substring(0, 20) + '...');
+            // SDK에 토큰 설정
+            Kakao.Auth.setAccessToken(tokenData.access_token);
+
+            // 사용자 정보 가져오기 (Promise 기반)
+            console.log('🔍 Fetching user info with Kakao.API.request...');
+            Kakao.API.request({
+              url: '/v2/user/me'
+            })
+            .then(function(userInfo) {
+              console.log('✅ User info received:', userInfo);
+              // 토큰과 함께 사용자 정보도 반환
+              resolve({
+                access_token: tokenData.access_token,
+                user_info: userInfo
+              });
+            })
+            .catch(function(error) {
+              console.warn('⚠️ Failed to get user info, returning token only:', error);
+              // 사용자 정보를 못 가져와도 토큰은 반환
+              resolve(tokenData.access_token);
+            });
+          } else {
+            console.error('❌ No access token in response:', tokenData);
+            reject('Failed to get access token');
+          }
+        })
+        .catch(function(error) {
+          console.error('❌ Token exchange failed:', error);
+          reject('Token exchange failed: ' + error.message);
+        });
+      });
+    };
+  </script>
 </head>
 <body>
 <script>

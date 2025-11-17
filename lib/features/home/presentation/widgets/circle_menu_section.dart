@@ -19,8 +19,8 @@ class CircleMenuSection extends StatelessWidget {
     },
     {
       'icon': Icons.inventory_2_outlined,
-      'label': '드래곤볼',
-      'route': Routes.dragonBallStorage, // ✅ 드래곤볼 보관함 연결!
+      'label': 'PC 보관함',
+      'route': Routes.dragonBallStorage, // ✅ PC 보관함 연결!
     },
     {
       'icon': Icons.add_box_outlined,

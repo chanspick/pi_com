@@ -27,11 +27,14 @@ class Routes {
   static const String profile = '/profile';
   static const String profileEdit = '/profile-edit';
   static const String purchaseHistory = '/purchase-history';
+  static const String purchaseDetail = '/purchase-detail'; // ✅ 추가
   static const String salesHistory = '/sales-history';
   static const String sellRequestHistory = '/sell-request-history';
   static const String favorites = '/favorites';
   static const String priceAlerts = '/price-alerts';
   static const String settings = '/settings';
+  static const String addressList = '/address-list';
+  static const String addressForm = '/address-form';
 
   // Search
   static const String partSearch = '/part-search'; // sell_request용 (parts 컬렉션)
@@ -50,8 +53,21 @@ class Routes {
   static const String paymentFailure = '/payment/failure';
   static const String paymentCancel = '/payment/cancel';
 
-  // ✅ 새로 추가: DragonBall 피처
-  static const String dragonBallStorage = '/dragon-ball-storage';
+  // ✅ 새로 추가: PC 보관함 피처 (DragonBall → PC Storage 리브랜딩)
+  static const String dragonBallStorage = '/dragon-ball-storage'; // 실제 화면: PC 보관함
+  static const String pcStorage = '/dragon-ball-storage'; // Alias for clarity
   static const String batchShipmentRequest = '/batch-shipment-request';
   static const String batchShipmentHistory = '/batch-shipment-history';
+
+  // ✅ 새로 추가: Recommendation 피처
+  static const String myEstimate = '/my-estimate';
+  static const String pcAssembly = '/pc-assembly';
+
+  // ✅ 개발자 전용: Admin Debug
+  static const String adminDebug = '/admin-debug';
+
+  // ✅ 약관 및 정책
+  static const String terms = '/terms';
+  static const String privacy = '/privacy';
+  static const String refund = '/refund';
 }

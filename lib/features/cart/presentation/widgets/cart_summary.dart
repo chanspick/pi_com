@@ -2,7 +2,9 @@
 // lib/features/cart/presentation/widgets/cart_summary.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pi_com/features/cart/domain/entities/cart_item_entity.dart';
 import 'package:pi_com/features/cart/presentation/providers/cart_provider.dart';
 import 'package:pi_com/core/constants/routes.dart';
@@ -156,7 +158,11 @@ class CartSummary extends ConsumerWidget {
                   child: ElevatedButton(
                     onPressed: () {
                       // CheckoutScreen으로 이동
-                      Navigator.pushNamed(context, Routes.checkout);
+                      if (kIsWeb) {
+                        context.go(Routes.checkout);
+                      } else {
+                        Navigator.pushNamed(context, Routes.checkout);
+                      }
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Theme.of(context).primaryColor,

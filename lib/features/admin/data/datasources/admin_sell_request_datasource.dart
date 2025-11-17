@@ -48,7 +48,6 @@ class AdminSellRequestDataSource {
       final listing = Listing(
         listingId: listingId,
         sellerId: sellRequest.sellerId,
-        partId: sellRequest.partId,
         basePartId: sellRequest.basePartId,
         brand: brand, // ✅ SellRequest에서 가져온 brand 사용
         modelName: sellRequest.modelName,

@@ -9,7 +9,11 @@ class GetListingsUseCase {
   GetListingsUseCase(this.repository);
 
   // ✅ Stream → Future로 변경, ListingEntity 사용
-  Future<List<ListingEntity>> call({String? category, String? sortBy}) async {
-    return await repository.getListings(category: category, sortBy: sortBy);
+  Future<List<ListingEntity>> call({String? category, String? sortBy, String? searchQuery}) async {
+    return await repository.getListings(
+      category: category,
+      sortBy: sortBy,
+      searchQuery: searchQuery,
+    );
   }
 }

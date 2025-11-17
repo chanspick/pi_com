@@ -1,9 +1,12 @@
 // lib/features/parts_price/presentation/screens/part_category_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/part_provider.dart';
 import '../widgets/base_part_card.dart';
 import '../../../../core/constants/routes.dart';
+import '../../../../core/utils/responsive_helper.dart';
+import '../../../web_public/presentation/widgets/web_navbar_v2.dart';
 
 class PartsCategoryScreen extends ConsumerStatefulWidget {
   const PartsCategoryScreen({super.key});
@@ -45,6 +48,43 @@ class _PartsCategoryScreenState extends ConsumerState<PartsCategoryScreen>
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) {
+      return Scaffold(
+        appBar: const WebNavBarV2(),
+        body: ResponsiveHelper.centeredMaxWidthContainer(
+          context: context,
+          child: Column(
+            children: [
+              // Tab bar for web
+              Container(
+                color: Colors.white,
+                child: TabBar(
+                  controller: _tabController,
+                  isScrollable: true,
+                  labelColor: Theme.of(context).primaryColor,
+                  unselectedLabelColor: Colors.grey,
+                  indicatorColor: Theme.of(context).primaryColor,
+                  tabs: _categories
+                      .map((c) => Tab(text: _categoryNames[c] ?? c.toUpperCase()))
+                      .toList(),
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: _categories.map((category) {
+                    return _buildPartGrid(category);
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Mobile layout
     return Scaffold(
       appBar: AppBar(
         title: const Text('부품 시세'),

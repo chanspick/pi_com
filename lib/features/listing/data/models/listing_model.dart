@@ -5,7 +5,7 @@ import '../../domain/entities/listing_entity.dart';
 
 class ListingModel {
   final String listingId;
-  final String partId;
+  final String basePartId;
   final String sellerId;
   final String brand;
   final String modelName;
@@ -20,7 +20,7 @@ class ListingModel {
 
   ListingModel({
     required this.listingId,
-    required this.partId,
+    required this.basePartId,
     required this.sellerId,
     required this.brand,
     required this.modelName,
@@ -35,9 +35,22 @@ class ListingModel {
   });
 
   factory ListingModel.fromFirestore(DocumentSnapshot doc) {
+    print('🔍 [ListingModel] Creating from Firestore doc ID: ${doc.id}');
     try {
-      final data = doc.data() as Map<String, dynamic>;
+      // 문서 데이터 확인
+      if (!doc.exists) {
+        throw Exception('Document does not exist: ${doc.id}');
+      }
 
+      final data = doc.data() as Map<String, dynamic>?;
+
+      // 데이터가 null인 경우 처리
+      if (data == null) {
+        throw Exception('Document data is null: ${doc.id}');
+      }
+
+      print('🔍 [ListingModel] Parsing document: ${doc.id}');
+      print('📋 [ListingModel] Data fields: ${data.keys.toList()}');
 
       // imageUrls 안전하게 파싱
       final imageUrlsRaw = data['imageUrls'];
@@ -46,15 +59,23 @@ class ListingModel {
         imageUrls = imageUrlsRaw.map((e) => e.toString()).toList();
       } else {
         imageUrls = [];
+        print('⚠️ [ListingModel] No imageUrls found, using empty list');
       }
 
-      return ListingModel(
-        listingId: data['listingId'] ?? doc.id,  // Firestore 필드 우선, 없으면 doc.id
-        partId: data['partId'] ?? '',
+      // 필수 필드 검증
+      if (!data.containsKey('listingId') && doc.id.isEmpty) {
+        throw Exception('Missing listingId field and doc.id is empty');
+      }
+
+      final model = ListingModel(
+        listingId: doc.id,  // ✅ 항상 doc.id 사용 (data['listingId']는 outdated될 수 있음)
+        basePartId: data['basePartId'] ?? data['partId'] ?? '',  // ✅ basePartId 우선, fallback으로 partId
         sellerId: data['sellerId'] ?? '',
         brand: data['brand'] ?? '',
         modelName: data['modelName'] ?? '',
-        price: (data['price'] ?? 0) as int,
+        price: (data['price'] ?? 0) is int
+            ? (data['price'] ?? 0) as int
+            : ((data['price'] ?? 0) as num).toInt(),
         conditionScore: ((data['conditionScore'] ?? 0) as num).toDouble(),
         imageUrls: imageUrls,
         status: data['status'] ?? 'pending',
@@ -63,8 +84,14 @@ class ListingModel {
         buyerId: data['buyerId'],  // 추가
         soldAt: data['soldAt'],  // 추가
       );
-    } catch (e, stackTrace) {
 
+      print('✅ [ListingModel] Successfully created model for: ${model.listingId}');
+      return model;
+
+    } catch (e, stackTrace) {
+      print('❌ [ListingModel] Failed to parse document: ${doc.id}');
+      print('Error: $e');
+      print('StackTrace: $stackTrace');
       rethrow;
     }
   }
@@ -76,7 +103,7 @@ class ListingModel {
 
       return ListingEntity(
         listingId: listingId,
-        partId: partId,
+        basePartId: basePartId,
         sellerId: sellerId,
         brand: brand,
         modelName: modelName,
@@ -112,7 +139,7 @@ class ListingModel {
   Map<String, dynamic> toFirestore() {
     return {
       'listingId': listingId,
-      'partId': partId,
+      'basePartId': basePartId,
       'sellerId': sellerId,
       'brand': brand,
       'modelName': modelName,

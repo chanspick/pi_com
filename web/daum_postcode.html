@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>다음 우편번호 검색</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        #layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+        }
+    </style>
+    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+</head>
+<body>
+    <div id="layer"></div>
+    <script>
+        function embedPostcode() {
+            new daum.Postcode({
+                oncomplete: function(data) {
+                    const addressData = {
+                        zonecode: data.zonecode,
+                        roadAddress: data.roadAddress,
+                        jibunAddress: data.jibunAddress,
+                        buildingName: data.buildingName || '',
+                        userSelectedType: data.userSelectedType
+                    };
+
+                    // 부모 창에 메시지 전달
+                    window.parent.postMessage({
+                        type: 'DAUM_POSTCODE_COMPLETE',
+                        data: addressData
+                    }, '*');
+                },
+                onclose: function(state) {
+                    if (state === 'FORCE_CLOSE') {
+                        window.parent.postMessage({
+                            type: 'DAUM_POSTCODE_CANCEL'
+                        }, '*');
+                    }
+                },
+                width: '100%',
+                height: '100%'
+            }).embed(document.getElementById('layer'));
+        }
+
+        window.onload = embedPostcode;
+    </script>
+</body>
+</html>

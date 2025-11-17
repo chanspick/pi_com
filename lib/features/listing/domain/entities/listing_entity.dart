@@ -3,12 +3,14 @@ enum ListingStatus {
   available,
   sold,
   pending,
-  cancelled;
+  cancelled,
+  reserved,
+  sold_external;
 }
 
 class ListingEntity {
   final String listingId;
-  final String partId;
+  final String basePartId;
   final String sellerId;
   final String brand;
   final String modelName;
@@ -21,7 +23,7 @@ class ListingEntity {
 
   ListingEntity({
     required this.listingId,
-    required this.partId,
+    required this.basePartId,
     required this.sellerId,
     required this.brand,
     required this.modelName,

@@ -117,7 +117,6 @@ class SubmitSellRequestController extends StateNotifier<SubmitState> {
       final updatedRequest = SellRequest(
         requestId: sellRequest.requestId,
         sellerId: sellRequest.sellerId,
-        partId: sellRequest.partId,
         basePartId: sellRequest.basePartId,
         brand: sellRequest.brand,
         category: sellRequest.category,
@@ -229,9 +228,8 @@ class SubmitMultipleSellRequestsController extends StateNotifier<SubmitState> {
         final sellRequest = SellRequest(
           requestId: const Uuid().v4(),
           sellerId: userId,
-          partId: basePart.basePartId, // TODO: Part ID가 있으면 사용
           basePartId: basePart.basePartId,
-          brand: '', // TODO: BasePart에 brand 필드 추가 필요
+          brand: basePart.brand,
           category: basePart.category,
           modelName: basePart.modelName,
           ageInfoType: ageInfoType,

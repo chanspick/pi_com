@@ -136,7 +136,6 @@ class _SellRequestScreenState extends ConsumerState<SellRequestScreen> {
       final sellRequest = SellRequest(
         requestId: const Uuid().v4(),
         sellerId: user.uid,
-        partId: _selectedPart!.basePartId,
         basePartId: _selectedPart!.basePartId,
         brand: _selectedPart!.brand,  // ✅ BasePart에서 가져오기
         category: _selectedPart!.category,
@@ -356,7 +355,9 @@ class _SellRequestScreenState extends ConsumerState<SellRequestScreen> {
       validator: (value) {
         if (value == null || value.isEmpty) return '가격을 입력하세요';
         if (int.tryParse(value) == null) return '올바른 숫자를 입력하세요';
-        if (int.parse(value) <= 0) return '가격은 0보다 커야 합니다';
+        final price = int.parse(value);
+        if (price <= 0) return '가격은 0보다 커야 합니다';
+        if (price > 5000000) return '가격은 500만원 이하로 입력해주세요\n(카드사 심사 정책)';
         return null;
       },
     );

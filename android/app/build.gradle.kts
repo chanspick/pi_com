@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     // START: FlutterFire Configuration
@@ -8,10 +11,16 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// 키스토어 설정 로드
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
 android {
     namespace = "app.picom.team.pi_com"
-    compileSdk = 36  // ⭐️ 최신 Android 14
-    ndkVersion = "27.0.12077973"
+    compileSdk = 36  // ⭐️ 최신 Android 15
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -29,21 +38,38 @@ android {
         minSdk = flutter.minSdkVersion  // Android 6.0
 
         // ⭐️ Google Play 요구사항
-        targetSdk = 34  // Android 14
+        targetSdk = 36  // Android 15
 
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 7
+        versionName = "1.0.6"
 
         // ⭐️ MultiDex 지원
         multiDexEnabled = true
+
+        // ⭐️ NDK 설정 (debug symbol strip 오류 해결)
+        ndk {
+            debugSymbolLevel = "SYMBOL_TABLE"
+        }
+    }
+
+    // 릴리즈 서명 설정
+    signingConfigs {
+        create("release") {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+                storeFile = rootProject.file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+            }
+        }
     }
 
     buildTypes {
         release {
-            // TODO: 나중에 릴리즈용 signing config 추가
-            signingConfig = signingConfigs.getByName("debug")
+            // ✅ 릴리즈 서명 설정 적용
+            signingConfig = signingConfigs.getByName("release")
 
-            // ⭐️ Kotlin DSL 문법: isMinifyEnabled
+            // ⭐️ ProGuard 난독화 및 코드 최적화 활성화
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(

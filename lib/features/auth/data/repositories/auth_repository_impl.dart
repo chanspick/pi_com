@@ -1,24 +1,25 @@
 // lib/features/auth/data/repositories/auth_repository_impl.dart
 
-import 'package:flutter/foundation.dart'; // 🆕 추가
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao;
 import '../../../../core/models/user_model.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../datasources/google_auth_datasource.dart';
+import '../datasources/kakao_auth_datasource.dart';
 import '../datasources/firestore_user_datasource.dart';
 
-/// 인증 Repository 구현체
+/// 인증 Repository 구현체 (카카오 로그인 전용)
 class AuthRepositoryImpl implements AuthRepository {
   final FirebaseAuth _auth;
-  final GoogleAuthDataSource _googleAuth;
+  final KakaoAuthDataSource _kakaoAuth;
   final FirestoreUserDataSource _firestoreUser;
 
   AuthRepositoryImpl({
     required FirebaseAuth auth,
-    required GoogleAuthDataSource googleAuth,
+    required KakaoAuthDataSource kakaoAuth,
     required FirestoreUserDataSource firestoreUser,
   })  : _auth = auth,
-        _googleAuth = googleAuth,
+        _kakaoAuth = kakaoAuth,
         _firestoreUser = firestoreUser;
 
   @override
@@ -28,54 +29,49 @@ class AuthRepositoryImpl implements AuthRepository {
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
   @override
-  Future<UserModel> signInAnonymously() async {
+  Future<UserModel> signInWithKakao() async {
     try {
-      final userCredential = await _auth.signInAnonymously();
-      final user = userCredential.user!;
-
-      final userModel = UserModel.fromFirebaseUser(
-        user,
-        provider: 'anonymous',
-      );
-
-      await _firestoreUser.createOrUpdateUser(userModel);
-      return userModel;
-    } catch (e) {
-      throw Exception('Failed to sign in anonymously: $e');
-    }
-  }
-
-  @override
-  Future<UserModel> signInWithGoogle() async {
-    try {
-      // ✅ 웹에서는 이 메서드를 호출하면 안 됨!
-      if (kIsWeb) {
-        throw Exception('signInWithGoogle() is not supported on web. Use renderButton instead.');
-      }
-
-      // 모바일: 정상 호출
-      final user = await _googleAuth.signIn();
+      // 카카오 로그인 수행
+      final user = await _kakaoAuth.signIn();
 
       if (user == null) {
-        throw Exception('Google Sign-In returned null user');
+        throw Exception('Kakao Sign-In returned null user');
       }
 
-      final userModel = UserModel.fromFirebaseUser(
-        user,
-        provider: 'google',
-      );
+      // ✅ Cloud Functions에서 이미 사용자를 생성/업데이트했으므로
+      // Firestore에서 사용자 정보를 읽기만 함
+      debugPrint('🔍 [AuthRepository] Getting user from Firestore: ${user.uid}');
 
-      await _firestoreUser.createOrUpdateUser(userModel);
+      // 약간의 지연을 주어 Cloud Functions가 완료될 시간을 확보
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      final userModel = await _firestoreUser.getUser(user.uid);
+
+      if (userModel == null) {
+        // Cloud Functions가 아직 처리 중일 수 있으므로 재시도
+        debugPrint('⚠️ [AuthRepository] User not found, retrying...');
+        await Future.delayed(const Duration(seconds: 1));
+
+        final retryUserModel = await _firestoreUser.getUser(user.uid);
+        if (retryUserModel == null) {
+          throw Exception('User not found in Firestore after sign-in');
+        }
+        return retryUserModel;
+      }
+
+      debugPrint('✅ [AuthRepository] User loaded from Firestore: ${userModel.toString()}');
       return userModel;
+
     } catch (e) {
-      throw Exception('Failed to sign in with Google: $e');
+      debugPrint('❌ [AuthRepository] Failed to sign in with Kakao: $e');
+      throw Exception('Failed to sign in with Kakao: $e');
     }
   }
 
   @override
   Future<void> signOut() async {
     try {
-      await _googleAuth.signOut();
+      await _kakaoAuth.signOut();
       await _auth.signOut();
     } catch (e) {
       throw Exception('Failed to sign out: $e');
@@ -95,29 +91,47 @@ class AuthRepositoryImpl implements AuthRepository {
     }
   }
 
-  @override
-  Future<void> reauthenticateWithGoogle() async {
+  /// 웹에서 인가 코드로 카카오 로그인 (리다이렉트 폴백용)
+  Future<UserModel> signInWithKakaoCode(String code) async {
+    if (!kIsWeb) {
+      throw Exception('signInWithKakaoCode is only available on web');
+    }
+
     try {
-      final user = _auth.currentUser;
-      if (user == null) throw Exception('No user signed in');
+      // 코드로 로그인
+      final user = await _kakaoAuth.signInWithCode(code);
 
-      // ✅ 웹에서는 이 메서드를 호출하면 안 됨!
-      if (kIsWeb) {
-        throw Exception('reauthenticateWithGoogle() is not supported on web.');
+      if (user == null) {
+        throw Exception('Kakao Sign-In with code returned null user');
       }
 
-      // 모바일: Google 재인증
-      final freshUser = await _googleAuth.signIn();
+      // ✅ Cloud Functions에서 이미 사용자를 생성/업데이트했으므로
+      // Firestore에서 사용자 정보를 읽기만 함
+      debugPrint('🔍 [AuthRepository] Getting user from Firestore: ${user.uid}');
 
-      if (freshUser == null) {
-        throw Exception('Reauthentication failed: User is null');
+      // 약간의 지연을 주어 Cloud Functions가 완료될 시간을 확보
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      final userModel = await _firestoreUser.getUser(user.uid);
+
+      if (userModel == null) {
+        // Cloud Functions가 아직 처리 중일 수 있으므로 재시도
+        debugPrint('⚠️ [AuthRepository] User not found, retrying...');
+        await Future.delayed(const Duration(seconds: 1));
+
+        final retryUserModel = await _firestoreUser.getUser(user.uid);
+        if (retryUserModel == null) {
+          throw Exception('User not found in Firestore after sign-in');
+        }
+        return retryUserModel;
       }
 
-      if (freshUser.uid != user.uid) {
-        throw Exception('Reauthentication failed: User mismatch');
-      }
+      debugPrint('✅ [AuthRepository] User loaded from Firestore: ${userModel.toString()}');
+      return userModel;
+
     } catch (e) {
-      throw Exception('Failed to reauthenticate: $e');
+      debugPrint('❌ [AuthRepository] Failed to sign in with Kakao code: $e');
+      throw Exception('Failed to sign in with Kakao code: $e');
     }
   }
 
@@ -128,6 +142,81 @@ class AuthRepositoryImpl implements AuthRepository {
       return userModel?.isAdmin ?? false;
     } catch (e) {
       return false;
+    }
+  }
+
+  @override
+  Future<UserModel> signInWithEmail(String email, String password) async {
+    try {
+      // Firebase Auth 이메일 로그인
+      final credential = await _auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = credential.user;
+      if (user == null) {
+        throw Exception('Email Sign-In returned null user');
+      }
+
+      // Firestore에서 기존 사용자 정보 가져오기
+      final existingUser = await _firestoreUser.getUser(user.uid);
+
+      if (existingUser != null) {
+        // ✅ 기존 사용자는 그대로 반환 (isAdmin 보존)
+        return existingUser;
+      }
+
+      // 신규 사용자 (Firestore에 없는 경우)
+      final userModel = UserModel(
+        uid: user.uid,
+        email: user.email ?? email,
+        displayName: user.displayName ?? email.split('@')[0],
+        photoURL: user.photoURL,
+        provider: 'email',
+        createdAt: DateTime.now(),
+        isAdmin: false,  // 신규 사용자는 false
+      );
+
+      await _firestoreUser.createOrUpdateUserWithAdminPreserve(userModel);
+      return userModel;
+    } catch (e) {
+      throw Exception('Failed to sign in with email: $e');
+    }
+  }
+
+  @override
+  Future<UserModel> signUpWithEmail(String email, String password, String displayName) async {
+    try {
+      // Firebase Auth 이메일 회원가입
+      final credential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      final user = credential.user;
+      if (user == null) {
+        throw Exception('Email Sign-Up returned null user');
+      }
+
+      // displayName 설정
+      await user.updateDisplayName(displayName);
+
+      // UserModel 생성
+      final userModel = UserModel(
+        uid: user.uid,
+        email: email,
+        displayName: displayName,
+        photoURL: user.photoURL,
+        provider: 'email',
+        createdAt: DateTime.now(),
+        isAdmin: false,  // 신규 사용자는 항상 false
+      );
+
+      await _firestoreUser.createOrUpdateUser(userModel);  // 신규 사용자는 그대로 생성
+      return userModel;
+    } catch (e) {
+      throw Exception('Failed to sign up with email: $e');
     }
   }
 }
