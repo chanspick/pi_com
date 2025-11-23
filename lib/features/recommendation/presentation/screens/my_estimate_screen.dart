@@ -3,7 +3,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:pi_com/features/recommendation/data/models/estimate_sample_model.dart';
 import 'package:pi_com/features/recommendation/data/models/spec_profile_model.dart';
 import 'package:pi_com/features/recommendation/domain/entities/recommendation_entity.dart';
 import 'package:pi_com/features/recommendation/presentation/providers/recommendation_provider.dart';

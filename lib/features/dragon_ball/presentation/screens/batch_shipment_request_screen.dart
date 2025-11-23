@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:pi_com/features/dragon_ball/presentation/providers/dragon_ball_provider.dart';
 import 'package:pi_com/features/dragon_ball/domain/entities/dragon_ball_entity.dart';
-import 'package:pi_com/core/models/batch_shipment_model.dart';
 import 'package:pi_com/core/constants/storage_policy.dart';
 import 'package:pi_com/shared/utils/snackbar_helper.dart';
 

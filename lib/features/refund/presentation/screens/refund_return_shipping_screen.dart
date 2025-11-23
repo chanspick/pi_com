@@ -171,7 +171,7 @@ class _RefundReturnShippingScreenState
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<CourierCompany>(
-              value: _selectedCourier,
+              initialValue: _selectedCourier,
               decoration: InputDecoration(
                 hintText: '택배사를 선택하세요',
                 border: OutlineInputBorder(

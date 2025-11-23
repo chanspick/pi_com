@@ -14,6 +14,7 @@ class PurchaseUseCase {
   final OrderRepository _orderRepository;
   final ListingRepository _listingRepository;
   final CartRepository _cartRepository;
+  // ignore: unused_field
   final PriceHistoryRepository _priceHistoryRepository;
   final NotificationHelper _notificationHelper;
 
@@ -79,7 +80,6 @@ class PurchaseUseCase {
       );
 
       // 2. 해당 판매자의 listing 상태 업데이트 + 가격 스냅샷 생성
-      final basePartIds = <String>{};
       for (final item in sellerItems) {
         await _listingRepository.updateListingStatus(item.listingId, ListingStatus.sold);
 

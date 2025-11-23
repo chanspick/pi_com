@@ -69,12 +69,12 @@ class RefundCalculator {
     String message;
     if (canRefund) {
       if (reason.isBuyerFault) {
-        message = '단순 변심 환불 가능 기간: ${daysRemaining}일 남음 (7일 이내)';
+        message = '단순 변심 환불 가능 기간: $daysRemaining일 남음 (7일 이내)';
       } else {
-        message = '제품 불량/오배송 환불 가능 기간: ${daysRemaining}일 남음 (30일 이내)';
+        message = '제품 불량/오배송 환불 가능 기간: $daysRemaining일 남음 (30일 이내)';
       }
     } else {
-      message = '환불 가능 기간이 지났습니다. (배송 완료 후 ${returnPeriodDays}일 이내)';
+      message = '환불 가능 기간이 지났습니다. (배송 완료 후 $returnPeriodDays일 이내)';
     }
 
     return {
@@ -130,7 +130,7 @@ class RefundCalculator {
     if (isOverdue) {
       message = '검수 기한이 ${-daysRemaining}일 초과되었습니다. (3영업일 이내 완료 필요)';
     } else {
-      message = '검수 완료 기한: ${daysRemaining}일 남음 (3영업일 이내)';
+      message = '검수 완료 기한: $daysRemaining일 남음 (3영업일 이내)';
     }
 
     return {

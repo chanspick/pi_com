@@ -3,11 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pi_com/features/dragon_ball/presentation/providers/dragon_ball_provider.dart';
-import 'package:pi_com/features/dragon_ball/presentation/widgets/dragon_ball_card.dart';
 import 'package:pi_com/features/dragon_ball/presentation/widgets/dragon_ball_storage_summary.dart';
 import 'package:pi_com/features/dragon_ball/presentation/screens/batch_shipment_request_screen.dart';
 import 'package:pi_com/core/constants/routes.dart';
-import 'package:pi_com/features/listing/presentation/providers/listing_provider.dart';
 import 'package:pi_com/features/dragon_ball/domain/entities/dragon_ball_entity.dart';
 
 /// 드래곤볼 보관함 화면
@@ -268,7 +266,7 @@ Widget _buildPartSlotsTable(BuildContext context, WidgetRef ref, List<DragonBall
               dragonBall: dragonBall,
             ),
           );
-        }).toList(),
+        }),
       ],
     ),
   );

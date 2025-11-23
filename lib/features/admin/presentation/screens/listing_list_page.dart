@@ -1,7 +1,6 @@
 // lib/features/admin/presentation/screens/listing_list_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pi_com/features/listing/domain/entities/listing_entity.dart';
 import 'package:pi_com/features/listing/presentation/providers/listing_provider.dart';
 
 class ListingListPage extends ConsumerWidget {

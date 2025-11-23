@@ -6,7 +6,6 @@ import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../../core/models/notification_model.dart';
 import '../../../../core/utils/notification_handler.dart'; // ✅ 추가
-import '../providers/notification_provider.dart';
 
 /// 알림 항목 위젯
 class NotificationItem extends ConsumerWidget {

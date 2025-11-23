@@ -38,7 +38,7 @@ class _RefundRequestScreenState extends ConsumerState<RefundRequestScreen> {
   OrderEntity? _order;
   RefundReason _selectedReason = RefundReason.simpleChange;
   bool _sealIntact = true;
-  List<File> _selectedImages = [];
+  final List<File> _selectedImages = [];
   List<String> _uploadedImageUrls = [];
   bool _isLoading = true;
   bool _isSubmitting = false;

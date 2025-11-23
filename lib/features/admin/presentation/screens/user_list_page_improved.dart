@@ -82,7 +82,7 @@ class _UserListPageImprovedState extends ConsumerState<UserListPageImproved> {
                 var filteredUsers = users.where((user) {
                   // 검색 필터
                   if (_searchQuery.isNotEmpty) {
-                    final name = user.displayName?.toLowerCase() ?? '';
+                    final name = user.displayName.toLowerCase();
                     final email = user.email.toLowerCase();
                     if (!name.contains(_searchQuery) && !email.contains(_searchQuery)) {
                       return false;
@@ -109,14 +109,14 @@ class _UserListPageImprovedState extends ConsumerState<UserListPageImproved> {
                         leading: CircleAvatar(
                           backgroundColor: user.isAdmin ? Colors.red : Colors.blue,
                           child: Text(
-                            (user.displayName?.isNotEmpty ?? false)
-                                ? user.displayName![0].toUpperCase()
+                            user.displayName.isNotEmpty
+                                ? user.displayName[0].toUpperCase()
                                 : user.email[0].toUpperCase(),
                             style: const TextStyle(color: Colors.white),
                           ),
                         ),
                         title: Text(
-                          user.displayName ?? '이름 없음',
+                          user.displayName,
                           style: const TextStyle(fontWeight: FontWeight.w600),
                         ),
                         subtitle: Column(

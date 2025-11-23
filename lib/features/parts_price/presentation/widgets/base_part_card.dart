@@ -1,6 +1,5 @@
 // lib/features/parts_price/presentation/widgets/base_part_card.dart
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../domain/entities/base_part_entity.dart';
 import '../screens/price_history_screen.dart';
 
@@ -11,8 +10,6 @@ class BasePartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formatter = NumberFormat('#,###');
-
     return GestureDetector(
       onTap: () {
         Navigator.of(context).push(MaterialPageRoute(

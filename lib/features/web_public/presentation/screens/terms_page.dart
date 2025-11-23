@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../../../core/utils/responsive_helper.dart';
 import '../widgets/web_navbar_v2.dart';
 
 class TermsPage extends StatefulWidget {

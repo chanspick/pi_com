@@ -3,8 +3,6 @@
 // 실행 방법: dart run scripts/add_ram_ssd_data.dart
 
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 void main() async {
   print('🚀 Firebase RAM/SSD 데이터 추가 스크립트 시작...\n');

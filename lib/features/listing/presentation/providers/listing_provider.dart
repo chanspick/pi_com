@@ -234,7 +234,7 @@ final listingsByMultipleBasePartIdsProvider = FutureProvider.autoDispose.family<
   }
 
   // 최신순으로 정렬
-  allListings.sort((a, b) => (b.createdAt ?? DateTime(2000)).compareTo(a.createdAt ?? DateTime(2000)));
+  allListings.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
   return allListings;
 });

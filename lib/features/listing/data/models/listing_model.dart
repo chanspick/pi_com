@@ -121,7 +121,7 @@ class ListingModel {
         category: category,
         markedForSold: markedForSold,
       );
-    } catch (e, stackTrace) {
+    } catch (e) {
 
       rethrow;
     }

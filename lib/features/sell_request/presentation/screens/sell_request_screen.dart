@@ -28,7 +28,7 @@ class _SellRequestScreenState extends ConsumerState<SellRequestScreen> {
   BasePart? _selectedPart;
 
   // 이미지
-  List<XFile> _images = [];
+  final List<XFile> _images = [];
   final ImagePicker _picker = ImagePicker();
 
   // 폼 필드
@@ -373,7 +373,7 @@ class _SellRequestScreenState extends ConsumerState<SellRequestScreen> {
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<AgeInfoType>(
-          value: _ageInfoType,
+          initialValue: _ageInfoType,
           decoration: const InputDecoration(
             labelText: '연식 정보 유형',
             border: OutlineInputBorder(),
@@ -525,7 +525,7 @@ class _SellRequestScreenState extends ConsumerState<SellRequestScreen> {
 
   Widget _buildPurposeInput() {
     return DropdownButtonFormField<String>(
-      value: _selectedPurpose,
+      initialValue: _selectedPurpose,
       decoration: const InputDecoration(
         labelText: '사용 용도',
         border: OutlineInputBorder(),

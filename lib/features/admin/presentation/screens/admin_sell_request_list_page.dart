@@ -7,7 +7,7 @@ import '../providers/admin_sell_request_provider.dart';
 import '../widgets/admin_review_dialog.dart';
 
 class AdminSellRequestListPage extends ConsumerStatefulWidget {
-  const AdminSellRequestListPage({Key? key}) : super(key: key);
+  const AdminSellRequestListPage({super.key});
 
   @override
   ConsumerState<AdminSellRequestListPage> createState() =>

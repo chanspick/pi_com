@@ -558,7 +558,7 @@ class _SellRequestDetailsScreenState
                     border: OutlineInputBorder(),
                     suffixText: '일',
                   ),
-                  value: _usageDaysPerWeek,
+                  initialValue: _usageDaysPerWeek,
                   items: List.generate(
                     8,
                         (index) => DropdownMenuItem(
@@ -584,7 +584,7 @@ class _SellRequestDetailsScreenState
                     border: OutlineInputBorder(),
                     suffixText: '시간',
                   ),
-                  value: _usageHoursPerDay,
+                  initialValue: _usageHoursPerDay,
                   items: List.generate(
                     25,
                         (index) => DropdownMenuItem(

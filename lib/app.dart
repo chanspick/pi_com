@@ -28,8 +28,6 @@ import 'features/parts_price/presentation/screens/part_category_screen.dart'; //
 import 'features/parts_price/presentation/screens/price_history_screen.dart';
 import 'features/parts_price/domain/entities/base_part_entity.dart';
 import 'features/recommendation/presentation/screens/my_estimate_screen.dart';
-import 'features/recommendation/presentation/screens/pc_assembly_screen.dart';
-import 'features/recommendation/domain/entities/spec_profile_entity.dart';
 import 'features/my_page/presentation/screens/my_page_screen.dart';
 import 'features/my_page/presentation/screens/favorites_screen.dart';
 import 'features/my_page/presentation/screens/purchase_history_screen.dart';
@@ -154,7 +152,6 @@ class MyApp extends ConsumerWidget {
       GoRoute(
         path: '/price-history/:basePartId',
         builder: (context, state) {
-          final basePartId = state.pathParameters['basePartId']!;
           final basePart = state.extra as BasePartEntity?;
           if (basePart == null) {
             return const Scaffold(

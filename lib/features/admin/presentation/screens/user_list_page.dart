@@ -1,7 +1,6 @@
 // lib/features/admin/presentation/screens/user_list_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:pi_com/core/models/user_model.dart';
 import 'package:pi_com/features/auth/presentation/providers/auth_provider.dart';
 
 class UserListPage extends ConsumerWidget {

@@ -11,7 +11,9 @@ import 'package:pi_com/features/recommendation/domain/services/recommendation_en
 
 /// 추천 Repository 구현체
 class RecommendationRepositoryImpl implements RecommendationRepository {
+  // ignore: unused_field
   final RecommendationLocalDataSource _localDataSource;
+  // ignore: unused_field
   final FirebaseFirestore _firestore;
   final BasePartRepository _basePartRepository;
   final RecommendationEngineService _recommendationEngine;
@@ -229,6 +231,7 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
   }
 
   /// 최적 매칭 찾기
+  // ignore: unused_element
   Sample? _findBestMatch(EstimateSamples samples, Map<String, dynamic> userAnswers) {
     int bestScore = -1;
     Sample? bestMatch;

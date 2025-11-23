@@ -1,7 +1,7 @@
 // lib/features/auth/data/datasources/web_kakao_auth.dart
 
 @JS()
-library kakao_auth;
+library;
 
 import 'dart:async';
 import 'package:js/js.dart';

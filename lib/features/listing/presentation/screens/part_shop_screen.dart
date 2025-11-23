@@ -415,6 +415,7 @@ class _PartShopScreenState
   }
 
   /// 결과 헤더 (카운트 + 검색 초기화 버튼)
+  // ignore: unused_element
   Widget _buildResultHeader(
     int count,
     String? searchQuery,

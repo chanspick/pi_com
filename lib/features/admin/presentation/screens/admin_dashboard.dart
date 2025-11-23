@@ -6,7 +6,6 @@ import 'package:go_router/go_router.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/repositories/admin_auth_repository.dart';
-import '../../../price_history/data/repositories/price_history_repository.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -17,7 +16,6 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   final _authRepo = AdminAuthRepository();
-  final _priceHistoryRepo = PriceHistoryRepository();
   bool _isChecking = true;
 
   @override

@@ -384,6 +384,7 @@ class LandingPageV2 extends ConsumerWidget {
     );
   }
 
+  // ignore: unused_element
   Widget _buildSpecialOffers(BuildContext context) {
     final isMobile = ResponsiveHelper.isMobile(context);
     final isTablet = ResponsiveHelper.isTablet(context);
@@ -734,7 +735,7 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
             ? 450.0
             : (screenHeight * 0.7).clamp(500.0, 600.0);
 
-    return Container(
+    return SizedBox(
       height: bannerHeight,
       width: double.infinity,
       child: Stack(

@@ -120,7 +120,7 @@ class _PartSearchScreenState extends State<PartSearchScreen> {
           children: [
             // 카테고리 선택
             DropdownButtonFormField<String>(
-              value: _selectedCategory,
+              initialValue: _selectedCategory,
               decoration: const InputDecoration(
                 labelText: '카테고리',
                 border: OutlineInputBorder(),

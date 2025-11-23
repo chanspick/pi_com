@@ -2,7 +2,6 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao;
 import '../../../../core/models/user_model.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/kakao_auth_datasource.dart';

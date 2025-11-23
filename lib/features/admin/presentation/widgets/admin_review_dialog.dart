@@ -11,9 +11,9 @@ class AdminReviewDialog extends ConsumerStatefulWidget {
   final SellRequest request;
 
   const AdminReviewDialog({
-    Key? key,
+    super.key,
     required this.request,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<AdminReviewDialog> createState() => _AdminReviewDialogState();

@@ -142,8 +142,9 @@ class _RefundDetailScreenState extends State<RefundDetailScreen> {
     ];
 
     int currentStep = 0;
-    if (status == RefundStatus.pending) currentStep = 0;
-    else if (status == RefundStatus.approved || status == RefundStatus.itemShipped) currentStep = 1;
+    if (status == RefundStatus.pending) {
+      currentStep = 0;
+    } else if (status == RefundStatus.approved || status == RefundStatus.itemShipped) currentStep = 1;
     else if (status == RefundStatus.itemReceived || status == RefundStatus.inspectionInProgress || status == RefundStatus.inspectionPass) currentStep = 2;
     else if (status == RefundStatus.refundProcessing || status == RefundStatus.refundCompleted) currentStep = 3;
 

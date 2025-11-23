@@ -117,8 +117,11 @@ service cloud.firestore {
     // ============================================
     match /orders/{orderId} {
       allow read: if isAuthenticated() &&
-                     (resource.data.buyerId == request.auth.uid || isAdmin());
-      allow create: if isAuthenticated();
+                     (resource.data.userId == request.auth.uid ||
+                      resource.data.sellerId == request.auth.uid ||
+                      isAdmin());
+      allow create: if isAuthenticated() &&
+                       request.resource.data.userId == request.auth.uid;
       allow update: if isAdmin(); // 주문 수정은 관리자만 가능
       allow delete: if isAdmin(); // 주문 삭제는 관리자만 가능
     }

@@ -309,8 +309,8 @@ class NotificationHelper {
     await sendNotification(
       userId: sellerId,
       type: NotificationType.returnAddressExpiring,
-      title: '⚠️ 반송 주소 등록 마감 임박 (${daysRemaining}일 남음)',
-      message: '$partName 부품의 반송 주소 등록 기한이 ${daysRemaining}일 남았습니다.\n\n'
+      title: '⚠️ 반송 주소 등록 마감 임박 ($daysRemaining일 남음)',
+      message: '$partName 부품의 반송 주소 등록 기한이 $daysRemaining일 남았습니다.\n\n'
           '기한 내 반송 주소를 등록하지 않으면 보관 서비스로 자동 전환되며,\n'
           '일일 0.5% 보관료가 부과됩니다.\n\n'
           '지금 바로 반송 주소를 등록해주세요!',
@@ -397,8 +397,8 @@ class NotificationHelper {
     await sendNotification(
       userId: userId,
       type: NotificationType.storageExpiring,
-      title: '⚠️ 보관 기간 만료 임박 (${daysRemaining}일 남음)',
-      message: '$partName 부품의 최대 보관 기간(59일)이 ${daysRemaining}일 남았습니다.\n\n'
+      title: '⚠️ 보관 기간 만료 임박 ($daysRemaining일 남음)',
+      message: '$partName 부품의 최대 보관 기간(59일)이 $daysRemaining일 남았습니다.\n\n'
           '60일 경과 시 위탁판매로 자동 전환됩니다.\n'
           '출고를 원하시면 지금 배송 신청을 해주세요!',
       relatedDragonBallId: dragonBallId,
@@ -415,8 +415,8 @@ class NotificationHelper {
     await sendNotification(
       userId: userId,
       type: NotificationType.consignmentWarning,
-      title: '⚠️ 위탁판매 전환 예정 (${daysUntilConsignment}일 후)',
-      message: '$partName 부품이 ${daysUntilConsignment}일 후 위탁판매로 전환됩니다.\n\n'
+      title: '⚠️ 위탁판매 전환 예정 ($daysUntilConsignment일 후)',
+      message: '$partName 부품이 $daysUntilConsignment일 후 위탁판매로 전환됩니다.\n\n'
           '위탁판매 전환 시:\n'
           '• 회사가 임의로 판매 가격을 결정합니다\n'
           '• 판매 대금에서 보관료(최대 30%)와 판매 수수료(10%)가 차감됩니다\n\n'

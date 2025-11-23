@@ -3,145 +3,525 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>이용약관 - PiCom</title>
+    <title>(주)파이컴퓨터 서비스 이용약관</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+            line-height: 1.8;
             color: #333;
-            max-width: 800px;
-            margin: 0 auto;
+            background-color: #f5f5f5;
             padding: 20px;
         }
-        h1 {
-            color: #2196F3;
-            border-bottom: 2px solid #2196F3;
-            padding-bottom: 10px;
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
-        h2 {
-            color: #1976D2;
-            margin-top: 30px;
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #2563eb;
         }
-        .info {
-            background: #f5f5f5;
+
+        .header h1 {
+            font-size: 28px;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .toc {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 40px;
+        }
+
+        .toc h2 {
+            font-size: 18px;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+
+        .toc ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 8px;
+        }
+
+        .toc li {
+            padding: 5px 0;
+        }
+
+        .toc a {
+            color: #2563eb;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .toc a:hover {
+            color: #1d4ed8;
+            text-decoration: underline;
+        }
+
+        .article {
+            margin-bottom: 40px;
+            scroll-margin-top: 20px;
+        }
+
+        .article h2 {
+            font-size: 20px;
+            color: #1e40af;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .article h3 {
+            font-size: 16px;
+            color: #374151;
+            margin: 20px 0 10px 0;
+            font-weight: 600;
+        }
+
+        .article p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+
+        .article ol, .article ul {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        .article li {
+            margin-bottom: 8px;
+        }
+
+        .article ul li::marker {
+            color: #2563eb;
+        }
+
+        .highlight {
+            background-color: #fef3c7;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .important {
+            background-color: #fee2e2;
+            border-left: 4px solid #dc2626;
             padding: 15px;
-            border-left: 4px solid #2196F3;
-            margin: 20px 0;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .important strong {
+            color: #dc2626;
+        }
+
+        .info-box {
+            background-color: #dbeafe;
+            border-left: 4px solid #2563eb;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e5e7eb;
+            text-align: center;
+        }
+
+        .company-info {
+            background-color: #f9fafb;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .company-info h3 {
+            font-size: 16px;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+
+        .company-info p {
+            font-size: 14px;
+            color: #4b5563;
+            margin-bottom: 5px;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: #2563eb;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s;
+            text-decoration: none;
+            font-size: 24px;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+        }
+
+        .back-to-top:hover {
+            background-color: #1d4ed8;
+        }
+
+        .note-box {
+            background-color: #f0fdf4;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                padding: 20px;
+            }
+
+            .back-to-top {
+                display: none;
+            }
+
+            .toc {
+                page-break-after: always;
+            }
+
+            .article {
+                page-break-inside: avoid;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .toc ul {
+                grid-template-columns: 1fr;
+            }
+
+            .back-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>PiCom 이용약관</h1>
+    <div class="container">
+        <div class="header">
+            <h1>(주)파이컴퓨터 서비스 이용약관</h1>
+            <p class="subtitle">시행일: 2025년 12월 1일</p>
+        </div>
 
-    <div class="info">
-        <strong>시행일자:</strong> 2025년 11월 8일<br>
-        <strong>사업자:</strong> (주) 파이컴퓨터<br>
-        <strong>대표자:</strong> 최진규
+        <!-- 목차 -->
+        <div class="toc">
+            <h2>📑 목차</h2>
+            <ul>
+                <li><a href="#article1">제1조 목적</a></li>
+                <li><a href="#article2">제2조 용어의 정의</a></li>
+                <li><a href="#article3">제3조 서비스의 성격 및 회사의 책임</a></li>
+                <li><a href="#article4">제4조 물품의 발송 및 위험 부담</a></li>
+                <li><a href="#article5">제5조 검수 절차 및 데이터 삭제</a></li>
+                <li><a href="#article6">제6조 검수 중 손상에 대한 책임</a></li>
+                <li><a href="#article7">제7조 검수 불합격 및 위약금</a></li>
+                <li><a href="#article8">제8조 정산 및 대금 지급</a></li>
+                <li><a href="#article9">제9조 수수료</a></li>
+                <li><a href="#article10">제10조 거래 제한 및 금지 물품</a></li>
+                <li><a href="#article11">제11조 분쟁 해결</a></li>
+                <li><a href="#article12">제12조 개인정보보호</a></li>
+                <li><a href="#article13">제13조 면책 조항</a></li>
+                <li><a href="#article14">제14조 약관의 변경</a></li>
+                <li><a href="#article15">제15조 준거법</a></li>
+            </ul>
+        </div>
+
+        <!-- 본문 -->
+        <div id="article1" class="article">
+            <h2>제1조 (목적)</h2>
+            <p>본 약관은 (주)파이컴퓨터(이하 "회사")가 운영하는 중고 컴퓨터 부품 중개 플랫폼 서비스 "PiCom"(이하 "서비스")을 이용함에 있어 회사와 판매자, 구매자 간의 권리·의무, 책임사항 및 서비스 이용 절차를 규정함을 목적으로 합니다.</p>
+        </div>
+
+        <div id="article2" class="article">
+            <h2>제2조 (용어의 정의)</h2>
+            <ol>
+                <li><strong>"판매자"</strong>란 물품을 판매하기 위해 회사에 위탁하고 검수를 요청하는 회원을 말합니다.</li>
+                <li><strong>"구매자"</strong>란 회사의 플랫폼을 통해 검수가 완료된 물품을 구매하는 회원을 말합니다.</li>
+                <li><strong>"물품"</strong>이란 거래의 대상이 되는 중고 컴퓨터 부품(CPU, GPU, RAM, 메인보드, 저장장치 등)을 말합니다.</li>
+                <li><strong>"검수"</strong>란 회사가 물품의 외관 상태, 기능 작동 여부, 스펙 일치 여부 등을 확인하여 판매 적합성을 판정하는 절차를 말합니다.</li>
+                <li><strong>"위약금"</strong>이란 검수 불합격 또는 판매자의 귀책사유로 거래가 취소될 경우 판매자가 회사에 지불해야 하는 비용을 말합니다.</li>
+            </ol>
+        </div>
+
+        <div id="article3" class="article">
+            <h2>제3조 (서비스의 성격 및 회사의 책임)</h2>
+            <ol>
+                <li>회사는 중고 물품 거래를 위한 시스템을 제공하고 검수, 보관, 배송을 대행하는 중개자입니다.</li>
+                <li>회사는 판매자가 등록한 상품 정보의 부정확성이나 구매자의 단순 변심 등 회사의 고의·과실이 없는 사유로 인한 손해에 대해서는 책임을 지지 않습니다.</li>
+                <li>단, 회사가 직접 수행한 <span class="highlight">검수 결과의 명백한 오류</span>, <span class="highlight">배송 중 파손(회사가 지정한 택배사 이용 시)</span>에 대해서는 회사가 책임을 부담합니다.</li>
+            </ol>
+        </div>
+
+        <div id="article4" class="article">
+            <h2>제4조 (물품의 발송 및 위험 부담)</h2>
+            <ol>
+                <li><strong>발송 의무:</strong> 판매자는 거래 체결 통지를 받은 후 회사가 정한 기한 내에 물품을 발송해야 합니다.</li>
+                <li><strong>위험 부담:</strong> 물품이 회사의 검수 센터에 도달하기 전까지 발생한 파손, 분실 등의 위험은 판매자가 부담합니다. 회사는 물품 수령 시 박스 개봉 영상을 촬영하여 이를 입증 자료로 활용합니다.</li>
+                <li><strong>배송비:</strong> 검수 입고를 위한 배송비는 판매자 부담을 원칙으로 합니다. 착불 발송 시 <span class="highlight">판매자의 사전 동의를 받아</span> 정산금에서 차감됩니다.</li>
+            </ol>
+        </div>
+
+        <div id="article5" class="article">
+            <h2>제5조 (검수 절차 및 데이터 삭제)</h2>
+            <ol>
+                <li><strong>검수 기준:</strong> 회사는 사전에 공지된 'PiCom 검수 가이드라인'에 따라 합격/불합격을 판정합니다.</li>
+                <li><strong>데이터 삭제 및 면책:</strong>
+                    <div class="important">
+                        <strong>⚠️ 중요:</strong> 저장장치(HDD, SSD 등)의 경우, 회사는 개인정보 보호를 위해 입고 즉시 <strong>로우 레벨 포맷(Low Level Format) 등 복구 불가능한 방법으로 데이터를 영구 삭제</strong>합니다.
+                    </div>
+                    <p>판매자는 물품 등록 시 <span class="highlight">데이터 백업은 판매자 본인의 책임</span>임을 확인하고, 다음 사항에 동의해야 합니다:</p>
+                    <ul>
+                        <li>저장장치 내 모든 데이터가 영구 삭제됨</li>
+                        <li>데이터 복구가 불가능함</li>
+                        <li>데이터 삭제로 인한 손해배상을 청구하지 않음</li>
+                    </ul>
+                    <p>회사는 물품 등록 단계에서 최소 3회 이상 데이터 삭제 안내를 제공하며, 판매자는 별도 체크박스를 통해 이에 동의합니다.</p>
+                </li>
+                <li><strong>소모품 간주:</strong> 써멀구리스 재도포, 먼지 제거 등은 상품화 과정의 일부로 보며, 이로 인한 기존 상태와의 차이는 훼손으로 보지 않습니다.</li>
+            </ol>
+        </div>
+
+        <div id="article6" class="article">
+            <h2>제6조 (검수 중 손상에 대한 책임)</h2>
+            <ol>
+                <li>판매자는 중고 부품의 특성상, 회사의 정상적인 기능 테스트(부하 테스트, 스트레스 테스트 등) 과정에서 잠재된 불량이 발현될 수 있음을 인지합니다.</li>
+                <li><strong>기준점 설정:</strong> 회사는 물품 수령 시 개봉 영상 및 사진을 촬영하여 입고 당시의 물품 상태를 기록합니다. 이를 검수 중 손상 판단의 기준점으로 삼습니다.</li>
+                <li><strong>회사의 책임 범위:</strong>
+                    <ul>
+                        <li><strong>회사의 고의 또는 중과실(물품 낙하, 침수, 과전압 인가 등)로 인한 손상:</strong> 전액 배상</li>
+                        <li><strong>회사의 경과실로 인한 손상:</strong> 감가상각을 고려한 시가의 70% 배상 (단, 제조일로부터 5년 경과 제품은 30% 한도)
+                            <div class="info-box">
+                                <strong>※ 경과실 배상 제외 사항:</strong> 다음의 경우는 중고 제품의 특성상 정상적으로 발생 가능한 것으로 보아 경과실 배상 대상에서 제외됩니다:
+                                <ul>
+                                    <li>미세한 스크래치, 먼지 부착 등 외관상 경미한 변화</li>
+                                    <li>자연적인 감모, 변색, 산화 등</li>
+                                    <li>정상적인 작동 과정에서의 발열, 소음 증가</li>
+                                    <li>기타 중고 제품의 일반적 사용에서 예상되는 변화</li>
+                                </ul>
+                            </div>
+                        </li>
+                        <li><strong>정상적인 테스트 과정에서 발생한 잠재 불량의 발현:</strong> 회사는 책임을 지지 않음</li>
+                    </ul>
+                </li>
+                <li><strong>입증 책임:</strong> 회사의 고의·과실로 인한 손상임을 주장하는 판매자는 이를 입증해야 하며, 회사가 촬영한 입고 영상·사진과 검수 과정 기록을 근거로 판단합니다.</li>
+            </ol>
+        </div>
+
+        <div id="article7" class="article">
+            <h2>제7조 (검수 불합격 및 위약금)</h2>
+            <ol>
+                <li><strong>거래 취소:</strong> 검수 불합격 시 거래는 자동 취소되며 구매자에게는 결제 대금이 전액 환불됩니다.</li>
+                <li><strong>위약금 부과:</strong> 검수 불합격의 원인이 판매자에게 있는 경우(스펙 불일치, 기능 불량, 가품 등), 판매자는 다음의 위약금을 납부해야 합니다.
+                    <ul>
+                        <li>기본 위약금: 판매 희망가의 <span class="highlight">5%</span> 또는 실제 발생 비용(검수 인건비, 재포장비 등) 중 <strong>큰 금액</strong></li>
+                        <li>중대 위반(가품, 허위 정보 등록): 판매 희망가의 <span class="highlight">10%</span> (형사고발 시 별도 법적 조치)</li>
+                    </ul>
+                </li>
+                <li><strong>반송 절차:</strong> 
+                    <ul>
+                        <li>판매자는 검수 결과 통보일로부터 <span class="highlight">60일 이내</span>에 반송 주소를 등록하고, 위약금 및 반송 배송비를 결제해야 합니다.</li>
+                        <li>60일 이내 반송 주소를 등록하지 않은 경우, 해당 물품은 회사의 <strong>[보관 서비스 약관]</strong>에 따라 처리됩니다.</li>
+                    </ul>
+                </li>
+                <li><strong>상계권 행사:</strong> 회사는 판매자에게 지급할 정산금(다른 물품의 판매 대금 등)이 있는 경우, <span class="highlight">판매자의 사전 동의를 받아</span> 미납된 위약금 및 제반 비용을 우선 차감(상계)할 수 있습니다.</li>
+            </ol>
+        </div>
+
+        <div id="article8" class="article">
+            <h2>제8조 (정산 및 대금 지급)</h2>
+            <ol>
+                <li><strong>정산 주기:</strong> 판매 대금은 구매자의 '구매 확정'일(또는 배송 완료 후 7일 경과 시 자동 확정)로부터 <span class="highlight">2영업일(D+2)</span> 이내에 지급합니다.</li>
+                <li><strong>차감 지급:</strong> 정산 시 판매 수수료, 배송비(선불 대납 시), 미납 위약금 등을 차감한 잔액을 지급합니다.</li>
+            </ol>
+        </div>
+
+        <div id="article9" class="article">
+            <h2>제9조 (수수료)</h2>
+            <ol>
+                <li>판매/구매 수수료는 회사의 수수료 정책에 따르며, 서비스 화면에 명시된 요율을 적용합니다.</li>
+                <li>회사는 프로모션 등에 따라 수수료를 한시적으로 감면하거나 조정할 수 있으며, 변경 시 <span class="highlight">30일 전</span> 사전 고지합니다.</li>
+            </ol>
+        </div>
+
+        <div id="article10" class="article">
+            <h2>제10조 (거래 제한 및 금지 물품)</h2>
+            <ol>
+                <li><strong>미성년자 거래:</strong> 만 19세 미만의 미성년자는 법정대리인의 동의 없이 거래할 수 없으며, 동의 없이 체결된 계약은 법정대리인이 취소할 수 있습니다.</li>
+                <li><strong>금지 물품:</strong> 다음 물품의 등록 및 거래는 금지됩니다.
+                    <ul>
+                        <li>불법 복제품, 도난품, 위조품</li>
+                        <li>법령에 의해 거래가 금지된 물품</li>
+                        <li>타인의 지적재산권을 침해하는 물품</li>
+                        <li>기타 회사가 거래 부적합으로 판단한 물품</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div id="article11" class="article">
+            <h2>제11조 (분쟁 해결)</h2>
+            <ol>
+                <li>회사와 이용자 간에 발생한 분쟁은 상호 협의하여 해결함을 원칙으로 합니다.</li>
+                <li>협의가 되지 않을 경우, <span class="highlight">한국소비자원 또는 전자거래분쟁조정위원회</span>에 조정을 신청할 수 있습니다.</li>
+                <li>조정으로도 해결되지 않아 소송이 제기되는 경우, 서울중앙지방법원 또는 민사소송법상의 관할 법원을 1심 관할 법원으로 합니다.</li>
+            </ol>
+        </div>
+
+        <div id="article12" class="article">
+            <h2>제12조 (개인정보보호)</h2>
+            <p>회사는 '개인정보보호법' 등 관계 법령이 정하는 바에 따라 이용자의 개인정보를 보호합니다. 개인정보의 수집, 이용, 제공 등에 관한 세부 사항은 회사의 웹사이트에 게시된 <strong>[개인정보처리방침]</strong>에 따릅니다.</p>
+        </div>
+
+        <div id="article13" class="article">
+            <h2>제13조 (면책 조항)</h2>
+            <ol>
+                <li>회사는 천재지변, 전쟁, 디도스(DDoS) 공격, 기간통신사업자의 서비스 중지 등 불가항력적인 사유로 서비스를 제공할 수 없는 경우 책임이 면제됩니다.</li>
+                <li>회사는 이용자 간의 직거래(회사의 결제 시스템을 통하지 않은 거래)로 인해 발생한 문제에 대해서는 일체의 책임을 지지 않습니다.</li>
+            </ol>
+        </div>
+
+        <div id="article14" class="article">
+            <h2>제14조 (약관의 변경)</h2>
+            <ol>
+                <li>회사는 필요한 경우 관계 법령을 위배하지 않는 범위에서 본 약관을 변경할 수 있습니다.</li>
+                <li>약관이 변경되는 경우, 회사는 변경사항을 적용일자 <span class="highlight">30일 전</span>부터 서비스 초기화면 또는 공지사항을 통해 공지합니다.</li>
+                <li>이용자가 변경된 약관에 동의하지 않을 경우, 서비스 이용을 중단하고 이용계약을 해지할 수 있습니다.</li>
+            </ol>
+        </div>
+
+        <div id="article15" class="article">
+            <h2>제15조 (준거법)</h2>
+            <p>본 약관은 대한민국 법령에 따라 규율되고 해석됩니다.</p>
+        </div>
+
+        <!-- 부칙 -->
+        <div class="footer">
+            <h2 style="font-size: 20px; color: #1e40af; margin-bottom: 20px;">부칙</h2>
+            <p><strong>시행일:</strong> 본 약관은 <span class="highlight">2025년 12월 1일</span>부터 시행됩니다.</p>
+            
+            <div class="company-info">
+                <h3>사업자 정보</h3>
+                <p><strong>상호:</strong> (주) 파이컴퓨터</p>
+                <p><strong>대표자:</strong> 최진규</p>
+                <p><strong>사업자등록번호:</strong> 207-87-03690</p>
+                <p><strong>통신판매업 신고번호:</strong> 2025-서울서대문-1006</p>
+                <p><strong>주소:</strong> 서울특별시 서대문구 연세로2나길 61</p>
+                <p><strong>대표전화:</strong> 02-6402-0025</p>
+                <p><strong>이메일:</strong> wlsrb00g@gmail.com</p>
+            </div>
+
+            <div class="note-box" style="margin-top: 30px;">
+                <strong>📌 별도 약관 안내</strong>
+                <p style="margin-top: 10px;">다음 사항은 별도의 약관으로 규정되며, 해당 서비스 이용 시 별도 동의가 필요합니다:</p>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>[보관 서비스 약관]</strong> - 물품 보관, 보관료, 위탁판매 전환 등</li>
+                    <li><strong>[환불 및 반품 정책]</strong> - 구매자/판매자 청약철회, 반품 절차 등</li>
+                    <li><strong>[개인정보처리방침]</strong> - 개인정보 수집·이용·보호</li>
+                </ul>
+            </div>
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <p style="font-size: 12px; color: #6b7280;">
+                    본 약관에 대한 문의사항이 있으시면 고객센터(02-6402-0025)로 연락주시기 바랍니다.
+                </p>
+            </div>
+        </div>
     </div>
 
-    <h2>제1조 (목적)</h2>
-    <p>본 약관은 (주) 파이컴퓨터(이하 "회사")가 운영하는 PiCom 서비스(이하 "서비스")의 이용과 관련하여 회사와 이용자 간의 권리, 의무 및 책임사항, 기타 필요한 사항을 규정함을 목적으로 합니다.</p>
+    <!-- 맨 위로 버튼 -->
+    <a href="#" class="back-to-top" id="backToTop">↑</a>
 
-    <h2>제2조 (정의)</h2>
-    <p>1. "서비스"란 회사가 제공하는 중고 컴퓨터 부품 거래 플랫폼을 말합니다.<br>
-    2. "이용자"란 서비스에 접속하여 본 약관에 따라 서비스를 이용하는 회원 및 비회원을 말합니다.<br>
-    3. "회원"이란 서비스에 개인정보를 제공하여 회원등록을 한 자로서, 서비스의 정보를 지속적으로 제공받으며 서비스를 계속적으로 이용할 수 있는 자를 말합니다.</p>
+    <script>
+        // 맨 위로 버튼 표시/숨김
+        window.addEventListener('scroll', function() {
+            const backToTop = document.getElementById('backToTop');
+            if (window.pageYOffset > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
 
-    <h2>제3조 (약관의 효력 및 변경)</h2>
-    <p>1. 본 약관은 서비스를 이용하고자 하는 모든 이용자에게 그 효력이 발생합니다.<br>
-    2. 회사는 필요한 경우 관련 법령을 위배하지 않는 범위 내에서 본 약관을 변경할 수 있으며, 변경된 약관은 서비스 내 공지사항을 통해 공지합니다.</p>
+        // 맨 위로 버튼 클릭 시 부드럽게 스크롤
+        document.getElementById('backToTop').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
 
-    <h2>제4조 (회원가입)</h2>
-    <p>1. 이용자는 회사가 정한 가입 양식에 따라 회원정보를 기입한 후 본 약관에 동의한다는 의사표시를 함으로써 회원가입을 신청합니다.<br>
-    2. 회사는 제1항과 같이 회원으로 가입할 것을 신청한 이용자 중 다음 각 호에 해당하지 않는 한 회원으로 등록합니다:<br>
-    - 가입신청자가 본 약관에 의하여 이전에 회원자격을 상실한 적이 있는 경우<br>
-    - 등록 내용에 허위, 기재누락, 오기가 있는 경우<br>
-    - 기타 회원으로 등록하는 것이 회사의 기술상 현저히 지장이 있다고 판단되는 경우</p>
-
-    <h2>제5조 (서비스의 제공 및 변경)</h2>
-    <p>1. 회사는 다음과 같은 업무를 수행합니다:<br>
-    - 중고 컴퓨터 부품 거래 중개<br>
-    - 부품 가격 정보 제공<br>
-    - 기타 회사가 정하는 업무<br>
-    2. 회사는 필요한 경우 서비스의 내용을 변경할 수 있으며, 변경 시 해당 내용을 공지합니다.</p>
-
-    <h2>제6조 (서비스의 중단)</h2>
-    <p>1. 회사는 컴퓨터 등 정보통신설비의 보수점검, 교체 및 고장, 통신의 두절 등의 사유가 발생한 경우에는 서비스의 제공을 일시적으로 중단할 수 있습니다.<br>
-    2. 회사는 제1항의 사유로 서비스의 제공이 일시적으로 중단됨으로 인하여 이용자 또는 제3자가 입은 손해에 대하여 배상합니다. 단, 회사에 고의 또는 과실이 없는 경우에는 그러하지 아니합니다.</p>
-
-    <h2>제7조 (회원탈퇴 및 자격 상실)</h2>
-    <p>1. 회원은 언제든지 서비스 내 설정 메뉴를 통해 탈퇴를 요청할 수 있으며, 회사는 즉시 회원탈퇴를 처리합니다.<br>
-    2. 회원이 다음 각 호의 사유에 해당하는 경우, 회사는 회원자격을 제한 및 정지시킬 수 있습니다:<br>
-    - 가입 신청 시에 허위 내용을 등록한 경우<br>
-    - 다른 사람의 서비스 이용을 방해하거나 그 정보를 도용하는 등 전자상거래 질서를 위협하는 경우<br>
-    - 서비스를 이용하여 법령 또는 본 약관이 금지하거나 공서양속에 반하는 행위를 하는 경우</p>
-
-    <h2>제8조 (회원에 대한 통지)</h2>
-    <p>1. 회사가 회원에 대한 통지를 하는 경우, 회원이 서비스에 등록한 이메일 주소로 할 수 있습니다.<br>
-    2. 회사는 불특정다수 회원에 대한 통지의 경우 서비스 내 공지사항에 게시함으로써 개별 통지에 갈음할 수 있습니다.</p>
-
-    <h2>제9조 (구매신청 및 개인정보 제공 동의)</h2>
-    <p>이용자는 서비스상에서 다음 또는 이와 유사한 방법에 의하여 구매를 신청하며, 회사는 이용자가 구매신청을 함에 있어서 다음의 각 내용을 알기 쉽게 제공하여야 합니다:<br>
-    1. 재화 등의 검색 및 선택<br>
-    2. 받는 사람의 성명, 주소, 전화번호, 전자우편주소 등의 입력<br>
-    3. 약관 내용, 청약철회권이 제한되는 서비스 등에 관한 정보 확인<br>
-    4. 이 약관에 동의하고 위 3호의 사항을 확인하거나 거부하는 표시<br>
-    5. 재화 등의 구매신청 및 이에 관한 확인 또는 회사의 확인에 대한 동의</p>
-
-    <h2>제10조 (결제방법)</h2>
-    <p>서비스에서 구매한 재화 또는 용역에 대한 대금지급방법은 다음 각 호의 방법 중 가용한 방법으로 할 수 있습니다:<br>
-    1. 카카오페이 등의 각종 전자결제<br>
-    2. 계좌이체<br>
-    3. 기타 회사가 추가로 제공하는 결제수단</p>
-
-    <h2>제11조 (청약철회 등)</h2>
-    <p>1. 회사와 재화 등의 구매에 관한 계약을 체결한 이용자는 전자상거래법 제13조 제2항에 따른 계약내용에 관한 서면을 받은 날부터 7일 이내에는 청약의 철회를 할 수 있습니다.<br>
-    2. 이용자는 다음 각 호의 경우에는 회사의 의사에 반하여 청약철회 등을 할 수 없습니다:<br>
-    - 이용자에게 책임 있는 사유로 재화 등이 멸실 또는 훼손된 경우<br>
-    - 이용자의 사용 또는 일부 소비에 의하여 재화 등의 가치가 현저히 감소한 경우<br>
-    - 시간의 경과에 의하여 재판매가 곤란할 정도로 재화 등의 가치가 현저히 감소한 경우</p>
-
-    <h2>제12조 (환불)</h2>
-    <p>회사는 이용자가 구매 신청한 재화 등이 품절 등의 사유로 인도 또는 제공을 할 수 없을 때에는 지체 없이 그 사유를 이용자에게 통지하고 사전에 재화 등의 대금을 받은 경우에는 대금을 받은 날부터 3영업일 이내에 환급하거나 환급에 필요한 조치를 취합니다.</p>
-
-    <h2>제13조 (개인정보보호)</h2>
-    <p>1. 회사는 이용자의 개인정보 수집 시 서비스제공을 위하여 필요한 범위에서 최소한의 개인정보를 수집합니다.<br>
-    2. 회사는 개인정보의 수집목적 또는 제공받은 목적을 달성한 때에는 당해 개인정보를 지체 없이 파기합니다.<br>
-    3. 회사는 이용자의 개인정보를 보호하기 위하여 관련 법령이 정하는 바를 준수합니다.</p>
-
-    <h2>제14조 (회사의 의무)</h2>
-    <p>1. 회사는 법령과 본 약관이 금지하거나 공서양속에 반하는 행위를 하지 않으며 본 약관이 정하는 바에 따라 지속적이고, 안정적으로 재화·용역을 제공하는데 최선을 다하여야 합니다.<br>
-    2. 회사는 이용자가 안전하게 인터넷 서비스를 이용할 수 있도록 이용자의 개인정보 보호를 위한 보안 시스템을 갖추어야 합니다.</p>
-
-    <h2>제15조 (이용자의 의무)</h2>
-    <p>이용자는 다음 행위를 하여서는 안 됩니다:<br>
-    1. 신청 또는 변경 시 허위 내용의 등록<br>
-    2. 타인의 정보 도용<br>
-    3. 회사에 게시된 정보의 변경<br>
-    4. 회사가 정한 정보 이외의 정보 등의 송신 또는 게시<br>
-    5. 회사 기타 제3자의 저작권 등 지적재산권에 대한 침해<br>
-    6. 회사 기타 제3자의 명예를 손상시키거나 업무를 방해하는 행위<br>
-    7. 외설 또는 폭력적인 메시지, 화상, 음성, 기타 공서양속에 반하는 정보를 서비스에 공개 또는 게시하는 행위</p>
-
-    <h2>제16조 (분쟁해결)</h2>
-    <p>1. 회사는 이용자가 제기하는 정당한 의견이나 불만을 반영하고 그 피해를 보상처리하기 위하여 피해보상처리기구를 설치·운영합니다.<br>
-    2. 회사는 이용자로부터 제출되는 불만사항 및 의견은 우선적으로 그 사항을 처리합니다. 다만, 신속한 처리가 곤란한 경우에는 이용자에게 그 사유와 처리일정을 즉시 통보해 드립니다.</p>
-
-    <h2>제17조 (재판권 및 준거법)</h2>
-    <p>1. 회사와 이용자 간에 발생한 전자상거래 분쟁에 관한 소송은 제소 당시의 이용자의 주소에 의하고, 주소가 없는 경우에는 거소를 관할하는 지방법원의 전속관할로 합니다. 다만, 제소 당시 이용자의 주소 또는 거소가 분명하지 않거나 외국 거주자의 경우에는 민사소송법상의 관할법원에 제기합니다.<br>
-    2. 회사와 이용자 간에 제기된 전자상거래 소송에는 한국법을 적용합니다.</p>
-
-    <hr style="margin: 40px 0;">
-
-    <div class="info">
-        <strong>사업자 정보</strong><br>
-        상호: (주) 파이컴퓨터<br>
-        대표자: 최진규<br>
-        사업자등록번호: 207-87-03690<br>
-        통신판매업 신고번호: 2025-서울서대문-1006<br>
-        주소: 서울특별시 서대문구 연세로2나길 61<br>
-        전화: 02-6402-0025<br>
-        이메일: contact@picom.team
-    </div>
+        // 목차 링크 클릭 시 부드럽게 스크롤
+        document.querySelectorAll('.toc a').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            });
+        });
+    </script>
 </body>
 </html>

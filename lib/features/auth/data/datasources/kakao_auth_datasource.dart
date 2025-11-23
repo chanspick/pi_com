@@ -132,7 +132,7 @@ class KakaoAuthDataSource {
     debugPrint('🔍 [Web] Starting Kakao Sign-In with AuthCodeClient...');
 
     // 카카오 공식 방식: AuthCodeClient로 인가 코드 요청 (리다이렉트)
-    final redirectUri = Uri.base.origin + '/oauth/callback.html';
+    final redirectUri = '${Uri.base.origin}/oauth/callback.html';
     debugPrint('📍 Redirect URI: $redirectUri');
 
     // 카카오 인증 화면으로 리다이렉트
@@ -254,7 +254,7 @@ class KakaoAuthDataSource {
       // 사용자 정보 저장
       if (loginResult.userInfo != null) {
         _webKakaoUserInfo = loginResult.userInfo;
-        debugPrint('✅ [Web] User info stored: ${_webKakaoUserInfo}');
+        debugPrint('✅ [Web] User info stored: $_webKakaoUserInfo');
       }
 
       // Cloud Function에 카카오 토큰 전송하여 Firebase Custom Token 받기

@@ -437,6 +437,7 @@ class RecommendationEngineServiceImpl implements RecommendationEngineService {
   }
 
   /// 쿨러 선택 (가상 상품 리스트에서 첫 번째 항목 = 인텔 기본 쿨러 5,000원)
+  // ignore: unused_element
   BasePart? _selectCooler(
     List<BasePart> coolers,
     String? cpuSocket,
@@ -451,6 +452,7 @@ class RecommendationEngineServiceImpl implements RecommendationEngineService {
   }
 
   /// 케이스 선택 (가상 상품 리스트에서 첫 번째 항목 = 임의 배송 케이스 10,000원)
+  // ignore: unused_element
   BasePart? _selectCase(
     List<BasePart> cases,
     String? mbFormFactor,
@@ -672,6 +674,7 @@ class RecommendationEngineServiceImpl implements RecommendationEngineService {
   // ==========================================
 
   /// 가상 파워 BasePart 리스트 생성
+  // ignore: unused_element
   List<BasePart> _createVirtualPsuList() {
     final psuOptions = [
       {'wattage': 450, 'price': 30000},
