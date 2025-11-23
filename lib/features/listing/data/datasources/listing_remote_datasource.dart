@@ -8,12 +8,41 @@ abstract class ListingRemoteDataSource {
   Stream<ListingModel> getListing(String listingId);
 
   // ✅ Stream → Future로 변경
-  Future<List<ListingModel>> getListings({String? category, String? sortBy, String? searchQuery});
+  Future<List<ListingModel>> getListings({
+    String? category,
+    String? sortBy,
+    String? searchQuery,
+    bool includeAllStatuses = false,
+  });
+
+  // 🆕 페이지네이션을 지원하는 getListings
+  Future<ListingPaginationResult> getListingsPaginated({
+    String? category,
+    String? sortBy,
+    String? searchQuery,
+    bool includeAllStatuses = false,
+    int limit = 20,
+    DocumentSnapshot? lastDocument,
+    bool useCache = true,
+  });
 
   // basePartId로 필터링된 active listings만 가져오기
   Future<List<ListingModel>> getListingsByBasePartId(String basePartId, {String? sortBy});
 
   Future<void> updateListingStatus(String listingId, ListingStatus status);
+}
+
+// 🆕 페이지네이션 결과 클래스
+class ListingPaginationResult {
+  final List<ListingModel> listings;
+  final DocumentSnapshot? lastDocument;
+  final bool hasMore;
+
+  ListingPaginationResult({
+    required this.listings,
+    this.lastDocument,
+    required this.hasMore,
+  });
 }
 
 class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
@@ -60,20 +89,89 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
   }
 
   @override
-  // ✅✅✅ 이 부분을 꼭 수정하세요!
-  Future<List<ListingModel>> getListings({String? category, String? sortBy, String? searchQuery}) async {
-    print('🔍 [ListingDataSource] Fetching listings with category: $category, sortBy: $sortBy, searchQuery: $searchQuery');
-    print('🌐 [ListingDataSource] Force fetching from SERVER (no cache)');
-    print('📊 [ListingDataSource] Firestore instance: ${_firestore.hashCode}');
-    print('⚙️  [ListingDataSource] Firestore settings: ${_firestore.settings}');
+  // ⚠️ DEPRECATED: 기존 메서드 (하위 호환성 유지)
+  // 새 코드는 getListingsPaginated()를 사용하세요
+  Future<List<ListingModel>> getListings({
+    String? category,
+    String? sortBy,
+    String? searchQuery,
+    bool includeAllStatuses = false,
+  }) async {
+    print('⚠️ [DEPRECATED] getListings() called - use getListingsPaginated() instead');
 
-    // available 상태인 리스트만 가져오는 기본 쿼리
-    final snapshot = await _firestore
-        .collection('listings')
-        .where('status', isEqualTo: 'available')
-        .get(const GetOptions(source: Source.server));
+    // 🎯 비용 최적화: limit를 20으로 제한 + 무한 스크롤
+    // ⚠️ 중고 거래 플랫폼 특성상 실시간성 중요 → 캐시 사용 안 함
+    final result = await getListingsPaginated(
+      category: category,
+      sortBy: sortBy,
+      searchQuery: searchQuery,
+      includeAllStatuses: includeAllStatuses,
+      limit: 20, // ✅ 493개 → 20개로 대폭 감소 (비용 96% 절감)
+      useCache: false, // ✅ 실시간성 보장 (판매 완료 상품 즉시 반영)
+    );
 
-    var listings = snapshot.docs.map((doc) {
+    return result.listings;
+  }
+
+  @override
+  // 🆕 페이지네이션 지원 버전 (비용 최적화)
+  Future<ListingPaginationResult> getListingsPaginated({
+    String? category,
+    String? sortBy,
+    String? searchQuery,
+    bool includeAllStatuses = false,
+    int limit = 20,
+    DocumentSnapshot? lastDocument,
+    bool useCache = true,
+  }) async {
+    print('🔍 [ListingDataSource] Fetching listings (paginated)');
+    print('   Category: $category, Sort: $sortBy, Search: $searchQuery');
+    print('   Limit: $limit, UseCache: $useCache, HasLastDoc: ${lastDocument != null}');
+
+    // 쿼리 빌더 시작
+    Query query = _firestore.collection('listings');
+
+    // 1️⃣ Status 필터 (서버 사이드)
+    if (!includeAllStatuses) {
+      query = query.where('status', isEqualTo: 'available');
+    }
+
+    // 2️⃣ Category 필터 (서버 사이드)
+    if (category != null && category != 'All') {
+      query = query.where('category', isEqualTo: category);
+    }
+
+    // 3️⃣ 정렬 (서버 사이드)
+    // ⚠️ Firestore 제약: orderBy 필드에 인덱스 필요
+    if (sortBy == '낮은 가격순') {
+      query = query.orderBy('price', descending: false);
+    } else if (sortBy == '높은 가격순') {
+      query = query.orderBy('price', descending: true);
+    } else {
+      // 기본값: 최신순
+      query = query.orderBy('createdAt', descending: true);
+    }
+
+    // 4️⃣ 페이지네이션 (startAfter)
+    if (lastDocument != null) {
+      query = query.startAfterDocument(lastDocument);
+    }
+
+    // 5️⃣ Limit (+1로 hasMore 체크)
+    query = query.limit(limit + 1);
+
+    // 6️⃣ 캐싱 전략
+    final source = useCache ? Source.serverAndCache : Source.server;
+    final snapshot = await query.get(GetOptions(source: source));
+
+    print('📊 [ListingDataSource] Fetched ${snapshot.docs.length} documents from ${source.name}');
+
+    // 7️⃣ hasMore 체크
+    final hasMore = snapshot.docs.length > limit;
+    final docs = hasMore ? snapshot.docs.sublist(0, limit) : snapshot.docs;
+
+    // 8️⃣ 모델 변환
+    var listings = docs.map((doc) {
       try {
         return ListingModel.fromFirestore(doc);
       } catch (e) {
@@ -82,7 +180,8 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
       }
     }).toList();
 
-    // 검색어 필터링 (클라이언트 사이드)
+    // 9️⃣ 검색어 필터링 (클라이언트 사이드)
+    // ⚠️ Firestore는 full-text search 미지원
     if (searchQuery != null && searchQuery.isNotEmpty) {
       final query = searchQuery.toLowerCase();
       listings = listings.where((listing) {
@@ -97,34 +196,13 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
       print('🔍 [ListingDataSource] Filtered to ${listings.length} listings matching: $searchQuery');
     }
 
-    // 카테고리 필터 (All이 아닐 때만)
-    if (category != null && category != 'All') {
-      listings = listings.where((listing) => listing.category == category).toList();
-      print('📂 [ListingDataSource] Filtered to ${listings.length} listings in category: $category');
-    }
+    print('✅ [ListingDataSource] Returning ${listings.length} listings, hasMore: $hasMore');
 
-    // 정렬
-    if (sortBy == '낮은 가격순') {
-      listings.sort((a, b) => a.price.compareTo(b.price));
-    } else if (sortBy == '높은 가격순') {
-      listings.sort((a, b) => b.price.compareTo(a.price));
-    } else {
-      // 기본값: 최신순
-      listings.sort((a, b) => b.createdAt.toDate()
-          .compareTo(a.createdAt.toDate()));
-    }
-
-    print('✅ [ListingDataSource] Returning ${listings.length} listings');
-    print('📋 [ListingDataSource] First 10 listings:');
-    for (var i = 0; i < listings.length && i < 10; i++) {
-      final listing = listings[i];
-      print('  ${i + 1}. ID: ${listing.listingId}');
-      print('     Brand: ${listing.brand}, Model: ${listing.modelName}');
-      print('     Status: ${listing.status}, Price: ${listing.price}');
-      print('     CreatedAt: ${listing.createdAt}');
-    }
-
-    return listings;
+    return ListingPaginationResult(
+      listings: listings,
+      lastDocument: docs.isEmpty ? null : docs.last,
+      hasMore: hasMore,
+    );
   }
 
   @override

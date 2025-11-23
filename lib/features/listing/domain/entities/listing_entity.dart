@@ -20,6 +20,7 @@ class ListingEntity {
   final ListingStatus status;
   final DateTime createdAt;
   final String? category;
+  final bool? markedForSold;  // 판매완료 마킹 (그래프 데이터 유지용)
 
   ListingEntity({
     required this.listingId,
@@ -33,6 +34,7 @@ class ListingEntity {
     required this.status,
     required this.createdAt,
     this.category,
+    this.markedForSold,
   });
 
   bool get isSold => status == ListingStatus.sold;
@@ -41,4 +43,17 @@ class ListingEntity {
   bool canBePurchasedBy(String userId) {
     return isAvailable && sellerId != userId;
   }
+}
+
+// 🆕 페이지네이션 결과 Entity
+class ListingPaginationEntity {
+  final List<ListingEntity> listings;
+  final dynamic lastDocument; // Firestore DocumentSnapshot (도메인 레이어에서는 opaque)
+  final bool hasMore;
+
+  ListingPaginationEntity({
+    required this.listings,
+    this.lastDocument,
+    required this.hasMore,
+  });
 }

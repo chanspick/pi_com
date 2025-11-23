@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:pi_com/features/auth/presentation/providers/auth_provider.dart';
 import 'package:pi_com/features/cart/presentation/providers/cart_provider.dart';
 import 'package:pi_com/features/cart/domain/entities/cart_item_entity.dart';
@@ -20,6 +21,8 @@ import 'package:pi_com/features/address/domain/entities/address_entity.dart';
 import 'package:pi_com/features/address/data/repositories/address_repository.dart';
 import 'package:pi_com/features/address/presentation/screens/address_list_screen.dart';
 import '../../../../core/utils/responsive_helper.dart';
+import '../../../../core/models/dragon_ball_model.dart';
+import '../../../../core/constants/routes.dart';
 import '../../../web_public/presentation/widgets/web_navbar_v2.dart';
 
 enum ShippingMethod {
@@ -54,6 +57,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   ShippingMethod _selectedShippingMethod = ShippingMethod.immediate;
   bool _agreedToDragonBallTerms = false;
+  StorageType _selectedStorageType = StorageType.general; // 기본값: 일반 보관
   PaymentMethod? _selectedPaymentMethod; // null이면 선택하지 않음
 
   @override
@@ -205,8 +209,12 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               if (_selectedShippingMethod == ShippingMethod.dragonBall) ...[
                 _DragonBallTermsAgreement(
                   agreedToTerms: _agreedToDragonBallTerms,
-                  onChanged: (agreed) {
+                  selectedStorageType: _selectedStorageType,
+                  onAgreementChanged: (agreed) {
                     setState(() => _agreedToDragonBallTerms = agreed ?? false);
+                  },
+                  onStorageTypeChanged: (type) {
+                    setState(() => _selectedStorageType = type);
                   },
                 ),
                 const SizedBox(height: 24),
@@ -540,6 +548,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               basePartId: null,
               category: item.category,
               agreedToTerms: true,
+              storageType: _selectedStorageType, // 사용자가 선택한 보관 타입 전달
             );
           } catch (dragonBallError) {
             // 드래곤볼 생성 실패는 로그만 남기고 계속 진행
@@ -710,7 +719,7 @@ class _ShippingMethodSelector extends StatelessWidget {
           subtitle: Text(
             disableDragonBall
                 ? '⚠️ 케이스/쿨러/파워는 PC 보관함 서비스를 이용할 수 없습니다.'
-                : '배송비: 무료 (보관 후 합배송)\n보관 기간: 180일 (오픈 이벤트)\n💡 다른 부품과 함께 배송받아 배송비를 절약하세요!',
+                : '배송비: 무료 (보관 후 합배송)\n보관 기간: 7일 무료\n💡 다른 부품과 함께 배송받아 배송비를 절약하세요!',
             style: TextStyle(
               color: disableDragonBall ? Colors.red : null,
             ),
@@ -815,14 +824,18 @@ class _PaymentMethodSelector extends StatelessWidget {
   }
 }
 
-/// 드래곤볼 약관 동의 위젯
+/// 드래곤볼(보관 서비스) 약관 동의 위젯
 class _DragonBallTermsAgreement extends StatelessWidget {
   final bool agreedToTerms;
-  final ValueChanged<bool?> onChanged;
+  final StorageType selectedStorageType;
+  final ValueChanged<bool?> onAgreementChanged;
+  final ValueChanged<StorageType> onStorageTypeChanged;
 
   const _DragonBallTermsAgreement({
     required this.agreedToTerms,
-    required this.onChanged,
+    required this.selectedStorageType,
+    required this.onAgreementChanged,
+    required this.onStorageTypeChanged,
   });
 
   @override
@@ -835,42 +848,111 @@ class _DragonBallTermsAgreement extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '드래곤볼 서비스 약관',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            // 제목
+            Row(
+              children: [
+                const Text(
+                  '보관 서비스 약관',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                TextButton(
+                  onPressed: () async {
+                    if (kIsWeb) {
+                      // 웹에서는 HTML 파일로 직접 이동
+                      final currentUrl = Uri.base;
+                      final targetUrl = currentUrl.replace(path: '/storage_service_terms.html');
+                      await launchUrl(
+                        targetUrl,
+                        webOnlyWindowName: '_blank', // 새 탭에서 열기
+                      );
+                    } else {
+                      // 모바일에서는 라우트 사용
+                      Navigator.of(context).pushNamed(Routes.storageServiceTerms);
+                    }
+                  },
+                  child: const Text('전문 보기'),
+                ),
+              ],
             ),
+            const SizedBox(height: 16),
+
+            // 보관 타입 선택
+            const Text(
+              '보관 타입 선택',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 8),
+
+            // 일반 보관 옵션
+            RadioListTile<StorageType>(
+              value: StorageType.general,
+              groupValue: selectedStorageType,
+              onChanged: (type) => onStorageTypeChanged(type!),
+              title: const Text('일반 보관'),
+              subtitle: const Text(
+                '• 7일 무료, 이후 하루 0.5% 보관료 (최대 30%)\n'
+                '• 최대 59일 보관 가능\n'
+                '• 60일 초과 시 위탁판매 전환',
+                style: TextStyle(fontSize: 12),
+              ),
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+            ),
+
+            // 임대 보관 옵션
+            RadioListTile<StorageType>(
+              value: StorageType.rental,
+              groupValue: selectedStorageType,
+              onChanged: (type) => onStorageTypeChanged(type!),
+              title: const Text('임대 보관 (무료)'),
+              subtitle: const Text(
+                '• 보관 기간 동안 완전 무료\n'
+                '• 회사가 렌탈 서비스에 활용 가능\n'
+                '• 부품 보호 보험 100% 보상',
+                style: TextStyle(fontSize: 12),
+              ),
+              contentPadding: EdgeInsets.zero,
+              dense: true,
+            ),
+
             const SizedBox(height: 12),
+            const Divider(),
+            const SizedBox(height: 8),
+
+            // 약관 요약
             Container(
-              height: 150,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.grey[100],
+                color: Colors.blue.shade50,
                 borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
               ),
-              child: const SingleChildScrollView(
-                child: Text(
-                  '제1조 (서비스 개요)\n'
-                  '파이컴퓨터는 고객님의 부품을 최대 30일간 완전 무료로 보관하며, 합배송 서비스를 제공합니다.\n\n'
-                  '제2조 (부품 운용 동의) ⭐ 중요\n'
-                  '- 보관 기간 동안 파이컴퓨터는 부품을 렌탈/대여 서비스에 활용할 수 있습니다.\n'
-                  '- 부품 보호 보험에 가입하여 손상 시 100% 보상합니다.\n'
-                  '- 배송 요청 시 24시간 내 준비를 완료합니다.\n\n'
-                  '제3조 (보관 기간)\n'
-                  '- 기본 보관 기간: 30일 (입고일 기준)\n'
-                  '- 만료 3일 전 알림을 발송합니다.\n'
-                  '- 만료 시: 기본 배송지로 자동 배송\n\n'
-                  '제4조 (배송비)\n'
-                  '- 일괄 배송 기본: 10,000원\n'
-                  '- 부품 2개 이상: 개당 3,000원 추가\n'
-                  '- 개별 배송 대비 최대 50% 절감',
-                  style: TextStyle(fontSize: 12),
-                ),
+              child: const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '📋 주요 약관 요약',
+                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    '• 7일 무료 보관 후 일일 보관료 부과 (일반 보관)\n'
+                    '• 임대 보관 선택 시 무료이나 렌탈 활용 동의 필요\n'
+                    '• 59일 최대 보관 기간 (카카오페이 제약)\n'
+                    '• 60일 초과 시 자동 위탁판매 전환',
+                    style: TextStyle(fontSize: 12, height: 1.5),
+                  ),
+                ],
               ),
             ),
+
             const SizedBox(height: 12),
+
+            // 동의 체크박스
             CheckboxListTile(
               value: agreedToTerms,
-              onChanged: onChanged,
+              onChanged: onAgreementChanged,
               title: const Text(
                 '위 약관을 모두 읽었으며 이에 동의합니다.',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),

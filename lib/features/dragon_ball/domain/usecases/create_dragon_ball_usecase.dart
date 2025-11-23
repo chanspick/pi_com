@@ -1,5 +1,6 @@
 // lib/features/dragon_ball/domain/usecases/create_dragon_ball_usecase.dart
 
+import 'package:pi_com/core/models/dragon_ball_model.dart';
 import 'package:pi_com/features/dragon_ball/domain/repositories/dragon_ball_repository.dart';
 
 /// 드래곤볼 생성 UseCase (구매 완료 시)
@@ -18,6 +19,7 @@ class CreateDragonBallUseCase {
     String? basePartId,
     String? category,
     required bool agreedToTerms,
+    StorageType storageType = StorageType.general, // 기본값: 일반 보관
   }) {
     return _repository.createDragonBall(
       userId: userId,
@@ -29,6 +31,7 @@ class CreateDragonBallUseCase {
       basePartId: basePartId,
       category: category,
       agreedToTerms: agreedToTerms,
+      storageType: storageType,
     );
   }
 }

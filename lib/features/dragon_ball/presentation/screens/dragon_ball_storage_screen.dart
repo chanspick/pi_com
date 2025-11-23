@@ -79,7 +79,7 @@ class DragonBallStorageScreen extends ConsumerWidget {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                '부품 구매 시 드래곤볼 보관을 선택하면 30일간 무료 보관 후 합배송으로 배송비를 절약할 수 있어요!',
+                                '부품 구매 시 드래곤볼 보관을 선택하면 7일간 무료 보관 후 합배송으로 배송비를 절약할 수 있어요!',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.blue[900],

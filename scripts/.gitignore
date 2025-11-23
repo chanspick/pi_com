@@ -1,0 +1,15 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Firebase Admin SDK 서비스 계정 키 (절대 커밋하지 마세요!)
+serviceAccountKey.json
+*-firebase-adminsdk-*.json
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db

@@ -16,13 +16,47 @@ class ListingRepositoryImpl implements ListingRepository {
 
   @override
   // ✅ Stream → Future, Listing → ListingEntity
-  Future<List<ListingEntity>> getListings({String? category, String? sortBy, String? searchQuery}) async {
+  Future<List<ListingEntity>> getListings({
+    String? category,
+    String? sortBy,
+    String? searchQuery,
+    bool includeAllStatuses = false,
+  }) async {
     final models = await remoteDataSource.getListings(
       category: category,
       sortBy: sortBy,
       searchQuery: searchQuery,
+      includeAllStatuses: includeAllStatuses,
     );
     return models.map((model) => model.toEntity()).toList();
+  }
+
+  @override
+  // 🆕 페이지네이션 지원
+  Future<ListingPaginationEntity> getListingsPaginated({
+    String? category,
+    String? sortBy,
+    String? searchQuery,
+    bool includeAllStatuses = false,
+    int limit = 20,
+    dynamic lastDocument,
+    bool useCache = true,
+  }) async {
+    final result = await remoteDataSource.getListingsPaginated(
+      category: category,
+      sortBy: sortBy,
+      searchQuery: searchQuery,
+      includeAllStatuses: includeAllStatuses,
+      limit: limit,
+      lastDocument: lastDocument,
+      useCache: useCache,
+    );
+
+    return ListingPaginationEntity(
+      listings: result.listings.map((model) => model.toEntity()).toList(),
+      lastDocument: result.lastDocument,
+      hasMore: result.hasMore,
+    );
   }
 
   @override

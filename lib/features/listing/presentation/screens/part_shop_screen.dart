@@ -29,11 +29,60 @@ class PartShopScreen extends ConsumerStatefulWidget {
 
 class _PartShopScreenState
     extends ConsumerState<PartShopScreen> {
+  final ScrollController _scrollController = ScrollController();
+  bool _isLoadingMore = false;
+
   @override
   void initState() {
     super.initState();
     // URL 파라미터로 받은 카테고리 및 검색어 설정
     _initializeCategory();
+    // 무한 스크롤 리스너 추가
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  /// 무한 스크롤 핸들러
+  void _onScroll() {
+    if (_isLoadingMore) return;
+
+    // 스크롤이 80% 이상일 때 다음 페이지 로드
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent * 0.8) {
+      _loadMore();
+    }
+  }
+
+  /// 다음 페이지 로드
+  void _loadMore() {
+    final selectedBasePartIds = ref.read(selectedBasePartIdsProvider);
+
+    // basePartIds 검색이 아닐 때만 페이지네이션 적용
+    if (selectedBasePartIds.isEmpty) {
+      final selectedCategory = ref.read(selectedCategoryProvider);
+      final selectedSort = ref.read(selectedSortProvider);
+      final searchQuery = ref.read(searchQueryProvider);
+      final firestoreCategory = _getCategoryForFirestore(selectedCategory);
+
+      final params = ListingQueryParams(
+        category: firestoreCategory,
+        sortBy: selectedSort,
+        searchQuery: searchQuery,
+      );
+
+      setState(() => _isLoadingMore = true);
+
+      ref.read(paginatedListingsProvider(params).notifier).loadMore().then((_) {
+        if (mounted) {
+          setState(() => _isLoadingMore = false);
+        }
+      });
+    }
   }
 
   void _initializeCategory() {
@@ -145,6 +194,29 @@ class _PartShopScreenState
     }
   }
 
+  String _getCategoryForFirestore(String displayCategory) {
+    // 화면 표시용 카테고리명을 Firestore용으로 변환
+    switch (displayCategory) {
+      case 'CPU':
+        return 'cpu';
+      case 'GPU':
+        return 'gpu';
+      case 'RAM':
+        return 'ram';
+      case 'mainboard':
+        return 'mainboard';
+      case '저장장치':
+        return 'ssd';  // ← Firestore에는 'ssd'로 저장
+      case '파워':
+        return 'psu';
+      case 'All':
+      case '전체':
+        return 'All';
+      default:
+        return displayCategory;
+    }
+  }
+
   void _updateUrlWithCategory(String category) {
     if (kIsWeb) {
       // URL 업데이트 (브라우저 히스토리 관리)
@@ -168,18 +240,11 @@ class _PartShopScreenState
     final selectedBasePartIds = ref.watch(selectedBasePartIdsProvider);
     final basePartSearchQuery = ref.watch(basePartSearchQueryProvider);
 
-    // basePartIds가 있으면 해당 부품들의 listings만, 없으면 전체 listings
-    final listingsAsync = selectedBasePartIds.isNotEmpty
-        ? ref.watch(listingsByMultipleBasePartIdsProvider(selectedBasePartIds))
-        : ref.watch(
-      listingsFutureProvider(
-        ListingQueryParams(
-          category: selectedCategory,
-          sortBy: selectedSort,
-          searchQuery: searchQuery,
-        ),
-      ),
-    );
+    // ✅ 화면용 카테고리 → Firestore용 카테고리로 변환
+    final firestoreCategory = _getCategoryForFirestore(selectedCategory);
+
+    // 🆕 basePartIds가 비어있으면 페이지네이션 사용, 있으면 기존 방식
+    final usePagination = selectedBasePartIds.isEmpty;
 
     return Scaffold(
       appBar: kIsWeb
@@ -214,113 +279,195 @@ class _PartShopScreenState
           _buildFilterRow(context, ref),
           const Divider(height: 1),
           Expanded(
-            child: listingsAsync.when(
-              data: (listings) {
-                if (listings.isEmpty) {
-                  return _buildEmptyState(context, selectedCategory, basePartSearchQuery);
-                }
-
-                return ResponsiveHelper.centeredMaxWidthContainer(
-                  context: context,
-                  child: RefreshIndicator(
-                    onRefresh: () async {
-                      ref.invalidate(
-                        listingsFutureProvider(
-                          ListingQueryParams(
-                            category: selectedCategory,
-                            sortBy: selectedSort,
-                            searchQuery: searchQuery,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Column(
-                      children: [
-                        // 결과 카운트
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                          color: Colors.grey[50],
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                basePartSearchQuery != null && basePartSearchQuery.isNotEmpty
-                                    ? '"$basePartSearchQuery" 검색 결과 ${listings.length}개'
-                                    : searchQuery != null && searchQuery.isNotEmpty
-                                    ? '"$searchQuery" 검색 결과 ${listings.length}개'
-                                    : '${listings.length}개의 상품',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey[700],
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              if ((searchQuery != null && searchQuery.isNotEmpty) ||
-                                  (basePartSearchQuery != null && basePartSearchQuery.isNotEmpty))
-                                TextButton.icon(
-                                  onPressed: () {
-                                    ref.read(searchQueryProvider.notifier).state = null;
-                                    ref.read(selectedBasePartIdProvider.notifier).state = null;
-                                    ref.read(selectedBasePartIdsProvider.notifier).state = [];
-                                    ref.read(basePartSearchQueryProvider.notifier).state = null;
-                                    // URL 업데이트
-                                    if (kIsWeb) {
-                                      final category = ref.read(selectedCategoryProvider);
-                                      final urlCategory = _getCategoryForUrl(category);
-                                      final newPath = urlCategory.isEmpty
-                                          ? '/part-shop'
-                                          : '/part-shop?category=$urlCategory';
-                                      context.go(newPath);
-                                    }
-                                  },
-                                  icon: const Icon(Icons.clear, size: 18),
-                                  label: const Text('검색 초기화'),
-                                  style: TextButton.styleFrom(
-                                    foregroundColor: Colors.grey[700],
-                                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                        // 그리드 뷰
-                        Expanded(
-                          child: GridView.builder(
-                            padding: ResponsiveHelper.getHorizontalPadding(context)
-                                .copyWith(
-                              top: 16,
-                              bottom: 16,
-                            ),
-                            gridDelegate:
-                            SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount:
-                              ResponsiveHelper.getGridCrossAxisCount(
-                                  context),
-                              childAspectRatio: 0.7,
-                              crossAxisSpacing:
-                              ResponsiveHelper.isDesktop(context) ? 24 : 12,
-                              mainAxisSpacing:
-                              ResponsiveHelper.isDesktop(context) ? 24 : 12,
-                            ),
-                            itemCount: listings.length,
-                            itemBuilder: (context, index) {
-                              return ListingCard(listing: listings[index]);
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
+            child: usePagination
+                ? _buildPaginatedListings(
+                    context,
+                    ref,
+                    firestoreCategory,
+                    selectedSort,
+                    searchQuery,
+                    selectedCategory,
+                    basePartSearchQuery,
+                  )
+                : _buildBasePartIdListings(
+                    context,
+                    ref,
+                    selectedBasePartIds,
+                    selectedCategory,
+                    basePartSearchQuery,
                   ),
-                );
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 페이지네이션 리스트 (basePartIds 검색이 아닐 때)
+  Widget _buildPaginatedListings(
+    BuildContext context,
+    WidgetRef ref,
+    String firestoreCategory,
+    String selectedSort,
+    String? searchQuery,
+    String selectedCategory,
+    String? basePartSearchQuery,
+  ) {
+    final params = ListingQueryParams(
+      category: firestoreCategory,
+      sortBy: selectedSort,
+      searchQuery: searchQuery,
+    );
+
+    final paginatedState = ref.watch(paginatedListingsProvider(params));
+
+    if (paginatedState.error != null) {
+      return Center(child: Text('오류 발생: ${paginatedState.error}'));
+    }
+
+    if (paginatedState.listings.isEmpty && paginatedState.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (paginatedState.listings.isEmpty) {
+      return _buildEmptyState(context, selectedCategory, basePartSearchQuery);
+    }
+
+    return ResponsiveHelper.centeredMaxWidthContainer(
+      context: context,
+      child: RefreshIndicator(
+        onRefresh: () async {
+          ref.read(paginatedListingsProvider(params).notifier).refresh();
+        },
+        child: GridView.builder(
+          controller: _scrollController, // ✅ 무한 스크롤용 컨트롤러
+          padding: ResponsiveHelper.getHorizontalPadding(context).copyWith(
+            top: 16,
+            bottom: 16,
+          ),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: ResponsiveHelper.getGridCrossAxisCount(context),
+            childAspectRatio: 0.7,
+            crossAxisSpacing: ResponsiveHelper.isDesktop(context) ? 24 : 12,
+            mainAxisSpacing: ResponsiveHelper.isDesktop(context) ? 24 : 12,
+          ),
+          itemCount: paginatedState.listings.length + (paginatedState.hasMore ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index >= paginatedState.listings.length) {
+              // 로딩 인디케이터
+              return const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: CircularProgressIndicator(),
+                ),
+              );
+            }
+            return ListingCard(listing: paginatedState.listings[index]);
+          },
+        ),
+      ),
+    );
+  }
+
+  /// BasePartIds 검색 결과 리스트
+  Widget _buildBasePartIdListings(
+    BuildContext context,
+    WidgetRef ref,
+    List<String> selectedBasePartIds,
+    String selectedCategory,
+    String? basePartSearchQuery,
+  ) {
+    final listingsAsync = ref.watch(listingsByMultipleBasePartIdsProvider(selectedBasePartIds));
+
+    return listingsAsync.when(
+      data: (listings) {
+        if (listings.isEmpty) {
+          return _buildEmptyState(context, selectedCategory, basePartSearchQuery);
+        }
+
+        return ResponsiveHelper.centeredMaxWidthContainer(
+          context: context,
+          child: RefreshIndicator(
+            onRefresh: () async {
+              ref.invalidate(listingsByMultipleBasePartIdsProvider(selectedBasePartIds));
+            },
+            child: GridView.builder(
+              padding: ResponsiveHelper.getHorizontalPadding(context).copyWith(
+                top: 16,
+                bottom: 16,
+              ),
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: ResponsiveHelper.getGridCrossAxisCount(context),
+                childAspectRatio: 0.7,
+                crossAxisSpacing: ResponsiveHelper.isDesktop(context) ? 24 : 12,
+                mainAxisSpacing: ResponsiveHelper.isDesktop(context) ? 24 : 12,
+              ),
+              itemCount: listings.length,
+              itemBuilder: (context, index) {
+                return ListingCard(listing: listings[index]);
               },
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => _buildErrorState(context, ref, error),
             ),
           ),
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => _buildErrorState(context, ref, error),
+    );
+  }
+
+  /// 결과 헤더 (카운트 + 검색 초기화 버튼)
+  Widget _buildResultHeader(
+    int count,
+    String? searchQuery,
+    String? basePartSearchQuery,
+    bool hasMore,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 12,
+      ),
+      color: Colors.grey[50],
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            basePartSearchQuery != null && basePartSearchQuery.isNotEmpty
+                ? '"$basePartSearchQuery" 검색 결과 $count개${hasMore ? '+' : ''}'
+                : searchQuery != null && searchQuery.isNotEmpty
+                    ? '"$searchQuery" 검색 결과 $count개${hasMore ? '+' : ''}'
+                    : '$count개의 상품${hasMore ? '+' : ''}',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          if ((searchQuery != null && searchQuery.isNotEmpty) ||
+              (basePartSearchQuery != null && basePartSearchQuery.isNotEmpty))
+            TextButton.icon(
+              onPressed: () {
+                ref.read(searchQueryProvider.notifier).state = null;
+                ref.read(selectedBasePartIdProvider.notifier).state = null;
+                ref.read(selectedBasePartIdsProvider.notifier).state = [];
+                ref.read(basePartSearchQueryProvider.notifier).state = null;
+                // URL 업데이트
+                if (kIsWeb) {
+                  final category = ref.read(selectedCategoryProvider);
+                  final urlCategory = _getCategoryForUrl(category);
+                  final newPath = urlCategory.isEmpty
+                      ? '/part-shop'
+                      : '/part-shop?category=$urlCategory';
+                  context.go(newPath);
+                }
+              },
+              icon: const Icon(Icons.clear, size: 18),
+              label: const Text('검색 초기화'),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.grey[700],
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+              ),
+            ),
         ],
       ),
     );

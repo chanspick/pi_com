@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>(주)파이컴퓨터 보관 서비스 약관</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+            line-height: 1.8;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #10b981;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            color: #059669;
+            margin-bottom: 10px;
+        }
+
+        .header .subtitle {
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .toc {
+            background-color: #f0fdf4;
+            border: 1px solid #a7f3d0;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 40px;
+        }
+
+        .toc h2 {
+            font-size: 18px;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+
+        .toc ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 8px;
+        }
+
+        .toc li {
+            padding: 5px 0;
+        }
+
+        .toc a {
+            color: #059669;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .toc a:hover {
+            color: #047857;
+            text-decoration: underline;
+        }
+
+        .article {
+            margin-bottom: 40px;
+            scroll-margin-top: 20px;
+        }
+
+        .article h2 {
+            font-size: 20px;
+            color: #059669;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .article h3 {
+            font-size: 16px;
+            color: #374151;
+            margin: 20px 0 10px 0;
+            font-weight: 600;
+        }
+
+        .article p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+
+        .article ol, .article ul {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        .article li {
+            margin-bottom: 8px;
+        }
+
+        .article ul li::marker {
+            color: #10b981;
+        }
+
+        .highlight {
+            background-color: #fef3c7;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: 600;
+        }
+
+        .important {
+            background-color: #fee2e2;
+            border-left: 4px solid #dc2626;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .important strong {
+            color: #dc2626;
+        }
+
+        .info-box {
+            background-color: #dbeafe;
+            border-left: 4px solid #2563eb;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .note-box {
+            background-color: #f0fdf4;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .comparison-table th {
+            background-color: #059669;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .comparison-table td {
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+        }
+
+        .comparison-table tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e5e7eb;
+            text-align: center;
+        }
+
+        .company-info {
+            background-color: #f9fafb;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .company-info h3 {
+            font-size: 16px;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+
+        .company-info p {
+            font-size: 14px;
+            color: #4b5563;
+            margin-bottom: 5px;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: #10b981;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s;
+            text-decoration: none;
+            font-size: 24px;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+        }
+
+        .back-to-top:hover {
+            background-color: #059669;
+        }
+
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+                padding: 20px;
+            }
+
+            .back-to-top {
+                display: none;
+            }
+
+            .toc {
+                page-break-after: always;
+            }
+
+            .article {
+                page-break-inside: avoid;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .toc ul {
+                grid-template-columns: 1fr;
+            }
+
+            .comparison-table {
+                font-size: 13px;
+            }
+
+            .comparison-table th, .comparison-table td {
+                padding: 8px;
+            }
+
+            .back-to-top {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>(주)파이컴퓨터 보관 서비스 약관</h1>
+            <p class="subtitle">시행일: 2025년 12월 1일</p>
+        </div>
+
+        <div class="note-box">
+            <strong>📌 본 약관 적용 대상</strong>
+            <p style="margin-top: 10px;">본 약관은 다음의 경우에 적용되며, 해당 서비스 이용 시 별도 동의가 필요합니다:</p>
+            <ul style="margin-left: 20px; margin-top: 10px;">
+                <li>검수 합격 후 판매 대기 중인 물품 (무료 보관 기간 경과 시)</li>
+                <li>검수 불합격 후 60일 이내 반송 주소를 등록하지 않은 물품</li>
+            </ul>
+        </div>
+
+        <!-- 목차 -->
+        <div class="toc">
+            <h2>📑 목차</h2>
+            <ul>
+                <li><a href="#article1">제1조 목적 및 적용 범위</a></li>
+                <li><a href="#article2">제2조 용어의 정의</a></li>
+                <li><a href="#article3">제3조 보관 서비스의 종류</a></li>
+                <li><a href="#article4">제4조 보관 서비스 자동 전환</a></li>
+                <li><a href="#article5">제5조 일반 보관 서비스</a></li>
+                <li><a href="#article6">제6조 렌탈 보관 서비스</a></li>
+                <li><a href="#article7">제7조 보관 기간 및 제한</a></li>
+                <li><a href="#article8">제8조 위탁판매 전환 절차</a></li>
+                <li><a href="#article9">제9조 매각 수익 정산</a></li>
+                <li><a href="#article10">제10조 회사의 권리 및 의무</a></li>
+                <li><a href="#article11">제11조 이용자의 권리 및 의무</a></li>
+                <li><a href="#article12">제12조 면책 및 손해배상</a></li>
+            </ul>
+        </div>
+
+        <!-- 본문 -->
+        <div id="article1" class="article">
+            <h2>제1조 (목적 및 적용 범위)</h2>
+            <ol>
+                <li>본 약관은 (주)파이컴퓨터(이하 "회사")가 제공하는 물품 보관 서비스의 이용 조건, 절차, 권리·의무를 규정함을 목적으로 합니다.</li>
+                <li>본 약관은 <strong>[서비스 이용약관]</strong>과 함께 적용되며, 본 약관에서 정하지 않은 사항은 서비스 이용약관에 따릅니다.</li>
+            </ol>
+        </div>
+
+        <div id="article2" class="article">
+            <h2>제2조 (용어의 정의)</h2>
+            <ol>
+                <li><strong>"보관 서비스"</strong>란 회사가 이용자의 물품을 일정 기간 보관하는 서비스를 말합니다.</li>
+                <li><strong>"일반 보관"</strong>이란 회사가 물품을 보관하고 이용자에게 보관료를 청구하는 유료 보관 서비스를 말합니다.</li>
+                <li><strong>"렌탈 보관"</strong>이란 이용자가 물품을 회사에 임대하고, 회사가 해당 물품을 업무용으로 사용할 수 있는 보관 서비스를 말하며, 보관료는 임대료와 상계됩니다.</li>
+                <li><strong>"보관료"</strong>란 일반 보관 서비스 이용 시 이용자가 회사에 지급하는 비용을 말합니다.</li>
+                <li><strong>"위탁판매"</strong>란 보관 기간이 만료된 물품을 회사가 적정 가격으로 판매할 수 있는 권한을 말합니다.</li>
+            </ol>
+        </div>
+
+        <div id="article3" class="article">
+            <h2>제3조 (보관 서비스의 종류)</h2>
+            <p>회사는 다음 두 가지 유형의 보관 서비스를 제공하며, 이용자는 보관 서비스 전환 시 원하는 방식을 선택할 수 있습니다.</p>
+            
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>구분</th>
+                        <th>일반 보관</th>
+                        <th>렌탈 보관</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>보관료</strong></td>
+                        <td>물품 가액의 0.5%/일</td>
+                        <td>면제 (임대료와 상계)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>회사의 사용 권한</strong></td>
+                        <td>없음 (보관만)</td>
+                        <td>있음 (테스트 벤치, B2B 등)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>물품 반환</strong></td>
+                        <td>언제든지 요청 가능</td>
+                        <td>언제든지 요청 가능</td>
+                    </tr>
+                    <tr>
+                        <td><strong>최대 보관 기간</strong></td>
+                        <td>59일</td>
+                        <td>59일</td>
+                    </tr>
+                    <tr>
+                        <td><strong>60일 경과 시</strong></td>
+                        <td colspan="2">위탁판매 전환 (매각 수익 정산 후 잔액 반환)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="note-box">
+                <strong>💡 선택 가이드</strong>
+                <ul style="margin-left: 20px; margin-top: 10px;">
+                    <li><strong>일반 보관 추천:</strong> 물품을 빠른 시일 내에 반송받을 계획이 있거나, 회사의 사용을 원하지 않는 경우</li>
+                    <li><strong>렌탈 보관 추천:</strong> 보관료 부담을 줄이고 싶으며, 회사가 물품을 업무용으로 사용하는 것에 동의하는 경우</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="article4" class="article">
+            <h2>제4조 (보관 서비스 자동 전환)</h2>
+            <ol>
+                <li><strong>자동 전환 조건:</strong> 다음의 경우 물품은 자동으로 유료 보관 서비스로 전환됩니다.
+                    <ul>
+                        <li><strong>검수 합격 후 판매 대기 중인 물품:</strong> 무료 보관 기간(기본 7일) 경과 시</li>
+                        <li><strong>검수 불합격 물품:</strong> 검수 결과 통보일로부터 60일 이내 반송 주소를 등록하지 않은 경우 (탈락 당일부터 보관료 산정 시작)</li>
+                    </ul>
+                </li>
+                <li><strong>사전 알림:</strong> 회사는 무료 보관 기간 만료 <span class="highlight">1일 전</span> 및 <span class="highlight">보관 전환 당일</span>에 이용자에게 SMS, 이메일, 앱 푸시 등으로 알림을 발송합니다.</li>
+                <li><strong>보관 방식 선택:</strong> 
+                    <ul>
+                        <li>이용자는 알림 수신 후 <strong>24시간 이내</strong>에 일반 보관 또는 렌탈 보관 중 하나를 선택해야 합니다.</li>
+                        <li>24시간 이내 선택하지 않을 경우, 자동으로 <span class="highlight">일반 보관</span>으로 전환됩니다.</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div id="article5" class="article">
+            <h2>제5조 (일반 보관 서비스)</h2>
+            <ol>
+                <li><strong>보관료:</strong>
+                    <ul>
+                        <li>보관료는 물품 가액(등록 가격 또는 검수 평가액)의 <span class="highlight">0.5%/일</span>로 산정됩니다.</li>
+                        <li>보관료는 유료 보관 전환일로부터 매일 누적됩니다.</li>
+                        <li>예시: 100만원 물품의 경우 → 일일 보관료 5,000원</li>
+                    </ul>
+                </li>
+                <li><strong>보관료 결제:</strong>
+                    <ul>
+                        <li>이용자가 물품 반송을 신청할 경우, 누적 보관료를 결제한 후 반송이 진행됩니다.</li>
+                        <li>회사는 이용자에게 지급할 정산금이 있는 경우, 이용자의 동의를 받아 보관료를 우선 차감(상계)할 수 있습니다.</li>
+                    </ul>
+                </li>
+                <li><strong>회사의 의무:</strong>
+                    <ul>
+                        <li>회사는 물품을 안전하게 보관하며, 임의로 사용하거나 이동하지 않습니다.</li>
+                        <li>단, 화재, 도난 등 안전을 위한 불가피한 경우에는 물품을 이동할 수 있습니다.</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div id="article6" class="article">
+            <h2>제6조 (렌탈 보관 서비스)</h2>
+            <ol>
+                <li><strong>서비스 성격:</strong>
+                    <ul>
+                        <li>렌탈 보관은 이용자가 물품을 회사에 임대하는 형태로, <strong>임대차 계약</strong>의 성격을 가집니다.</li>
+                        <li>보관료와 임대료가 상계되어 이용자에게 별도 보관료가 청구되지 않습니다.</li>
+                    </ul>
+                </li>
+                <li><strong>회사의 사용 권한:</strong>
+                    <div class="info-box">
+                        회사는 렌탈 보관 중인 물품을 다음의 용도로 사용할 수 있습니다:
+                        <ul style="margin-left: 20px; margin-top: 10px;">
+                            <li>검수용 테스트 벤치 구성</li>
+                            <li>B2B 고객 대상 시연 및 전시</li>
+                            <li>직원 교육 및 연구개발 목적</li>
+                            <li>기타 회사의 정상적인 업무 활동</li>
+                        </ul>
+                        <strong>※ 회사는 물품을 파손되지 않도록 주의하여 사용하며, 정상적인 사용 범위를 초과하는 과도한 사용(오버클럭, 24시간 연속 가동 등)은 하지 않습니다.</strong>
+                    </div>
+                </li>
+                <li><strong>물품 반환:</strong>
+                    <ul>
+                        <li>이용자는 언제든지 물품 반환을 요청할 수 있으며, 회사는 요청일로부터 <strong>3영업일 이내</strong>에 물품을 반송합니다.</li>
+                        <li>반환 시 별도 비용은 청구되지 않습니다.</li>
+                    </ul>
+                </li>
+                <li><strong>손상 책임:</strong>
+                    <ul>
+                        <li>회사의 고의 또는 중과실로 인한 물품 손상: 회사가 전액 배상</li>
+                        <li>회사의 경과실로 인한 손상: 감가상각을 고려한 시가의 70% 배상</li>
+                        <li>정상적인 사용 과정에서의 자연 감모, 미세한 스크래치 등: 배상 책임 없음</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div id="article7" class="article">
+            <h2>제7조 (보관 기간 및 제한)</h2>
+            <ol>
+                <li><strong>최대 보관 기간:</strong>
+                    <div class="important">
+                        <strong>⚠️ 중요:</strong> 카카오페이 결제 시스템의 제약으로 인해, 보관 기간은 <strong>최대 59일</strong>로 제한됩니다.
+                    </div>
+                </li>
+                <li><strong>보관 기간 계산:</strong>
+                    <ul>
+                        <li>일반 보관: 유료 보관 전환일로부터 기산</li>
+                        <li>검수 불합격 물품: 검수 결과 통보일(탈락 당일)로부터 기산</li>
+                    </ul>
+                </li>
+                <li><strong>59일 경과 전 알림:</strong> 회사는 보관 시작일로부터 50일째에 최종 알림을 발송하며, 이용자에게 다음 중 하나를 선택하도록 안내합니다.
+                    <ul>
+                        <li>물품 반송 신청</li>
+                        <li>위탁판매 동의</li>
+                    </ul>
+                </li>
+                <li><strong>60일 경과 시:</strong> 이용자의 응답이 없거나 별도 조치가 없는 경우, 자동으로 제8조의 위탁판매 절차가 진행됩니다.</li>
+            </ol>
+        </div>
+
+        <div id="article8" class="article">
+            <h2>제8조 (위탁판매 전환 절차)</h2>
+            <ol>
+                <li><strong>전환 조건:</strong> 보관 기간이 60일을 경과한 경우, 해당 물품은 <strong>회사의 위탁판매 물품</strong>으로 전환됩니다.</li>
+                <li><strong>최종 통지:</strong>
+                    <ul>
+                        <li>회사는 60일 경과 시점에 이용자에게 서면(이메일, SMS 등)으로 <strong>최종 통지</strong>를 발송합니다.</li>
+                        <li>최종 통지에는 위탁판매 전환 사실, 예상 판매 가격, 정산 방식 등이 포함됩니다.</li>
+                    </ul>
+                </li>
+                <li><strong>판매 권한:</strong>
+                    <ul>
+                        <li>회사는 위탁판매 물품을 시장 시세를 고려한 <strong>적정 가격</strong>으로 판매할 수 있습니다.</li>
+                        <li>회사는 온라인 플랫폼, 오프라인 매장 등 다양한 채널을 통해 판매할 수 있습니다.</li>
+                    </ul>
+                </li>
+                <li><strong>판매 기간:</strong> 회사는 위탁판매 전환 후 <strong>60일 이내</strong>에 물품 판매를 시도하며, 판매가 되지 않을 경우 이용자에게 통보합니다.</li>
+            </ol>
+        </div>
+
+        <div id="article9" class="article">
+            <h2>제9조 (매각 수익 정산)</h2>
+            <ol>
+                <li><strong>정산 순서:</strong> 위탁판매 물품이 판매된 경우, 판매 수익은 다음 순서로 공제됩니다.
+                    <div class="info-box">
+                        <strong>정산 공제 순서:</strong>
+                        <ol style="margin-left: 20px; margin-top: 10px;">
+                            <li><strong>보관료:</strong> 물품 가액의 30% (0.5% × 60일) - 일반 보관만 해당, 렌탈 보관은 0원</li>
+                            <li><strong>매각비용:</strong> 판매 수수료, 배송비, 광고비 등 실제 발생한 판매 관련 비용</li>
+                            <li><strong>미납 위약금:</strong> 이용자에게 미납된 위약금이 있는 경우 우선 공제</li>
+                            <li><strong>잔여금:</strong> 위 공제 후 잔액은 이용자에게 지급</li>
+                        </ol>
+                    </div>
+                </li>
+                <li><strong>정산 예시:</strong>
+                    <div class="note-box">
+                        <strong>📊 일반 보관 정산 예시 (물품 가액 100만원, 판매가 90만원)</strong>
+                        <ul style="list-style: none; margin-top: 10px;">
+                            <li>• 판매 수익: 900,000원</li>
+                            <li>• 차감 - 보관료 (30%): -300,000원</li>
+                            <li>• 차감 - 매각비용 (10%): -90,000원</li>
+                            <li>• <strong>이용자 지급액: 510,000원</strong></li>
+                        </ul>
+                        
+                        <strong style="margin-top: 15px; display: block;">📊 렌탈 보관 정산 예시 (물품 가액 100만원, 판매가 90만원)</strong>
+                        <ul style="list-style: none; margin-top: 10px;">
+                            <li>• 판매 수익: 900,000원</li>
+                            <li>• 차감 - 보관료: 0원 (임대료 상계)</li>
+                            <li>• 차감 - 매각비용 (10%): -90,000원</li>
+                            <li>• <strong>이용자 지급액: 810,000원</strong></li>
+                        </ul>
+                    </div>
+                </li>
+                <li><strong>정산 지급:</strong>
+                    <ul>
+                        <li>잔여금이 발생한 경우, 판매 완료일로부터 <strong>7영업일 이내</strong>에 이용자에게 지급됩니다.</li>
+                        <li>정산 내역은 이메일 및 서비스 내 알림으로 상세히 안내됩니다.</li>
+                    </ul>
+                </li>
+                <li><strong>적자 발생 시:</strong> 보관료와 매각비용이 판매 수익을 초과하는 경우, 회사는 법적 절차(유치권 행사 등)를 통해 채권을 회수할 수 있으며, 이용자에게 추가 비용을 청구하지 않습니다.</li>
+            </ol>
+        </div>
+
+        <div id="article10" class="article">
+            <h2>제10조 (회사의 권리 및 의무)</h2>
+            <ol>
+                <li><strong>보관 의무:</strong> 회사는 물품을 안전하게 보관하며, 선량한 관리자의 주의 의무를 다합니다.</li>
+                <li><strong>알림 의무:</strong> 회사는 보관 전환, 기간 만료, 위탁판매 등 중요한 사항을 사전에 이용자에게 알립니다.</li>
+                <li><strong>정산 의무:</strong> 위탁판매 수익이 발생한 경우, 회사는 신속하고 투명하게 정산합니다.</li>
+                <li><strong>사용 권한 (렌탈 보관):</strong> 렌탈 보관 물품에 한해, 회사는 제6조에 명시된 범위 내에서 물품을 사용할 수 있습니다.</li>
+            </ol>
+        </div>
+
+        <div id="article11" class="article">
+            <h2>제11조 (이용자의 권리 및 의무)</h2>
+            <ol>
+                <li><strong>반환 요청권:</strong> 이용자는 보관 기간 중 언제든지 물품 반환을 요청할 수 있습니다.</li>
+                <li><strong>보관 방식 선택권:</strong> 이용자는 일반 보관 또는 렌탈 보관 중 원하는 방식을 선택할 수 있습니다.</li>
+                <li><strong>보관료 결제 의무:</strong> 일반 보관 이용자는 물품 반환 시 누적된 보관료를 결제해야 합니다.</li>
+                <li><strong>정보 제공 의무:</strong> 이용자는 정확한 연락처를 제공하고, 회사의 알림을 확인해야 합니다.</li>
+            </ol>
+        </div>
+
+        <div id="article12" class="article">
+            <h2>제12조 (면책 및 손해배상)</h2>
+            <ol>
+                <li><strong>천재지변:</strong> 화재, 홍수, 지진 등 불가항력적인 사유로 물품이 훼손된 경우, 회사는 책임을 지지 않습니다.</li>
+                <li><strong>제3자 귀책:</strong> 도난, 제3자의 고의·과실로 인한 손해는 회사가 책임지지 않으며, 이용자는 회사와 함께 가해자에 대한 손해배상을 청구할 수 있습니다.</li>
+                <li><strong>손해배상 한도:</strong> 회사의 과실로 인한 손해배상 책임은 물품 가액을 한도로 합니다.</li>
+                <li><strong>이용자 과실:</strong> 이용자가 부정확한 정보를 제공하거나 회사의 알림을 확인하지 않아 발생한 손해는 이용자가 부담합니다.</li>
+            </ol>
+        </div>
+
+        <!-- 부칙 -->
+        <div class="footer">
+            <h2 style="font-size: 20px; color: #059669; margin-bottom: 20px;">부칙</h2>
+            <p><strong>시행일:</strong> 본 약관은 <span class="highlight">2025년 12월 1일</span>부터 시행됩니다.</p>
+            
+            <div class="company-info">
+                <h3>사업자 정보</h3>
+                <p><strong>상호:</strong> (주) 파이컴퓨터</p>
+                <p><strong>대표자:</strong> 최진규</p>
+                <p><strong>사업자등록번호:</strong> 207-87-03690</p>
+                <p><strong>통신판매업 신고번호:</strong> 2025-서울서대문-1006</p>
+                <p><strong>주소:</strong> 서울특별시 서대문구 연세로2나길 61</p>
+                <p><strong>대표전화:</strong> 02-6402-0025</p>
+                <p><strong>이메일:</strong> wlsrb00g@gmail.com</p>
+            </div>
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <p style="font-size: 12px; color: #6b7280;">
+                    본 약관에 대한 문의사항이 있으시면 고객센터(02-6402-0025)로 연락주시기 바랍니다.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 맨 위로 버튼 -->
+    <a href="#" class="back-to-top" id="backToTop">↑</a>
+
+    <script>
+        // 맨 위로 버튼 표시/숨김
+        window.addEventListener('scroll', function() {
+            const backToTop = document.getElementById('backToTop');
+            if (window.pageYOffset > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        // 맨 위로 버튼 클릭 시 부드럽게 스크롤
+        document.getElementById('backToTop').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // 목차 링크 클릭 시 부드럽게 스크롤
+        document.querySelectorAll('.toc a').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                target.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start'
+                });
+            });
+        });
+    </script>
+</body>
+</html>

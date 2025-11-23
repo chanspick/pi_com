@@ -1,0 +1,17 @@
+{
+  "name": "firebase-scripts",
+  "version": "1.0.0",
+  "description": "Firebase 데이터 관리 스크립트",
+  "main": "add_ram_ssd_firebase.js",
+  "scripts": {
+    "add-ram-ssd": "node add_ram_ssd_firebase.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "mammoth": "^1.11.0",
+    "uuid": "^13.0.0",
+    "xlsx": "^0.18.5"
+  },
+  "author": "",
+  "license": "MIT"
+}

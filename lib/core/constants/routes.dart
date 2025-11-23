@@ -70,4 +70,11 @@ class Routes {
   static const String terms = '/terms';
   static const String privacy = '/privacy';
   static const String refund = '/refund';
+  static const String storageServiceTerms = '/storage-service-terms';
+
+  // ✅ 환불 관리
+  static const String refundList = '/refund-list';
+  static const String refundRequest = '/refund-request';
+  static const String refundDetail = '/refund-detail';
+  static const String refundReturnShipping = '/refund-return-shipping';
 }

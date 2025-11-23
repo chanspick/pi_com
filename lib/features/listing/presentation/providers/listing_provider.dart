@@ -9,12 +9,152 @@ import 'package:pi_com/features/listing/domain/usecases/get_listing_usecase.dart
 import '../../data/datasources/listing_remote_datasource.dart';
 import '../../domain/repositories/listing_repository.dart';
 
+// 🆕 무한 스크롤을 위한 상태 클래스
+class PaginatedListingsState {
+  final List<ListingEntity> listings;
+  final bool isLoading;
+  final bool hasMore;
+  final dynamic lastDocument;
+  final String? error;
+
+  PaginatedListingsState({
+    this.listings = const [],
+    this.isLoading = false,
+    this.hasMore = true,
+    this.lastDocument,
+    this.error,
+  });
+
+  PaginatedListingsState copyWith({
+    List<ListingEntity>? listings,
+    bool? isLoading,
+    bool? hasMore,
+    dynamic lastDocument,
+    String? error,
+  }) {
+    return PaginatedListingsState(
+      listings: listings ?? this.listings,
+      isLoading: isLoading ?? this.isLoading,
+      hasMore: hasMore ?? this.hasMore,
+      lastDocument: lastDocument ?? this.lastDocument,
+      error: error ?? this.error,
+    );
+  }
+}
+
+// 🆕 무한 스크롤 컨트롤러 (StateNotifier)
+class PaginatedListingsNotifier extends StateNotifier<PaginatedListingsState> {
+  final ListingRepository repository;
+  final ListingQueryParams params;
+
+  PaginatedListingsNotifier({
+    required this.repository,
+    required this.params,
+  }) : super(PaginatedListingsState()) {
+    // 초기 로드
+    loadInitial();
+  }
+
+  /// 초기 로드 (실시간 데이터)
+  Future<void> loadInitial() async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final result = await repository.getListingsPaginated(
+        category: params.category,
+        sortBy: params.sortBy,
+        searchQuery: params.searchQuery,
+        includeAllStatuses: params.includeAllStatuses,
+        limit: 20,
+        useCache: false, // 중고 거래 플랫폼 특성상 항상 최신 데이터
+      );
+
+      state = PaginatedListingsState(
+        listings: result.listings,
+        isLoading: false,
+        hasMore: result.hasMore,
+        lastDocument: result.lastDocument,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// 다음 페이지 로드
+  Future<void> loadMore() async {
+    if (state.isLoading || !state.hasMore) return;
+
+    state = state.copyWith(isLoading: true);
+
+    try {
+      final result = await repository.getListingsPaginated(
+        category: params.category,
+        sortBy: params.sortBy,
+        searchQuery: params.searchQuery,
+        includeAllStatuses: params.includeAllStatuses,
+        limit: 20,
+        lastDocument: state.lastDocument,
+        useCache: false, // 중고 거래 플랫폼 특성상 항상 최신 데이터
+      );
+
+      state = PaginatedListingsState(
+        listings: [...state.listings, ...result.listings],
+        isLoading: false,
+        hasMore: result.hasMore,
+        lastDocument: result.lastDocument,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  /// 새로고침 (Pull-to-refresh, 서버 강제)
+  Future<void> refresh() async {
+    state = PaginatedListingsState(isLoading: true); // 완전 초기화
+
+    try {
+      final result = await repository.getListingsPaginated(
+        category: params.category,
+        sortBy: params.sortBy,
+        searchQuery: params.searchQuery,
+        includeAllStatuses: params.includeAllStatuses,
+        limit: 20,
+        useCache: false, // 새로고침은 서버 강제
+      );
+
+      state = PaginatedListingsState(
+        listings: result.listings,
+        isLoading: false,
+        hasMore: result.hasMore,
+        lastDocument: result.lastDocument,
+      );
+    } catch (e) {
+      state = PaginatedListingsState(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+}
+
 class ListingQueryParams {
   final String? category;
   final String? sortBy;
   final String? searchQuery;  // 검색어 추가
+  final bool includeAllStatuses;  // Admin용: 모든 상태 포함
 
-  ListingQueryParams({this.category, this.sortBy, this.searchQuery});
+  ListingQueryParams({
+    this.category,
+    this.sortBy,
+    this.searchQuery,
+    this.includeAllStatuses = false,
+  });
 
   @override
   bool operator ==(Object other) =>
@@ -23,10 +163,11 @@ class ListingQueryParams {
           runtimeType == other.runtimeType &&
           category == other.category &&
           sortBy == other.sortBy &&
-          searchQuery == other.searchQuery;
+          searchQuery == other.searchQuery &&
+          includeAllStatuses == other.includeAllStatuses;
 
   @override
-  int get hashCode => category.hashCode ^ sortBy.hashCode ^ searchQuery.hashCode;
+  int get hashCode => category.hashCode ^ sortBy.hashCode ^ searchQuery.hashCode ^ includeAllStatuses.hashCode;
 }
 
 final selectedCategoryProvider = StateProvider<String>((ref) => 'All');
@@ -63,6 +204,7 @@ final listingsFutureProvider = FutureProvider.autoDispose.family<List<ListingEnt
     category: params.category,
     sortBy: params.sortBy,
     searchQuery: params.searchQuery,
+    includeAllStatuses: params.includeAllStatuses,
   );
 });
 
@@ -95,4 +237,12 @@ final listingsByMultipleBasePartIdsProvider = FutureProvider.autoDispose.family<
   allListings.sort((a, b) => (b.createdAt ?? DateTime(2000)).compareTo(a.createdAt ?? DateTime(2000)));
 
   return allListings;
+});
+
+// 🆕 페이지네이션을 지원하는 listings provider
+final paginatedListingsProvider = StateNotifierProvider.autoDispose.family<PaginatedListingsNotifier, PaginatedListingsState, ListingQueryParams>((ref, params) {
+  return PaginatedListingsNotifier(
+    repository: ref.watch(listingRepositoryProvider),
+    params: params,
+  );
 });

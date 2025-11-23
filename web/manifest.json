@@ -1,13 +1,16 @@
 {
-    "name": "pi_com",
-    "short_name": "pi_com",
-    "start_url": ".",
+    "name": "PiCom - 중고 컴퓨터 부품 거래 플랫폼",
+    "short_name": "PiCom",
+    "start_url": "/",
+    "scope": "/",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "new-picom",
+    "description": "믿을 수 있는 중고 컴퓨터 부품 거래 플랫폼. CPU, GPU, RAM, 메인보드, SSD 등 다양한 PC 부품을 안전하게 거래하세요.",
+    "lang": "ko",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
+    "categories": ["shopping", "marketplace", "technology"],
     "icons": [
         {
             "src": "icons/Icon-192.png",

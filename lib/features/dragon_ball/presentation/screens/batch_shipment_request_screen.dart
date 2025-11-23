@@ -50,6 +50,20 @@ class _BatchShipmentRequestScreenState extends ConsumerState<BatchShipmentReques
       return;
     }
 
+    // 59일 초과 아이템 확인
+    final dragonBallsAsync = ref.read(userDragonBallsStreamProvider);
+    final allDragonBalls = dragonBallsAsync.value ?? [];
+    final selectedDragonBalls = allDragonBalls.where((db) => widget.dragonBallIds.contains(db.dragonBallId)).toList();
+
+    final exceededItems = selectedDragonBalls.where((db) => StoragePolicy.hasExceededMaxStorageDays(db.storedAt)).toList();
+    if (exceededItems.isNotEmpty) {
+      SnackbarHelper.showError(
+        context,
+        '59일 최대 보관 기간을 초과한 부품이 포함되어 있습니다.\n해당 부품은 위탁판매로 전환됩니다.',
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {

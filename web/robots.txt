@@ -1,0 +1,14 @@
+# robots.txt for PiCom (피컴)
+# 중고 컴퓨터 부품 거래 플랫폼
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://picom-team.web.app/sitemap.xml
+
+# Disallow admin pages (if any exist in the future)
+# Disallow: /admin/
+
+# Crawl delay (optional, adjust if needed)
+# Crawl-delay: 1

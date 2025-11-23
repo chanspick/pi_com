@@ -6,7 +6,23 @@ abstract class ListingRepository {
   Stream<ListingEntity> getListing(String listingId);
 
   // ✅ Stream → Future로 변경, Listing → ListingEntity로 수정
-  Future<List<ListingEntity>> getListings({String? category, String? sortBy, String? searchQuery});
+  Future<List<ListingEntity>> getListings({
+    String? category,
+    String? sortBy,
+    String? searchQuery,
+    bool includeAllStatuses = false,
+  });
+
+  // 🆕 페이지네이션 지원
+  Future<ListingPaginationEntity> getListingsPaginated({
+    String? category,
+    String? sortBy,
+    String? searchQuery,
+    bool includeAllStatuses = false,
+    int limit = 20,
+    dynamic lastDocument,
+    bool useCache = true,
+  });
 
   // basePartId로 필터링된 active listings 가져오기
   Future<List<ListingEntity>> getListingsByBasePartId(String basePartId, {String? sortBy});

@@ -10,6 +10,7 @@ import 'package:pi_com/features/order/data/datasources/order_remote_datasource_i
 import 'package:pi_com/features/order/data/repositories/order_repository_impl.dart';
 import 'package:pi_com/features/order/domain/repositories/order_repository.dart';
 import 'package:pi_com/features/price_history/data/repositories/price_history_repository.dart';
+import 'package:pi_com/core/utils/notification_helper.dart';
 
 final orderRemoteDataSourceProvider = Provider<OrderRemoteDataSource>((ref) {
   return OrderRemoteDataSourceImpl();
@@ -24,15 +25,21 @@ final priceHistoryRepositoryProvider = Provider<PriceHistoryRepository>((ref) {
   return PriceHistoryRepository();
 });
 
+final notificationHelperProvider = Provider<NotificationHelper>((ref) {
+  return NotificationHelper();
+});
+
 final purchaseUseCaseProvider = Provider<PurchaseUseCase>((ref) {
   final orderRepository = ref.watch(orderRepositoryProvider);
   final listingRepository = ref.watch(listingRepositoryProvider);
   final cartRepository = ref.watch(cartRepositoryProvider);
   final priceHistoryRepository = ref.watch(priceHistoryRepositoryProvider);
+  final notificationHelper = ref.watch(notificationHelperProvider);
   return PurchaseUseCase(
     orderRepository,
     listingRepository,
     cartRepository,
     priceHistoryRepository,
+    notificationHelper,
   );
 });

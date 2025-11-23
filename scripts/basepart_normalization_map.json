@@ -1,0 +1,241 @@
+{
+  "gpu": [
+    {
+      "oldId": "NVIDIA_GeForce_GTX_1660_Super_6GB",
+      "newId": "NVIDIA_GeForce_GTX_1660_Super",
+      "count": 6
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_2060_Super_8GB",
+      "newId": "NVIDIA_GeForce_RTX_2060_Super",
+      "count": 2
+    },
+    {
+      "oldId": "NVIDIA_GeForce_GTX_1060_3GB",
+      "newId": "NVIDIA_GeForce_GTX_1060",
+      "count": 9
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_5060_8GB",
+      "newId": "NVIDIA_GeForce_RTX_5060",
+      "count": 3
+    },
+    {
+      "oldId": "AMD_Radeon_RX_6650_XT_8GB",
+      "newId": "AMD_Radeon_RX_6650_XT",
+      "count": 1
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_3060_12GB",
+      "newId": "NVIDIA_GeForce_RTX_3060",
+      "count": 7
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_2060_6GB",
+      "newId": "NVIDIA_GeForce_RTX_2060",
+      "count": 4
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_3070_Ti_8GB",
+      "newId": "NVIDIA_GeForce_RTX_3070_Ti",
+      "count": 2
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_2070_Super_8GB",
+      "newId": "NVIDIA_GeForce_RTX_2070_Super",
+      "count": 2
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_3060_Ti_8GB",
+      "newId": "NVIDIA_GeForce_RTX_3060_Ti",
+      "count": 4
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_2070_8GB",
+      "newId": "NVIDIA_GeForce_RTX_2070",
+      "count": 3
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_4060_8GB",
+      "newId": "NVIDIA_GeForce_RTX_4060",
+      "count": 5
+    },
+    {
+      "oldId": "NVIDIA_GeForce_GTX_1060_6GB",
+      "newId": "NVIDIA_GeForce_GTX_1060",
+      "count": 10
+    },
+    {
+      "oldId": "AMD_Radeon_RX_6750_XT_12GB",
+      "newId": "AMD_Radeon_RX_6750_XT",
+      "count": 1
+    },
+    {
+      "oldId": "AMD_Radeon_RX_6600_XT_8GB",
+      "newId": "AMD_Radeon_RX_6600_XT",
+      "count": 1
+    },
+    {
+      "oldId": "NVIDIA_GeForce_GTX_1080_8GB",
+      "newId": "NVIDIA_GeForce_GTX_1080",
+      "count": 2
+    },
+    {
+      "oldId": "NVIDIA_GeForce_GTX_1650_4GB",
+      "newId": "NVIDIA_GeForce_GTX_1650",
+      "count": 3
+    },
+    {
+      "oldId": "NVIDIA_GeForce_GTX_1080_Ti_11GB",
+      "newId": "NVIDIA_GeForce_GTX_1080_Ti",
+      "count": 1
+    },
+    {
+      "oldId": "NVIDIA_GeForce_GTX_1660_Ti_6GB",
+      "newId": "NVIDIA_GeForce_GTX_1660_Ti",
+      "count": 4
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_5070_12GB",
+      "newId": "NVIDIA_GeForce_RTX_5070",
+      "count": 2
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_5060_Ti_8GB",
+      "newId": "NVIDIA_GeForce_RTX_5060_Ti",
+      "count": 1
+    },
+    {
+      "oldId": "NVIDIA_GeForce_GTX_1660_6GB",
+      "newId": "NVIDIA_GeForce_GTX_1660",
+      "count": 2
+    },
+    {
+      "oldId": "NVIDIA_GeForce_GTX_1050_Ti_4GB",
+      "newId": "NVIDIA_GeForce_GTX_1050_Ti",
+      "count": 2
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_3070_8GB",
+      "newId": "NVIDIA_GeForce_RTX_3070",
+      "count": 2
+    },
+    {
+      "oldId": "NVIDIA_GeForce_GTX_1060_Ti_8GB",
+      "newId": "NVIDIA_GeForce_GTX_1060_Ti",
+      "count": 1
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_3080_10GB",
+      "newId": "NVIDIA_GeForce_RTX_3080",
+      "count": 1
+    },
+    {
+      "oldId": "NVIDIA_GeForce_GTX_1650_Super_4GB",
+      "newId": "NVIDIA_GeForce_GTX_1650_Super",
+      "count": 1
+    },
+    {
+      "oldId": "AMD_Radeon_RX_6600_8GB",
+      "newId": "AMD_Radeon_RX_6600",
+      "count": 1
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_3090_Ti_12GB",
+      "newId": "NVIDIA_GeForce_RTX_3090_Ti",
+      "count": 1
+    },
+    {
+      "oldId": "AMD_Radeon_RX_6800_16GB",
+      "newId": "AMD_Radeon_RX_6800",
+      "count": 1
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_3050_6GB",
+      "newId": "NVIDIA_GeForce_RTX_3050",
+      "count": 1
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_3050_8GB",
+      "newId": "NVIDIA_GeForce_RTX_3050",
+      "count": 1
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_4060_Ti_8GB",
+      "newId": "NVIDIA_GeForce_RTX_4060_Ti",
+      "count": 1
+    },
+    {
+      "oldId": "NVIDIA_GeForce_GTX_1070_8GB",
+      "newId": "NVIDIA_GeForce_GTX_1070",
+      "count": 1
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_4070_Ti_12GB",
+      "newId": "NVIDIA_GeForce_RTX_4070_Ti",
+      "count": 2
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_4080_16GB",
+      "newId": "NVIDIA_GeForce_RTX_4080",
+      "count": 1
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_2060_3GB",
+      "newId": "NVIDIA_GeForce_RTX_2060",
+      "count": 1
+    },
+    {
+      "oldId": "NVIDIA_GeForce_RTX_4090_24GB",
+      "newId": "NVIDIA_GeForce_RTX_4090",
+      "count": 1
+    }
+  ],
+  "mainboard": [
+    {
+      "oldId": "ASUS_X570_TUF_Gaming",
+      "newId": "AMD_X570",
+      "count": 1
+    },
+    {
+      "oldId": "Maxsun_B650",
+      "newId": "AMD_B650",
+      "count": 1
+    },
+    {
+      "oldId": "ASUS_Z790_Prime",
+      "newId": "Intel_Z790",
+      "count": 1
+    },
+    {
+      "oldId": "MSI_b450_MAG",
+      "newId": "AMD_B450",
+      "count": 1
+    },
+    {
+      "oldId": "Gigabyte_B650_K",
+      "newId": "AMD_B650",
+      "count": 2
+    },
+    {
+      "oldId": "ASUS_B550_TUF_Gaming",
+      "newId": "AMD_B550",
+      "count": 2
+    },
+    {
+      "oldId": "MSI_B660_PRO",
+      "newId": "Intel_B660",
+      "count": 1
+    },
+    {
+      "oldId": "ASUS_B550_Prime",
+      "newId": "AMD_B550",
+      "count": 1
+    },
+    {
+      "oldId": "Gigabyte_x870_Aorus",
+      "newId": "AMD_X870",
+      "count": 1
+    }
+  ]
+}

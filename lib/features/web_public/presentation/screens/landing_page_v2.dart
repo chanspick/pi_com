@@ -1,5 +1,6 @@
 // lib/features/web_public/presentation/screens/landing_page_v2.dart
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -304,43 +305,50 @@ class LandingPageV2 extends ConsumerWidget {
                 ),
               ),
               child: listing.imageUrls.isNotEmpty
-                  ? ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
-                      ),
-                      child: Image.network(
-                        listing.imageUrls.first,
-                        width: double.infinity,
-                        height: 180,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
-                            child: Icon(
-                              Icons.broken_image,
-                              size: 64,
-                              color: Colors.grey[300],
-                            ),
-                          );
-                        },
-                        loadingBuilder: (context, child, loadingProgress) {
-                          if (loadingProgress == null) return child;
-                          return Center(
-                            child: CircularProgressIndicator(
-                              value: loadingProgress.expectedTotalBytes != null
-                                  ? loadingProgress.cumulativeBytesLoaded /
-                                      loadingProgress.expectedTotalBytes!
-                                  : null,
-                            ),
-                          );
-                        },
+                  ? Semantics(
+                      label: '${listing.brand} ${listing.modelName} 상품 이미지',
+                      child: ClipRRect(
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          topRight: Radius.circular(12),
+                        ),
+                        child: Image.network(
+                          listing.imageUrls.first,
+                          width: double.infinity,
+                          height: 180,
+                          fit: BoxFit.cover,
+                          cacheWidth: 400, // Optimize memory usage
+                          errorBuilder: (context, error, stackTrace) {
+                            return Center(
+                              child: Icon(
+                                Icons.broken_image,
+                                size: 64,
+                                color: Colors.grey[300],
+                              ),
+                            );
+                          },
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                value: loadingProgress.expectedTotalBytes != null
+                                    ? loadingProgress.cumulativeBytesLoaded /
+                                        loadingProgress.expectedTotalBytes!
+                                    : null,
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     )
-                  : Center(
-                      child: Icon(
-                        Icons.image,
-                        size: 64,
-                        color: Colors.grey[300],
+                  : Semantics(
+                      label: '이미지 없음',
+                      child: Center(
+                        child: Icon(
+                          Icons.image,
+                          size: 64,
+                          color: Colors.grey[300],
+                        ),
                       ),
                     ),
             ),
@@ -463,7 +471,7 @@ class LandingPageV2 extends ConsumerWidget {
       {
         'icon': Icons.inventory,
         'title': '무료 보관',
-        'description': 'PC 보관함으로\n30일 무료 보관',
+        'description': 'PC 보관함으로\n7일 무료 보관',
       },
       {
         'icon': Icons.support_agent,
@@ -666,6 +674,7 @@ class HeroBannerCarousel extends StatefulWidget {
 class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  Timer? _autoSlideTimer;
 
   // 배너 이미지 목록 (Firebase Storage 또는 assets)
   final List<Map<String, String>> banners = [
@@ -693,24 +702,21 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
   void initState() {
     super.initState();
     // 자동 슬라이드 (5초마다)
-    Future.delayed(const Duration(seconds: 5), _autoSlide);
-  }
+    _autoSlideTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (!mounted) return;
 
-  void _autoSlide() {
-    if (!mounted) return;
-
-    final nextPage = (_currentPage + 1) % banners.length;
-    _pageController.animateToPage(
-      nextPage,
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeInOut,
-    );
-
-    Future.delayed(const Duration(seconds: 5), _autoSlide);
+      final nextPage = (_currentPage + 1) % banners.length;
+      _pageController.animateToPage(
+        nextPage,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    });
   }
 
   @override
   void dispose() {
+    _autoSlideTimer?.cancel();
     _pageController.dispose();
     super.dispose();
   }
@@ -836,25 +842,27 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
 
     return InkWell(
       onTap: () => context.go(banner['route']!),
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          image: DecorationImage(
-            image: NetworkImage(banner['image']!),
-            fit: BoxFit.cover,
-          ),
-        ),
+      child: Semantics(
+        label: '${banner['title']} 배너 이미지',
         child: Container(
+          width: double.infinity,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [
-                Colors.black.withValues(alpha: 0.7),
-                Colors.black.withValues(alpha: 0.3),
-              ],
+            image: DecorationImage(
+              image: NetworkImage(banner['image']!),
+              fit: BoxFit.cover,
             ),
           ),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+                colors: [
+                  Colors.black.withValues(alpha: 0.7),
+                  Colors.black.withValues(alpha: 0.3),
+                ],
+              ),
+            ),
           child: ResponsiveHelper.centeredMaxWidthContainer(
             context: context,
             child: Padding(
@@ -902,6 +910,7 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

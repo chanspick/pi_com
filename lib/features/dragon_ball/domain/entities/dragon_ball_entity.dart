@@ -23,6 +23,10 @@ class DragonBallEntity {
   final String? basePartId;
   final String? category;
   final int accumulatedFee; // 누적 보관료
+  final StorageType storageType; // 보관 서비스 타입
+  final int? salePrice; // 위탁판매 가격
+  final DateTime? consignmentConvertedAt; // 위탁판매 전환일
+  final int? revenueReturned; // 반환된 수익금
 
   DragonBallEntity({
     required this.dragonBallId,
@@ -43,6 +47,10 @@ class DragonBallEntity {
     this.basePartId,
     this.category,
     this.accumulatedFee = 0,
+    this.storageType = StorageType.general,
+    this.salePrice,
+    this.consignmentConvertedAt,
+    this.revenueReturned,
   });
 
   /// 모델에서 엔티티 생성
@@ -66,6 +74,10 @@ class DragonBallEntity {
       basePartId: model.basePartId,
       category: model.category,
       accumulatedFee: model.accumulatedFee,
+      storageType: model.storageType,
+      salePrice: model.salePrice,
+      consignmentConvertedAt: model.consignmentConvertedAt,
+      revenueReturned: model.revenueReturned,
     );
   }
 
@@ -90,6 +102,10 @@ class DragonBallEntity {
       basePartId: basePartId,
       category: category,
       accumulatedFee: accumulatedFee,
+      storageType: storageType,
+      salePrice: salePrice,
+      consignmentConvertedAt: consignmentConvertedAt,
+      revenueReturned: revenueReturned,
     );
   }
 
@@ -135,8 +151,7 @@ class DragonBallEntity {
   }
 
   /// 보관료 계산
-  /// 현재 이벤트 기간 이후 하루 1% 보관료 (구매가 기준)
-  /// 일반: 60일 무료, 이벤트: 180일 무료
+  /// 무료 기간(7일) 이후 하루 1% 보관료 (구매가 기준)
   int calculateStorageFee() {
     return StoragePolicy.calculateStorageFee(storedAt, purchasePrice);
   }
@@ -153,7 +168,7 @@ class DragonBallEntity {
     return StoragePolicy.shouldTransferOwnership(totalFee, purchasePrice);
   }
 
-  /// 무료 보관 기간 남은 일수 (현재 이벤트 중: 180일)
+  /// 무료 보관 기간 남은 일수 (7일 무료)
   int get freeDaysRemaining {
     final days = StoragePolicy.calculateDaysUntilExpiration(storedAt);
     return days > 0 ? days : 0;

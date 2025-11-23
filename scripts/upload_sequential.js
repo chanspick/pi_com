@@ -1,4 +1,4 @@
-// 중복 스킵하고 신규 데이터만 업로드하는 스크립트
+// 순차적 업로드 스크립트 (Price Chart용)
 const admin = require('firebase-admin');
 const xlsx = require('xlsx');
 const path = require('path');
@@ -27,7 +27,12 @@ const DUPLICATE_THRESHOLD = {
 // ============================================
 
 function getStatusFromSheetName(sheetName) {
-  return 'available';
+  const statusMap = {
+    '판매중': 'available',
+    '거래완료': 'sold',
+    '예약중': 'reserved'
+  };
+  return statusMap[sheetName] || 'available';
 }
 
 function parsePrice(priceValue) {
@@ -62,21 +67,19 @@ function generateBasePartId(category, data) {
     case 'mainboard': {
       const manufacturer = sanitize(data['제조사']);
       const chipset = sanitize(data['칩셋']);
-      const series = sanitize(data['시리즈']);
-      return [manufacturer, chipset, series].filter(p => p).join('_');
+      return [manufacturer, chipset].filter(p => p).join('_');
     }
     case 'ram': {
-      const brand = sanitize(data['브랜드']);
-      const type = sanitize(data['타입']);
-      const capacity = sanitize(data['용량']);
-      const speed = sanitize(data['속도']);
+      const brand = sanitize(data['제조사']);
+      const type = sanitize(data['메모리 규격']);
+      const capacity = sanitize(data['용량 (GB)']);
+      const speed = sanitize(data['클럭 (MHz)']);
       return [brand, type, capacity, speed].filter(p => p).join('_');
     }
     case 'ssd': {
-      const brand = sanitize(data['브랜드']);
-      const type = sanitize(data['타입']);
+      const brand = sanitize(data['제조사']);
       const capacity = sanitize(data['용량']);
-      return [brand, type, capacity].filter(p => p).join('_');
+      return [brand, capacity].filter(p => p).join('_');
     }
     default:
       return 'unknown';
@@ -111,19 +114,17 @@ function generateModelName(category, data) {
       return [manufacturer, series, chipset, modelName, detail1, detail2].filter(p => p).join(' ');
     }
     case 'ram': {
-      const brand = data['브랜드'] || '';
-      const type = data['타입'] || '';
-      const capacity = data['용량'] || '';
-      const speed = data['속도'] || '';
-      const modelName = data['모델명'] || '';
-      return [brand, type, capacity, speed, modelName].filter(p => p).join(' ');
+      const brand = data['제조사'] || '';
+      const type = data['메모리 규격'] || '';
+      const capacity = data['용량 (GB)'] || '';
+      const speed = data['클럭 (MHz)'] || '';
+      return [brand, type, capacity, speed].filter(p => p).join(' ');
     }
     case 'ssd': {
-      const brand = data['브랜드'] || '';
-      const type = data['타입'] || '';
+      const brand = data['제조사'] || '';
+      const series = data['시리즈/모델명'] || '';
       const capacity = data['용량'] || '';
-      const modelName = data['모델명'] || '';
-      return [brand, type, capacity, modelName].filter(p => p).join(' ');
+      return [brand, series, capacity].filter(p => p).join(' ');
     }
     default:
       return 'Unknown Model';
@@ -140,7 +141,7 @@ function extractBrand(category, data) {
       return data['제조사'] || '';
     case 'ram':
     case 'ssd':
-      return data['브랜드'] || data['제조사'] || '';
+      return data['제조사'] || '';
     default:
       return '';
   }
@@ -162,62 +163,69 @@ function getImageUrls(data) {
   return imageUrls;
 }
 
-function calculateConditionScore(data) {
-  if (data['conditionScore'] != null && data['conditionScore'] !== '') {
-    const existingScore = parseFloat(data['conditionScore']);
-    if (!isNaN(existingScore)) {
-      return existingScore;
+// ============================================
+// 카테고리별 기본 점수 (사용빈도 제거 & 가격 비중 강화)
+// ============================================
+const CATEGORY_BASE_SCORES = {
+  'cpu': 70,       // CPU는 고장이 잘 안나서 기본 점수 유지
+  'gpu': 68,       // GPU는 채굴 리스크를 가격으로 판단하기 위해 기본 점수 소폭 하향
+  'mainboard': 75,
+  'ssd': 65,       // 수명 소모품이라 보수적
+  'ram': 70,
+  'unknown': 65
+};
+
+function calculateConditionScore(category, row, imageUrls) {
+  // 1. 카테고리 기본 점수
+  let score = CATEGORY_BASE_SCORES[category.toLowerCase()] || 65.0;
+
+  // 2. 신품/중고 절대 기준 (팩트 체크)
+  const isSealed = row['미개봉 여부'] === 'O' || row['미개봉 여부'] === true;
+  if (isSealed) {
+    score += 10; // 미개봉 가산점
+  }
+
+  // 3. 이미지 투명성 (신뢰도)
+  if (imageUrls.length >= 3) {
+    score += 3; // 사진이 많을수록 상태 자신감 표현
+  } else if (imageUrls.length <= 1) {
+    score -= 2; // 정보 부족 페널티
+  }
+
+  // 4. AS 잔존 여부 (팩트 체크)
+  const warranty = (row['AS기간'] || '').toString().trim();
+  if (warranty && warranty !== '모름' && warranty !== '만료') {
+    score += 5; // AS 남았으면 가산점
+  }
+
+  // 5. 가격 기반 상태 추정 (가장 중요한 변수)
+  const price = parsePrice(category === 'ram' ? row['판매가(개당)'] : row['판매가']);
+  const refPrice = parsePrice(row['신제품 판매가']);
+
+  if (price > 0 && refPrice > 0) {
+    const ratio = price / refPrice;
+
+    if (ratio < 0.35) {
+      // 35% 미만: "부품용"이나 "하자품"일 확률 매우 높음
+      score -= 15;
+    } else if (ratio < 0.5) {
+      // 50% 미만: 급매 혹은 사용감 많음
+      score -= 5;
+    } else if (ratio >= 0.5 && ratio <= 0.8) {
+      // 50~80%: 가장 일반적인 양품 구간
+      score += 2;
+    } else if (ratio > 0.8) {
+      // 80% 초과: "S급" 혹은 "단순 개봉" 주장 매물
+      if (ratio > 1.0 && !isSealed) {
+        score -= 10; // 신품가보다 비싼데 미개봉 아님 (사기 의심)
+      } else {
+        score += 5; // 상태 자신감 인정
+      }
     }
   }
 
-  const price = parsePrice(data['판매가']);
-  const referencePrice = parsePrice(data['신제품 판매가']);
-  const likes = parseInt(data['좋아요 수'], 10) || 0;
-  const chats = parseInt(data['채팅 수'], 10) || 0;
-  const views = parseInt(data['조회수'], 10) || 0;
-  const isSealed = data['미개봉 여부'] === 'O';
-
-  if (isSealed) return 95;
-  if (!referencePrice || referencePrice === 0) return 70;
-
-  const priceRatio = price / referencePrice;
-
-  let baseScore;
-  if (priceRatio < 0.4) {
-    baseScore = 55 + (priceRatio / 0.4) * 5;
-  } else if (priceRatio < 0.5) {
-    baseScore = 60 + ((priceRatio - 0.4) / 0.1) * 5;
-  } else if (priceRatio < 0.6) {
-    baseScore = 65 + ((priceRatio - 0.5) / 0.1) * 5;
-  } else if (priceRatio < 0.7) {
-    baseScore = 70 + ((priceRatio - 0.6) / 0.1) * 3;
-  } else if (priceRatio < 0.8) {
-    baseScore = 73 + ((priceRatio - 0.7) / 0.1) * 3;
-  } else if (priceRatio < 0.9) {
-    baseScore = 76 + ((priceRatio - 0.8) / 0.1) * 4;
-  } else {
-    baseScore = 80 + Math.min((priceRatio - 0.9) / 0.1 * 3, 3);
-  }
-
-  const interestRaw = chats * 3 + likes * 1.5 + views * 0.01;
-
-  let interestAdjustment;
-  if (interestRaw < 5) {
-    interestAdjustment = -5 + (interestRaw / 5) * 5;
-  } else if (interestRaw < 15) {
-    interestAdjustment = (interestRaw - 5) / 10 * 4;
-  } else if (interestRaw < 30) {
-    interestAdjustment = 4 + (interestRaw - 15) / 15 * 4;
-  } else if (interestRaw < 50) {
-    interestAdjustment = 8 + (interestRaw - 30) / 20 * 3;
-  } else {
-    interestAdjustment = 11 + Math.min((interestRaw - 50) / 50 * 1, 1);
-  }
-
-  let score = baseScore + interestAdjustment;
-  score = Math.max(55, Math.min(90, score));
-
-  return Math.round(score * 10) / 10;
+  // 6. 점수 범위 제한 (Max 95)
+  return Math.min(95, Math.max(0, Math.round(score)));
 }
 
 function createListingDocument(category, sheetName, rowData) {
@@ -225,10 +233,12 @@ function createListingDocument(category, sheetName, rowData) {
   const basePartId = generateBasePartId(category, rowData);
   const modelName = generateModelName(category, rowData);
   const brand = extractBrand(category, rowData);
-  const price = parsePrice(rowData['판매가']);
+
+  // RAM은 '판매가(개당)' 사용
+  const price = parsePrice(category === 'ram' ? rowData['판매가(개당)'] : rowData['판매가']);
   const referencePrice = parsePrice(rowData['신제품 판매가']);
-  const conditionScore = calculateConditionScore(rowData);
   const imageUrls = getImageUrls(rowData);
+  const conditionScore = calculateConditionScore(category, rowData, imageUrls);
 
   let createdAt = new Date();
   const excelDate = rowData['판매글 게시일자'];
@@ -243,7 +253,7 @@ function createListingDocument(category, sheetName, rowData) {
     return isNaN(num) ? 0 : num;
   };
 
-  return {
+  const listing = {
     listingId,
     partId: basePartId,
     basePartId,
@@ -266,6 +276,37 @@ function createListingDocument(category, sheetName, rowData) {
     usageFrequency: rowData['사용빈도'] || '모름',
     purchaseDate: rowData['구매일'] || '모름',
   };
+
+  // CPU: 소켓 추가
+  if (category === 'cpu' && rowData['소켓']) {
+    listing.socket = rowData['소켓'];
+  }
+
+  // GPU: TDP 추가
+  if (category === 'gpu' && rowData['TDP(W)']) {
+    listing.tdp = parseNumber(rowData['TDP(W)']);
+  }
+
+  // Mainboard: 시리즈, 세부특징 추가
+  if (category === 'mainboard') {
+    if (rowData['시리즈']) listing.series = rowData['시리즈'];
+    if (rowData['모델명']) listing.modelDetail = rowData['모델명'];
+    if (rowData['세부특징1']) listing.feature1 = rowData['세부특징1'];
+    if (rowData['세부특징2']) listing.feature2 = rowData['세부특징2'];
+  }
+
+  // SSD: 폼팩터, 시리즈/모델명 추가
+  if (category === 'ssd') {
+    if (rowData['폼팩터']) listing.formFactor = rowData['폼팩터'];
+    if (rowData['시리즈/모델명']) listing.seriesModel = rowData['시리즈/모델명'];
+  }
+
+  // RAM: 판매 개수 추가
+  if (category === 'ram' && rowData['판매 개수']) {
+    listing.quantity = parseNumber(rowData['판매 개수']);
+  }
+
+  return listing;
 }
 
 // ============================================
@@ -400,68 +441,113 @@ async function processExcelFile(filePath, category, existingDocs) {
   return { processed: totalProcessed, skipped: totalSkipped, uploaded: totalUploaded };
 }
 
+async function collectAllListings() {
+  console.log('\n📊 모든 Excel 파일에서 데이터 수집 중...');
+  console.log('==================================================\n');
+
+  const allListings = [];
+
+  const files = [
+    { path: path.join(__dirname, '../datas/CPU.xlsx'), category: 'cpu', sheets: ['거래완료', '예약중', '판매중'] },
+    { path: path.join(__dirname, '../datas/GPU.xlsx'), category: 'gpu', sheets: ['거래완료', '예약중', '판매중'] },
+    { path: path.join(__dirname, '../datas/Mainboard.xlsx'), category: 'mainboard', sheets: ['거래완료', '예약중', '판매중'] },
+    { path: path.join(__dirname, '../datas/SSD.xlsx'), category: 'ssd', sheets: ['거래완료', '예약중', '판매중'] },
+    { path: path.join(__dirname, '../datas/RAM.xlsx'), category: 'ram', sheets: ['판매중'] }, // RAM은 판매중만
+  ];
+
+  for (const { path: filePath, category, sheets } of files) {
+    console.log(`📁 ${category.toUpperCase()} 파일 읽는 중...`);
+    const workbook = xlsx.readFile(filePath);
+
+    for (const sheetName of sheets) {
+      if (!workbook.SheetNames.includes(sheetName)) {
+        continue;
+      }
+
+      const sheet = workbook.Sheets[sheetName];
+      const rows = xlsx.utils.sheet_to_json(sheet, { defval: '' });
+
+      const validRows = rows.filter(row => {
+        // RAM은 '판매가(개당)' 사용
+        const price = parsePrice(category === 'ram' ? row['판매가(개당)'] : row['판매가']);
+        return price > 0;
+      });
+
+      console.log(`  [${sheetName}] ${validRows.length}개 유효 데이터`);
+
+      for (const row of validRows) {
+        try {
+          const listing = createListingDocument(category, sheetName, row);
+          allListings.push(listing);
+        } catch (error) {
+          // 조용히 스킵
+        }
+      }
+    }
+  }
+
+  console.log(`\n✅ 총 ${allListings.length}개 listing 수집 완료\n`);
+
+  // createdAt 기준으로 정렬 (오래된 것부터)
+  allListings.sort((a, b) => a.createdAt.toMillis() - b.createdAt.toMillis());
+
+  return allListings;
+}
+
+async function uploadSequentially(listings) {
+  console.log('\n🚀 순차적 업로드 시작');
+  console.log('==================================================\n');
+  console.log(`총 ${listings.length}개 listing을 순차적으로 업로드합니다.\n`);
+
+  const delay = 50; // 50ms 간격
+  let uploadCount = 0;
+
+  for (const listing of listings) {
+    try {
+      const docRef = db.collection('listings').doc(listing.listingId);
+      await docRef.set(listing);
+
+      uploadCount++;
+
+      if (uploadCount % 50 === 0) {
+        console.log(`  ✅ ${uploadCount}/${listings.length} 업로드 완료...`);
+      }
+
+      // 작은 딜레이 추가
+      await new Promise(resolve => setTimeout(resolve, delay));
+
+    } catch (error) {
+      console.error(`  ❌ 오류: ${listing.modelName} - ${error.message}`);
+    }
+  }
+
+  console.log(`\n==================================================`);
+  console.log(`✅ 순차적 업로드 완료: ${uploadCount}개`);
+  console.log(`==================================================\n`);
+}
+
 async function main() {
-  console.log('\n🚀 중복 스킵 Excel 업로드 시작');
-  console.log('='.repeat(60));
+  console.log('\n🚀 순차적 Excel 업로드 시작 (Price Chart용)');
+  console.log('==================================================\n');
 
   if (SELLER_ID === 'YOUR_SELLER_ID_HERE') {
     console.error('\n❌ 오류: SELLER_ID를 설정해주세요!\n');
     process.exit(1);
   }
 
-  // 기존 Firestore 데이터 로드
-  console.log('\n📊 기존 Firestore 데이터 로드 중...');
-  const existingSnapshot = await db.collection('listings').get();
-  console.log(`  ✅ ${existingSnapshot.size}개 listings 로드 완료\n`);
+  try {
+    // 1. 모든 데이터 수집
+    const allListings = await collectAllListings();
 
-  const files = [
-    { path: path.join(__dirname, '../datas/CPU.xlsx'), category: 'cpu' },
-    { path: path.join(__dirname, '../datas/GPU.xlsx'), category: 'gpu' },
-    { path: path.join(__dirname, '../datas/Mainboard.xlsx'), category: 'mainboard' },
-    // { path: path.join(__dirname, '../datas/RAM.xlsx'), category: 'ram' },
-    // { path: path.join(__dirname, '../datas/SSD.xlsx'), category: 'ssd' },
-  ];
+    // 2. 순차적 업로드
+    await uploadSequentially(allListings);
 
-  const grandTotal = {
-    processed: 0,
-    skipped: 0,
-    uploaded: 0,
-  };
-
-  for (const file of files) {
-    try {
-      // 해당 카테고리의 기존 문서만 필터링
-      const categoryDocs = existingSnapshot.docs.filter(doc =>
-        doc.data().category === file.category
-      );
-
-      console.log(`📂 ${file.category} 카테고리: 기존 ${categoryDocs.length}개`);
-
-      const result = await processExcelFile(file.path, file.category, categoryDocs);
-
-      grandTotal.processed += result.processed;
-      grandTotal.skipped += result.skipped;
-      grandTotal.uploaded += result.uploaded;
-    } catch (error) {
-      console.error(`\n❌ ${file.path} 처리 실패:`, error);
-    }
-  }
-
-  console.log('\n' + '='.repeat(60));
-  console.log('📊 전체 업로드 요약');
-  console.log('='.repeat(60));
-  console.log(`처리한 행: ${grandTotal.processed}개`);
-  console.log(`중복 스킵: ${grandTotal.skipped}개`);
-  console.log(`신규 업로드: ${grandTotal.uploaded}개`);
-  console.log('='.repeat(60));
-
-  if (grandTotal.uploaded === 0) {
-    console.log('\n💡 신규 데이터가 없습니다.');
-    console.log('   Excel 파일에 새로운 행을 추가한 후 다시 실행하세요.');
-  } else {
     console.log('\n📌 다음 단계:');
-    console.log('  1. Firestore Console에서 listings 컬렉션 확인');
-    console.log('  2. Cloud Functions가 baseParts 및 priceHistory 업데이트');
+    console.log('  1. Cloud Functions가 BasePart를 자동 생성합니다.');
+    console.log('  2. 약 1-2분 정도 기다리면 Price Chart 데이터가 준비됩니다.\n');
+
+  } catch (error) {
+    console.error('❌ 오류 발생:', error);
   }
 }
 

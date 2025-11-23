@@ -214,11 +214,16 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
           Center(
             child: _isLoading
                 ? const CircularProgressIndicator()
-                : Padding(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+                : SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(24.0),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.of(context).size.height - 48,
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
                   // 로고
                   const Icon(
                     Icons.computer,
@@ -450,8 +455,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                 ),
               ],
             ],
-          ),
-        ),
+                  ),
+                ),
+              ),
+            ),
           ),
 
           // Admin 숨겨진 버튼 (왼쪽 위)

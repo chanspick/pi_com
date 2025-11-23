@@ -5,8 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../domain/entities/order_entity.dart';
 import '../../data/models/order_model.dart';
+import '../providers/order_provider.dart';
+import '../../../../core/constants/routes.dart';
 
 /// 구매 상세 조회 Provider (읽기 전용)
 final purchaseDetailProvider = StreamProvider.autoDispose.family<OrderEntity, String>((ref, orderId) {
@@ -82,6 +85,10 @@ class PurchaseDetailScreen extends ConsumerWidget {
           // 결제 정보
           _buildPaymentInfo(context, order),
 
+          // 액션 버튼들 (배송 완료 상태일 때만 표시)
+          if (order.status == OrderStatus.delivered)
+            _buildActionButtons(context, order),
+
           const SizedBox(height: 32),
         ],
       ),
@@ -119,11 +126,72 @@ class PurchaseDetailScreen extends ConsumerWidget {
         statusText = '배송 완료';
         icon = Icons.check_circle;
         break;
+      case OrderStatus.confirmed:
+        bgColor = Colors.teal.withValues(alpha: 0.1);
+        textColor = Colors.teal;
+        statusText = '구매 확정';
+        icon = Icons.verified;
+        break;
       case OrderStatus.cancelled:
         bgColor = Colors.red.withValues(alpha: 0.1);
         textColor = Colors.red;
         statusText = '취소됨';
         icon = Icons.cancel;
+        break;
+      // 환불 관련 상태
+      case OrderStatus.refundRequested:
+        bgColor = Colors.amber.withValues(alpha: 0.1);
+        textColor = Colors.amber;
+        statusText = '환불 신청됨';
+        icon = Icons.assignment_return;
+        break;
+      case OrderStatus.refundApproved:
+        bgColor = Colors.amber.withValues(alpha: 0.1);
+        textColor = Colors.amber;
+        statusText = '환불 승인됨';
+        icon = Icons.check_circle;
+        break;
+      case OrderStatus.refundRejected:
+        bgColor = Colors.red.withValues(alpha: 0.1);
+        textColor = Colors.red;
+        statusText = '환불 거부됨';
+        icon = Icons.cancel;
+        break;
+      case OrderStatus.itemReturning:
+        bgColor = Colors.amber.withValues(alpha: 0.1);
+        textColor = Colors.amber;
+        statusText = '반품 배송중';
+        icon = Icons.local_shipping;
+        break;
+      case OrderStatus.refundInspecting:
+        bgColor = Colors.blue.withValues(alpha: 0.1);
+        textColor = Colors.blue;
+        statusText = '환불 검수중';
+        icon = Icons.search;
+        break;
+      case OrderStatus.refundInspectionPass:
+        bgColor = Colors.blue.withValues(alpha: 0.1);
+        textColor = Colors.blue;
+        statusText = '검수 합격';
+        icon = Icons.verified;
+        break;
+      case OrderStatus.refundInspectionFail:
+        bgColor = Colors.deepOrange.withValues(alpha: 0.1);
+        textColor = Colors.deepOrange;
+        statusText = '검수 불합격';
+        icon = Icons.error;
+        break;
+      case OrderStatus.refundProcessing:
+        bgColor = Colors.blue.withValues(alpha: 0.1);
+        textColor = Colors.blue;
+        statusText = '환불 처리중';
+        icon = Icons.refresh;
+        break;
+      case OrderStatus.refundCompleted:
+        bgColor = Colors.teal.withValues(alpha: 0.1);
+        textColor = Colors.teal;
+        statusText = '환불 완료';
+        icon = Icons.account_balance_wallet;
         break;
     }
 
@@ -396,6 +464,166 @@ class PurchaseDetailScreen extends ConsumerWidget {
     );
   }
 
+  Widget _buildActionButtons(BuildContext context, OrderEntity order) {
+    return Container(
+      margin: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // 환불 신청 버튼 (30일 이내)
+          if (_canRequestRefund(order)) ...[
+            OutlinedButton.icon(
+              onPressed: () {
+                context.push(
+                  Routes.refundRequest,
+                  extra: order.orderId,
+                );
+              },
+              icon: const Icon(Icons.assignment_return),
+              label: const Text('반품/환불 신청'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                foregroundColor: Colors.orange[700],
+                side: BorderSide(color: Colors.orange[700]!),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
+          // 구매 확정 안내
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Colors.blue.withValues(alpha: 0.2),
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline, color: Colors.blue[700], size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '상품에 문제가 없으면 구매를 확정해주세요.\n구매 확정 시 판매자에게 정산이 진행됩니다.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey[700],
+                      height: 1.4,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Consumer(
+            builder: (context, ref, child) {
+              return ElevatedButton(
+                onPressed: () => _handleConfirmPurchase(context, ref, order.orderId),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  backgroundColor: Theme.of(context).primaryColor,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Text(
+                  '구매 확정',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _handleConfirmPurchase(
+    BuildContext context,
+    WidgetRef ref,
+    String orderId,
+  ) async {
+    // 확인 다이얼로그 표시
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('구매 확정'),
+        content: const Text(
+          '구매를 확정하시겠습니까?\n\n구매 확정 후에는 환불이 불가능하며, 판매자에게 정산이 진행됩니다.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('확정'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      // 로딩 표시
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(),
+          ),
+        );
+      }
+
+      // 구매 확정 처리
+      final orderRepository = ref.read(orderRepositoryProvider);
+      await orderRepository.confirmPurchase(orderId);
+
+      // 로딩 닫기
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+
+      // 성공 메시지 표시
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('구매가 확정되었습니다.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      // 로딩 닫기
+      if (context.mounted) {
+        Navigator.pop(context);
+      }
+
+      // 에러 메시지 표시
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('구매 확정 실패: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildInfoRow(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -424,6 +652,19 @@ class PurchaseDetailScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// 환불 신청 가능 여부 확인
+  bool _canRequestRefund(OrderEntity order) {
+    // 배송 완료일이 없으면 불가
+    if (order.deliveredAt == null) return false;
+
+    // 배송 완료 상태만 환불 가능
+    if (order.status != OrderStatus.delivered) return false;
+
+    // 최대 30일 이내만 환불 가능
+    final daysSinceDelivery = DateTime.now().difference(order.deliveredAt!).inDays;
+    return daysSinceDelivery <= 30;
   }
 
   String _formatPrice(int price) {

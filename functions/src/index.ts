@@ -6,6 +6,38 @@ import cors from "cors";
 
 admin.initializeApp();
 
+// ============================================================================
+// Schedulers Import
+// ============================================================================
+import {checkStorageNotifications} from "./schedulers/storage_scheduler";
+import {checkSettlementNotifications} from "./schedulers/settlement_scheduler";
+import {checkReturnAddressDeadline} from "./schedulers/return_address_scheduler";
+
+// ============================================================================
+// Refund Functions Import
+// ============================================================================
+import {
+  processRefundCompletion,
+  autoApproveRefundInspection,
+  notifyPendingInspections,
+} from "./refund/process_refund";
+import {notifyRefundApprovalDeadline} from "./refund/approval_deadline_scheduler";
+
+// Export schedulers
+export {
+  checkStorageNotifications,
+  checkSettlementNotifications,
+  checkReturnAddressDeadline,
+};
+
+// Export refund functions
+export {
+  processRefundCompletion,
+  autoApproveRefundInspection,
+  notifyPendingInspections,
+  notifyRefundApprovalDeadline,
+};
+
 // Express 앱 생성
 const app = express();
 app.use(cors({origin: true}));

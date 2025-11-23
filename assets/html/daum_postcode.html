@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>다음 우편번호 검색</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+        #layer {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            left: 0;
+            top: 0;
+        }
+    </style>
+    <script src="https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js"></script>
+</head>
+<body>
+    <div id="layer"></div>
+    <script>
+        // 우편번호 찾기 화면을 embed하는 함수
+        function embedPostcode() {
+            new daum.Postcode({
+                oncomplete: function(data) {
+                    // 주소 정보를 Flutter로 전달
+                    const addressData = {
+                        zonecode: data.zonecode,
+                        roadAddress: data.roadAddress,
+                        jibunAddress: data.jibunAddress,
+                        buildingName: data.buildingName || '',
+                        userSelectedType: data.userSelectedType,
+                        addressEnglish: data.addressEnglish || ''
+                    };
+
+                    // Flutter WebView에 메시지 전달
+                    if (window.FlutterChannel) {
+                        // Android
+                        window.FlutterChannel.postMessage(JSON.stringify(addressData));
+                    } else if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.FlutterChannel) {
+                        // iOS
+                        window.webkit.messageHandlers.FlutterChannel.postMessage(addressData);
+                    } else {
+                        // Fallback: alert로 데이터 표시 (디버깅용)
+                        alert(JSON.stringify(addressData, null, 2));
+                    }
+                },
+                onclose: function(state) {
+                    // 사용자가 닫기 버튼을 눌렀을 때
+                    if (state === 'COMPLETE_CLOSE') {
+                        // 완료 후 닫기
+                    } else if (state === 'FORCE_CLOSE') {
+                        // 강제 닫기
+                        if (window.FlutterChannel) {
+                            window.FlutterChannel.postMessage('CANCELLED');
+                        } else if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.FlutterChannel) {
+                            window.webkit.messageHandlers.FlutterChannel.postMessage('CANCELLED');
+                        }
+                    }
+                },
+                width: '100%',
+                height: '100%'
+            }).embed(document.getElementById('layer'));
+        }
+
+        // 페이지 로드 시 실행
+        window.onload = embedPostcode;
+    </script>
+</body>
+</html>

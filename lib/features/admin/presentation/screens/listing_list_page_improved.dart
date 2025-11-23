@@ -1,4 +1,5 @@
 // lib/features/admin/presentation/screens/listing_list_page_improved.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pi_com/features/listing/domain/entities/listing_entity.dart';
@@ -35,7 +36,7 @@ class _ListingListPageImprovedState extends ConsumerState<ListingListPageImprove
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
   }
 
   @override
@@ -94,6 +95,7 @@ class _ListingListPageImprovedState extends ConsumerState<ListingListPageImprove
                   Tab(text: '판매중'),
                   Tab(text: '예약됨'),
                   Tab(text: '판매완료'),
+                  Tab(text: '마킹됨'),
                   Tab(text: '타사이트 판매'),
                 ],
               ),
@@ -134,6 +136,7 @@ class _ListingListPageImprovedState extends ConsumerState<ListingListPageImprove
           _buildListingList(ListingStatus.available),     // 판매중
           _buildListingList(ListingStatus.reserved),      // 예약됨
           _buildListingList(ListingStatus.sold),          // 판매완료
+          _buildMarkedForSoldList(),                      // 마킹됨 (available + markedForSold)
           _buildListingList(ListingStatus.sold_external), // 타사이트 판매
         ],
       ),
@@ -141,7 +144,7 @@ class _ListingListPageImprovedState extends ConsumerState<ListingListPageImprove
   }
 
   Widget _buildListingList(ListingStatus? statusFilter) {
-    final listingsAsync = ref.watch(listingsFutureProvider(ListingQueryParams()));
+    final listingsAsync = ref.watch(listingsFutureProvider(ListingQueryParams(includeAllStatuses: true)));
 
     return listingsAsync.when(
       data: (listings) {
@@ -363,6 +366,249 @@ class _ListingListPageImprovedState extends ConsumerState<ListingListPageImprove
     );
   }
 
+  // 마킹됨 탭 (markedForSold == true인 listings)
+  Widget _buildMarkedForSoldList() {
+    final listingsAsync = ref.watch(listingsFutureProvider(ListingQueryParams(includeAllStatuses: true)));
+
+    return listingsAsync.when(
+      data: (listings) {
+        // markedForSold가 true인 listings만 필터
+        var filteredListings = listings.where((l) => l.markedForSold == true).toList();
+
+        // 검색 필터 적용
+        if (_searchQuery.isNotEmpty) {
+          filteredListings = filteredListings.where((listing) {
+            final modelName = listing.modelName.toLowerCase();
+            final brand = listing.brand.toLowerCase();
+            return modelName.contains(_searchQuery) || brand.contains(_searchQuery);
+          }).toList();
+        }
+
+        if (filteredListings.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.label_outlined, size: 64, color: Colors.grey[400]),
+                const SizedBox(height: 16),
+                Text(
+                  _searchQuery.isNotEmpty ? '검색 결과가 없습니다' : '마킹된 매물이 없습니다',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '판매완료로 전환할 매물을 마킹하세요',
+                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return Column(
+          children: [
+            if (_isSelectionMode)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                color: Colors.blue[50],
+                child: Row(
+                  children: [
+                    Text(
+                      '${_selectedListingIds.length}개 선택됨',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const Spacer(),
+                    TextButton.icon(
+                      icon: const Icon(Icons.select_all),
+                      label: const Text('전체 선택'),
+                      onPressed: () {
+                        setState(() {
+                          _selectedListingIds.addAll(
+                            filteredListings.map((l) => l.listingId),
+                          );
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.all(8),
+                itemCount: filteredListings.length,
+                itemBuilder: (context, index) {
+                  final listing = filteredListings[index];
+                  final isSelected = _selectedListingIds.contains(listing.listingId);
+
+                  return Card(
+                    elevation: isSelected ? 4 : 1,
+                    color: isSelected ? Colors.blue[50] : null,
+                    margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                    child: InkWell(
+                      onTap: _isSelectionMode
+                          ? () => _toggleSelection(listing.listingId)
+                          : null,
+                      onLongPress: !_isSelectionMode
+                          ? () {
+                              setState(() {
+                                _isSelectionMode = true;
+                                _selectedListingIds.add(listing.listingId);
+                              });
+                            }
+                          : null,
+                      child: ListTile(
+                        leading: _isSelectionMode
+                            ? Checkbox(
+                                value: isSelected,
+                                onChanged: (_) => _toggleSelection(listing.listingId),
+                              )
+                            : listing.imageUrls.isNotEmpty
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(4),
+                                    child: Image.network(
+                                      listing.imageUrls.first,
+                                      width: 56,
+                                      height: 56,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, __, ___) => Container(
+                                        width: 56,
+                                        height: 56,
+                                        color: Colors.grey[200],
+                                        child: const Icon(Icons.broken_image),
+                                      ),
+                                    ),
+                                  )
+                                : Container(
+                                    width: 56,
+                                    height: 56,
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[200],
+                                      borderRadius: BorderRadius.circular(4),
+                                    ),
+                                    child: const Icon(Icons.image_not_supported),
+                                  ),
+                        title: Text(
+                          listing.modelName,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${listing.brand} • ₩${_formatPrice(listing.price)}',
+                              style: const TextStyle(fontSize: 13),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                _buildMarkedChip(),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'ID: ${listing.listingId.substring(0, 8)}...',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey[600],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        trailing: !_isSelectionMode
+                            ? PopupMenuButton<String>(
+                                onSelected: (value) => _handleListingAction(value, listing),
+                                itemBuilder: (context) => [
+                                  const PopupMenuItem(
+                                    value: 'mark_sold',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.sell, size: 18, color: Colors.orange),
+                                        SizedBox(width: 8),
+                                        Text('판매완료로 전환'),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'unmark',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.label_off, size: 18),
+                                        SizedBox(width: 8),
+                                        Text('마킹 해제'),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuDivider(),
+                                  const PopupMenuItem(
+                                    value: 'delete',
+                                    child: Row(
+                                      children: [
+                                        Icon(Icons.delete, size: 18, color: Colors.red),
+                                        SizedBox(width: 8),
+                                        Text('삭제', style: TextStyle(color: Colors.red)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : null,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, stack) => Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline, size: 64, color: Colors.red),
+            const SizedBox(height: 16),
+            Text('오류 발생: $err'),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              icon: const Icon(Icons.refresh),
+              label: const Text('다시 시도'),
+              onPressed: () => ref.invalidate(listingsFutureProvider),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMarkedChip() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.amber.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: Colors.amber),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.label, size: 12, color: Colors.amber),
+          SizedBox(width: 4),
+          Text(
+            '마킹됨',
+            style: TextStyle(
+              color: Colors.amber,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildStatusChip(ListingStatus status) {
     Color color;
     String label;
@@ -480,6 +726,9 @@ class _ListingListPageImprovedState extends ConsumerState<ListingListPageImprove
       case 'mark_sold':
         await _updateListingStatus(listing.listingId, ListingStatus.sold);
         break;
+      case 'unmark':
+        await _unmarkListing(listing.listingId);
+        break;
       case 'delete':
         _showDeleteConfirmation(singleListingId: listing.listingId);
         break;
@@ -550,6 +799,37 @@ class _ListingListPageImprovedState extends ConsumerState<ListingListPageImprove
     }
   }
 
+  Future<void> _unmarkListing(String listingId) async {
+    try {
+      // Firestore에서 markedForSold와 markedAt 필드 제거
+      final firestore = FirebaseFirestore.instance;
+      await firestore.collection('listings').doc(listingId).update({
+        'markedForSold': FieldValue.delete(),
+        'markedAt': FieldValue.delete(),
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('마킹이 해제되었습니다'),
+            backgroundColor: Colors.green,
+          ),
+        );
+
+        ref.invalidate(listingsFutureProvider);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('오류 발생: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
   void _showDeleteConfirmation({String? singleListingId}) {
     final count = singleListingId != null ? 1 : _selectedListingIds.length;
 
@@ -598,8 +878,13 @@ class _ListingListPageImprovedState extends ConsumerState<ListingListPageImprove
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'datas 폴더의 엑셀 파일을 자동으로 listings에 업로드합니다.',
+                'datas 폴더의 엑셀 파일을 순차적으로 listings에 업로드합니다.',
                 style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '각 listing이 50ms 간격으로 업로드되어 자연스러운 timestamp 분포를 생성합니다.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
               const SizedBox(height: 16),
               const Text('📂 업로드 대상 파일:'),
@@ -640,7 +925,7 @@ class _ListingListPageImprovedState extends ConsumerState<ListingListPageImprove
                     Text('2. 명령어 실행:'),
                     SizedBox(height: 4),
                     SelectableText(
-                      'node scripts/upload_excel_listings.js',
+                      'node scripts/upload_sequential.js',
                       style: TextStyle(
                         fontFamily: 'monospace',
                         backgroundColor: Colors.black,
@@ -659,8 +944,9 @@ class _ListingListPageImprovedState extends ConsumerState<ListingListPageImprove
                 ),
               ),
               const SizedBox(height: 8),
-              const Text('• 엑셀 파일의 "거래완료", "예약중", "판매중" 시트만 업로드됩니다.'),
+              const Text('• 엑셀 파일의 "거래완료", "예약중", "판매중" 시트가 순차적으로 업로드됩니다.'),
               const Text('• 업로드 후 Cloud Functions 트리거가 자동으로 base_parts와 priceHistory를 생성합니다.'),
+              const Text('• 순차 업로드는 약 35초 소요됩니다 (700개 × 50ms). 중간에 중단하지 마세요.'),
               const Text('• 기존 데이터와 중복되지 않도록 주의하세요.'),
             ],
           ),

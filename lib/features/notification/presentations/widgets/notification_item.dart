@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timeago/timeago.dart' as timeago;
 
 import '../../../../core/models/notification_model.dart';
-import '../../../../core/constants/routes.dart'; // ✅ 추가
+import '../../../../core/utils/notification_handler.dart'; // ✅ 추가
 import '../providers/notification_provider.dart';
 
 /// 알림 항목 위젯
@@ -30,45 +30,9 @@ class NotificationItem extends ConsumerWidget {
 
     return InkWell(
       onTap: () async {
-        // 1. 읽음 처리
-        if (!notification.isRead) {
-          await ref
-              .read(notificationActionsProvider.notifier)
-              .markAsRead(notification.notificationId);
-        }
-
-        if (!context.mounted) return;
-
-        // 2. 관련 화면으로 이동
-        // 판매 요청 관련 알람 (statusChanged)
-        if (notification.relatedSellRequestId != null) {
-          Navigator.pushNamed(
-            context,
-            Routes.sellRequestDetails,
-            arguments: notification.relatedSellRequestId,
-          );
-        }
-        // 구매 관련 알람 (paymentCompleted, listingSold, purchaseConfirmed)
-        else if (notification.relatedListingId != null) {
-          // relatedListingId가 실제로는 orderId일 수 있음
-          // type에 따라 다르게 처리
-          if (notification.type == NotificationType.paymentCompleted ||
-              notification.type == NotificationType.purchaseConfirmed) {
-            // 구매자 알람 → 구매 상세로
-            Navigator.pushNamed(
-              context,
-              Routes.purchaseDetail,
-              arguments: notification.relatedListingId,
-            );
-          } else if (notification.type == NotificationType.listingSold) {
-            // 판매자 알람 → 매물 상세로
-            Navigator.pushNamed(
-              context,
-              Routes.listingDetail,
-              arguments: notification.relatedListingId,
-            );
-          }
-        }
+        // NotificationHandler를 사용하여 알림 처리
+        final handler = NotificationHandler(context);
+        await handler.handleNotificationTap(notification);
       },
       child: Container(
         color: backgroundColor,
@@ -119,6 +83,7 @@ class NotificationItem extends ConsumerWidget {
     Color iconColor;
 
     switch (notification.type) {
+      // 기존 타입
       case NotificationType.statusChanged:
         iconData = Icons.check_circle;
         iconColor = Colors.green;
@@ -150,6 +115,114 @@ class NotificationItem extends ConsumerWidget {
       case NotificationType.system:
         iconData = Icons.info;
         iconColor = Colors.orange;
+        break;
+
+      // 검수/QC Flow
+      case NotificationType.inspectionStarted:
+        iconData = Icons.search;
+        iconColor = Colors.blue;
+        break;
+      case NotificationType.inspectionPassed:
+        iconData = Icons.check_circle;
+        iconColor = Colors.green;
+        break;
+      case NotificationType.inspectionFailed:
+        iconData = Icons.cancel;
+        iconColor = Colors.red;
+        break;
+      case NotificationType.returnAddressExpiring:
+        iconData = Icons.warning_amber;
+        iconColor = Colors.orange;
+        break;
+      case NotificationType.penaltyIssued:
+        iconData = Icons.gavel;
+        iconColor = Colors.red;
+        break;
+
+      // 보관 서비스 Flow
+      case NotificationType.storageCreated:
+        iconData = Icons.inventory_2;
+        iconColor = Colors.blue;
+        break;
+      case NotificationType.storageFeeStart:
+        iconData = Icons.attach_money;
+        iconColor = Colors.orange;
+        break;
+      case NotificationType.storageExpiring:
+        iconData = Icons.access_time;
+        iconColor = Colors.orange;
+        break;
+      case NotificationType.consignmentWarning:
+        iconData = Icons.warning;
+        iconColor = Colors.deepOrange;
+        break;
+      case NotificationType.consignmentConverted:
+        iconData = Icons.swap_horiz;
+        iconColor = Colors.purple;
+        break;
+      case NotificationType.consignmentSold:
+        iconData = Icons.account_balance_wallet;
+        iconColor = Colors.green;
+        break;
+
+      // 환불 Flow
+      case NotificationType.refundRequested:
+        iconData = Icons.assignment_return;
+        iconColor = Colors.amber;
+        break;
+      case NotificationType.refundApproved:
+        iconData = Icons.check_circle;
+        iconColor = Colors.green;
+        break;
+      case NotificationType.refundRejected:
+        iconData = Icons.cancel;
+        iconColor = Colors.red;
+        break;
+      case NotificationType.returnShippingRequired:
+        iconData = Icons.local_shipping;
+        iconColor = Colors.blue;
+        break;
+      case NotificationType.returnItemReceived:
+        iconData = Icons.inventory;
+        iconColor = Colors.blue;
+        break;
+      case NotificationType.refundInspecting:
+        iconData = Icons.search;
+        iconColor = Colors.blue;
+        break;
+      case NotificationType.refundInspectionPass:
+        iconData = Icons.verified;
+        iconColor = Colors.green;
+        break;
+      case NotificationType.refundInspectionFail:
+        iconData = Icons.error;
+        iconColor = Colors.red;
+        break;
+      case NotificationType.refundProcessing:
+        iconData = Icons.refresh;
+        iconColor = Colors.blue;
+        break;
+      case NotificationType.refundCompleted:
+        iconData = Icons.account_balance_wallet;
+        iconColor = Colors.teal;
+        break;
+
+      // 정산 Flow
+      case NotificationType.purchaseConfirmReminder:
+        iconData = Icons.notifications_active;
+        iconColor = Colors.amber;
+        break;
+      case NotificationType.autoConfirmed:
+        iconData = Icons.check_circle_outline;
+        iconColor = Colors.green;
+        break;
+      case NotificationType.settlementPending:
+        iconData = Icons.schedule;
+        iconColor = Colors.blue;
+        break;
+      case NotificationType.settlementCompleted:
+        iconData = Icons.account_balance_wallet;
+        iconColor = Colors.green;
         break;
     }
 

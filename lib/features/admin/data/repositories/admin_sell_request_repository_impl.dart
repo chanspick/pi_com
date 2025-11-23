@@ -54,6 +54,14 @@ class AdminSellRequestRepositoryImpl implements AdminSellRequestRepository {
       finalPrice: finalPrice,
     );
 
+    // ✅ 검수 합격 알림 추가 발송 (약관 준수)
+    await _notificationHelper.notifyInspectionPassed(
+      sellerId: sellRequest.sellerId,
+      sellRequestId: requestId,
+      partName: '${sellRequest.brand} ${sellRequest.modelName}',
+      finalPrice: finalPrice,
+    );
+
     print('✅ 승인 알림 발송 완료: ${sellRequest.sellerId}');
   }
 
@@ -86,6 +94,17 @@ class AdminSellRequestRepositoryImpl implements AdminSellRequestRepository {
       sellRequestId: requestId,
       partName: '${sellRequest.brand} ${sellRequest.modelName}',
       reason: rejectReason,
+    );
+
+    // ✅ 검수 불합격 알림 추가 발송 (약관 준수)
+    // 위약금은 판매 희망가의 5% (기본)
+    final penaltyAmount = (sellRequest.requestedPrice * 0.05).toInt();
+    await _notificationHelper.notifyInspectionFailed(
+      sellerId: sellRequest.sellerId,
+      sellRequestId: requestId,
+      partName: '${sellRequest.brand} ${sellRequest.modelName}',
+      failReason: rejectReason,
+      penaltyAmount: penaltyAmount,
     );
 
     print('✅ 반려 알림 발송 완료: ${sellRequest.sellerId}');

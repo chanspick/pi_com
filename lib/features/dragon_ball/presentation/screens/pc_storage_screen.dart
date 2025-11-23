@@ -12,7 +12,6 @@ import 'package:pi_com/features/dragon_ball/domain/entities/dragon_ball_entity.d
 ///
 /// 개선 사항:
 /// - 카테고리 슬롯 제거, 리스트 뷰로 변경
-/// - 180일 무료 보관 이벤트 배너 추가
 /// - 배송비 정책 명확화 (개별 5,000원, 묶음 6,000원)
 class PcStorageScreen extends ConsumerWidget {
   const PcStorageScreen({super.key});
@@ -45,9 +44,6 @@ class PcStorageScreen extends ConsumerWidget {
         data: (allDragonBalls) {
           return Column(
             children: [
-              // 180일 무료 이벤트 배너
-              if (StoragePolicy.IS_EVENT_ACTIVE) _EventBanner(),
-
               // 부품 리스트
               Expanded(
                 child: storedDragonBalls.isEmpty
@@ -76,85 +72,6 @@ class PcStorageScreen extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// 180일 무료 이벤트 배너
-class _EventBanner extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final daysLeft = StoragePolicy.getDaysUntilEventEnd();
-
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blue[700]!, Colors.blue[500]!],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.blue.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.celebration,
-              color: Colors.white,
-              size: 32,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '🎉 오픈 기념 이벤트',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                const Text(
-                  '180일 무료 보관!',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    height: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  '${daysLeft}일 남음 · 쌀 때 사고, 배송비도 아끼고',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.9),
-                    fontSize: 11,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

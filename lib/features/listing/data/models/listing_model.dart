@@ -17,6 +17,8 @@ class ListingModel {
   final String? category;
   final String? buyerId;  // 추가
   final Timestamp? soldAt;  // 추가
+  final bool? markedForSold;  // 판매완료 마킹 (그래프 데이터 유지용)
+  final Timestamp? markedAt;  // 마킹 시간
 
   ListingModel({
     required this.listingId,
@@ -32,6 +34,8 @@ class ListingModel {
     this.category,
     this.buyerId,  // 추가
     this.soldAt,  // 추가
+    this.markedForSold,  // 추가
+    this.markedAt,  // 추가
   });
 
   factory ListingModel.fromFirestore(DocumentSnapshot doc) {
@@ -83,6 +87,8 @@ class ListingModel {
         category: data['category'],
         buyerId: data['buyerId'],  // 추가
         soldAt: data['soldAt'],  // 추가
+        markedForSold: data['markedForSold'],  // 추가
+        markedAt: data['markedAt'],  // 추가
       );
 
       print('✅ [ListingModel] Successfully created model for: ${model.listingId}');
@@ -113,6 +119,7 @@ class ListingModel {
         status: parsedStatus,
         createdAt: dateTime,
         category: category,
+        markedForSold: markedForSold,
       );
     } catch (e, stackTrace) {
 
@@ -151,6 +158,8 @@ class ListingModel {
       if (category != null) 'category': category,
       if (buyerId != null) 'buyerId': buyerId,
       if (soldAt != null) 'soldAt': soldAt,
+      if (markedForSold != null) 'markedForSold': markedForSold,
+      if (markedAt != null) 'markedAt': markedAt,
     };
   }
 }

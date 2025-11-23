@@ -22,6 +22,7 @@ abstract class DragonBallRepository {
     String? basePartId,
     String? category,
     required bool agreedToTerms,
+    StorageType storageType = StorageType.general,
   });
 
   /// 드래곤볼 상태 업데이트
@@ -52,4 +53,15 @@ abstract class DragonBallRepository {
 
   /// 드래곤볼 삭제
   Future<void> deleteDragonBall(String userId, String dragonBallId);
+
+  /// 위탁판매로 전환 (60일 경과 시)
+  Future<void> convertToConsignment(String userId, String dragonBallId);
+
+  /// 위탁판매 완료 처리 (매각 완료)
+  Future<void> markAsSold(
+    String userId,
+    String dragonBallId,
+    int salePrice,
+    int revenueReturned,
+  );
 }

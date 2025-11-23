@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:pi_com/features/dragon_ball/domain/entities/dragon_ball_entity.dart';
+import 'package:pi_com/core/models/dragon_ball_model.dart';
+import 'package:pi_com/core/constants/storage_policy.dart';
 import 'package:intl/intl.dart';
 
 /// 드래곤볼 카드 위젯
@@ -99,7 +101,7 @@ class DragonBallCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
 
-                    // 입고일 & 남은 일수
+                    // 입고일 & 보관 일수
                     Row(
                       children: [
                         Text(
@@ -116,22 +118,99 @@ class DragonBallCard extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         Icon(
-                          Icons.access_time,
+                          Icons.calendar_today,
                           size: 14,
-                          color: dragonBall.isExpiringSoon ? Colors.red : Colors.grey[600],
+                          color: Colors.grey[600],
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '${dragonBall.daysUntilExpiration}일 남음',
+                          '${StoragePolicy.calculateStorageDays(dragonBall.storedAt)}일 보관 중',
                           style: TextStyle(
                             fontSize: 12,
-                            color: dragonBall.isExpiringSoon ? Colors.red : Colors.grey[600],
-                            fontWeight: dragonBall.isExpiringSoon ? FontWeight.bold : FontWeight.normal,
+                            color: Colors.grey[600],
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 4),
+
+                    // 무료 기간 남은 일수 (7일 이내)
+                    if (dragonBall.daysUntilExpiration > 0)
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.access_time,
+                            size: 14,
+                            color: dragonBall.isExpiringSoon ? Colors.red : Colors.green[700],
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '무료 기간 ${dragonBall.daysUntilExpiration}일 남음',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: dragonBall.isExpiringSoon ? Colors.red : Colors.green[700],
+                              fontWeight: dragonBall.isExpiringSoon ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    const SizedBox(height: 4),
+
+                    // 위탁판매 경고 (50일 이상)
+                    if (StoragePolicy.shouldShowConsignmentWarning(dragonBall.storedAt))
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[100],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.orange[300]!),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.warning_amber, size: 14, color: Colors.orange[900]),
+                            const SizedBox(width: 4),
+                            Text(
+                              '위탁판매까지 ${StoragePolicy.getDaysUntilConsignment(dragonBall.storedAt)}일',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.orange[900],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (StoragePolicy.shouldShowConsignmentWarning(dragonBall.storedAt))
+                      const SizedBox(height: 4),
+
+                    // 59일 초과 경고
+                    if (StoragePolicy.hasExceededMaxStorageDays(dragonBall.storedAt))
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.red[100],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.red[300]!),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.error_outline, size: 14, color: Colors.red[900]),
+                            const SizedBox(width: 4),
+                            Text(
+                              '최대 보관 기간 초과 - 위탁판매 전환 중',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.red[900],
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (StoragePolicy.hasExceededMaxStorageDays(dragonBall.storedAt))
+                      const SizedBox(height: 4),
 
                     // 상태 배지
                     _StatusBadge(dragonBall: dragonBall),
@@ -157,15 +236,56 @@ class _StatusBadge extends StatelessWidget {
     Color backgroundColor;
     Color textColor;
     String text;
+    String icon;
 
-    if (dragonBall.isExpiringSoon) {
+    // 위탁판매 상태
+    if (dragonBall.status == DragonBallStatus.consignment) {
+      backgroundColor = Colors.purple[100]!;
+      textColor = Colors.purple[900]!;
+      text = '위탁판매 중';
+      icon = '🏪';
+    }
+    // 매각 완료 상태
+    else if (dragonBall.status == DragonBallStatus.sold) {
+      backgroundColor = Colors.teal[100]!;
+      textColor = Colors.teal[900]!;
+      text = '매각 완료';
+      icon = '✅';
+    }
+    // 배송 완료
+    else if (dragonBall.status == DragonBallStatus.delivered) {
+      backgroundColor = Colors.grey[200]!;
+      textColor = Colors.grey[800]!;
+      text = '배송 완료';
+      icon = '📦';
+    }
+    // 배송 중
+    else if (dragonBall.status == DragonBallStatus.shipping) {
+      backgroundColor = Colors.blue[100]!;
+      textColor = Colors.blue[900]!;
+      text = '배송 중';
+      icon = '🚚';
+    }
+    // 배송 준비 중
+    else if (dragonBall.status == DragonBallStatus.packing) {
+      backgroundColor = Colors.orange[100]!;
+      textColor = Colors.orange[900]!;
+      text = '배송 준비 중';
+      icon = '📋';
+    }
+    // 보관 중 - 만료 임박
+    else if (dragonBall.isExpiringSoon) {
       backgroundColor = Colors.red[100]!;
       textColor = Colors.red[900]!;
-      text = '🔴 만료 임박!';
-    } else {
+      text = '만료 임박!';
+      icon = '🔴';
+    }
+    // 보관 중 - 정상
+    else {
       backgroundColor = Colors.green[100]!;
       textColor = Colors.green[900]!;
-      text = '🟢 보관 중';
+      text = '보관 중';
+      icon = '🟢';
     }
 
     return Container(
@@ -175,7 +295,7 @@ class _StatusBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        text,
+        '$icon $text',
         style: TextStyle(
           fontSize: 11,
           color: textColor,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
+import 'package:go_router/go_router.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../order/domain/entities/order_entity.dart';
 import '../../../order/data/models/order_model.dart';
@@ -59,7 +60,7 @@ class PurchaseHistoryScreen extends ConsumerWidget {
                   const SizedBox(height: 24),
                   OutlinedButton.icon(
                     onPressed: () {
-                      Navigator.pushNamed(context, Routes.partShop);
+                      context.push(Routes.partShop);
                     },
                     icon: const Icon(Icons.store),
                     label: const Text('상품 둘러보기'),
@@ -119,8 +120,25 @@ class _OrderCard extends StatelessWidget {
         return Colors.purple;
       case OrderStatus.delivered:
         return Colors.green;
+      case OrderStatus.confirmed:
+        return Colors.teal;
       case OrderStatus.cancelled:
         return Colors.red;
+      // 환불 관련 상태
+      case OrderStatus.refundRequested:
+      case OrderStatus.refundApproved:
+      case OrderStatus.itemReturning:
+        return Colors.amber;
+      case OrderStatus.refundRejected:
+        return Colors.red;
+      case OrderStatus.refundInspecting:
+      case OrderStatus.refundInspectionPass:
+      case OrderStatus.refundProcessing:
+        return Colors.blue;
+      case OrderStatus.refundInspectionFail:
+        return Colors.deepOrange;
+      case OrderStatus.refundCompleted:
+        return Colors.teal;
     }
   }
 
@@ -134,8 +152,29 @@ class _OrderCard extends StatelessWidget {
         return '배송중';
       case OrderStatus.delivered:
         return '배송 완료';
+      case OrderStatus.confirmed:
+        return '구매 확정';
       case OrderStatus.cancelled:
         return '취소됨';
+      // 환불 관련 상태
+      case OrderStatus.refundRequested:
+        return '환불 신청됨';
+      case OrderStatus.refundApproved:
+        return '환불 승인됨';
+      case OrderStatus.refundRejected:
+        return '환불 거부됨';
+      case OrderStatus.itemReturning:
+        return '반품 배송중';
+      case OrderStatus.refundInspecting:
+        return '환불 검수중';
+      case OrderStatus.refundInspectionPass:
+        return '검수 합격';
+      case OrderStatus.refundInspectionFail:
+        return '검수 불합격';
+      case OrderStatus.refundProcessing:
+        return '환불 처리중';
+      case OrderStatus.refundCompleted:
+        return '환불 완료';
     }
   }
 
@@ -149,8 +188,29 @@ class _OrderCard extends StatelessWidget {
         return Icons.local_shipping_outlined;
       case OrderStatus.delivered:
         return Icons.check_circle_outline;
+      case OrderStatus.confirmed:
+        return Icons.verified;
       case OrderStatus.cancelled:
         return Icons.cancel_outlined;
+      // 환불 관련 상태
+      case OrderStatus.refundRequested:
+        return Icons.assignment_return;
+      case OrderStatus.refundApproved:
+        return Icons.check_circle;
+      case OrderStatus.refundRejected:
+        return Icons.cancel;
+      case OrderStatus.itemReturning:
+        return Icons.local_shipping;
+      case OrderStatus.refundInspecting:
+        return Icons.search;
+      case OrderStatus.refundInspectionPass:
+        return Icons.verified;
+      case OrderStatus.refundInspectionFail:
+        return Icons.error;
+      case OrderStatus.refundProcessing:
+        return Icons.refresh;
+      case OrderStatus.refundCompleted:
+        return Icons.account_balance_wallet;
     }
   }
 
@@ -377,9 +437,57 @@ class _OrderCard extends StatelessWidget {
                 ),
               ),
             ],
+
+            // 액션 버튼 (환불 신청 등)
+            if (_shouldShowRefundButton(order)) ...[
+              const Divider(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    context.push(
+                      Routes.refundRequest,
+                      extra: order.orderId,
+                    );
+                  },
+                  icon: const Icon(Icons.assignment_return),
+                  label: const Text('반품/환불 신청'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.orange[700],
+                    side: BorderSide(color: Colors.orange[700]!),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  /// 환불 신청 버튼 표시 여부
+  bool _shouldShowRefundButton(OrderEntity order) {
+    // 배송 완료 상태만 환불 가능
+    if (order.status != OrderStatus.delivered) return false;
+
+    // 배송 완료일이 없으면 불가
+    if (order.deliveredAt == null) return false;
+
+    // 이미 환불 관련 상태면 버튼 숨김
+    if (order.status == OrderStatus.refundRequested ||
+        order.status == OrderStatus.refundApproved ||
+        order.status == OrderStatus.refundRejected ||
+        order.status == OrderStatus.itemReturning ||
+        order.status == OrderStatus.refundInspecting ||
+        order.status == OrderStatus.refundInspectionPass ||
+        order.status == OrderStatus.refundInspectionFail ||
+        order.status == OrderStatus.refundProcessing ||
+        order.status == OrderStatus.refundCompleted) {
+      return false;
+    }
+
+    // 최대 30일 이내만 환불 가능 (판매자 귀책 기준)
+    final daysSinceDelivery = DateTime.now().difference(order.deliveredAt!).inDays;
+    return daysSinceDelivery <= 30;
   }
 }

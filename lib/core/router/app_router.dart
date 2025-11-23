@@ -56,6 +56,13 @@ import '../../features/recommendation/data/models/spec_profile_model.dart';
 import '../../features/web_public/presentation/screens/terms_page.dart';
 import '../../features/web_public/presentation/screens/privacy_page.dart';
 import '../../features/web_public/presentation/screens/refund_page.dart';
+import '../../features/web_public/presentation/screens/storage_service_terms_page.dart';
+
+// ✅ 새로 추가: Refund 피처 imports
+import '../../features/refund/presentation/screens/refund_request_screen.dart';
+import '../../features/refund/presentation/screens/refund_return_shipping_screen.dart';
+import '../../features/refund/presentation/screens/refund_detail_screen.dart';
+import '../../features/refund/presentation/screens/refund_list_screen.dart';
 
 /// 앱 내부용 Navigator Route Generator
 class AppRouter {
@@ -289,6 +296,49 @@ class AppRouter {
       case Routes.refund:
         return MaterialPageRoute(
           builder: (_) => const RefundPage(),
+          settings: settings,
+        );
+
+      case Routes.storageServiceTerms:
+        return MaterialPageRoute(
+          builder: (_) => const StorageServiceTermsPage(),
+          settings: settings,
+        );
+
+    // ✅ 새로 추가: 환불 관련
+      case Routes.refundRequest:
+        final orderId = settings.arguments as String?;
+        if (orderId == null) {
+          return _errorRoute('주문 ID가 필요합니다.');
+        }
+        return MaterialPageRoute(
+          builder: (_) => RefundRequestScreen(orderId: orderId),
+          settings: settings,
+        );
+
+      case Routes.refundReturnShipping:
+        final refundId = settings.arguments as String?;
+        if (refundId == null) {
+          return _errorRoute('환불 ID가 필요합니다.');
+        }
+        return MaterialPageRoute(
+          builder: (_) => RefundReturnShippingScreen(refundId: refundId),
+          settings: settings,
+        );
+
+      case Routes.refundDetail:
+        final refundId = settings.arguments as String?;
+        if (refundId == null) {
+          return _errorRoute('환불 ID가 필요합니다.');
+        }
+        return MaterialPageRoute(
+          builder: (_) => RefundDetailScreen(refundId: refundId),
+          settings: settings,
+        );
+
+      case Routes.refundList:
+        return MaterialPageRoute(
+          builder: (_) => const RefundListScreen(),
           settings: settings,
         );
 

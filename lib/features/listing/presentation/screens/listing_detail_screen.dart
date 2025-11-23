@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 import '../providers/listing_provider.dart';
 import '../widgets/listing_image_carousel.dart';
 import '../widgets/listing_header.dart';
@@ -33,7 +32,7 @@ class ListingDetailScreen extends ConsumerWidget {
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back, color: Colors.black),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => context.pop(),
             ),
             actions: listingAsync.when(
               data: (listing) => [
@@ -93,7 +92,7 @@ class ListingDetailScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   ElevatedButton.icon(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => context.pop(),
                     icon: const Icon(Icons.arrow_back),
                     label: const Text('돌아가기'),
                     style: ElevatedButton.styleFrom(
@@ -129,7 +128,7 @@ class ListingDetailScreen extends ConsumerWidget {
                         ),
                         actions: [
                           TextButton(
-                            onPressed: () => Navigator.pop(context),
+                            onPressed: () => context.pop(),
                             child: const Text('닫기'),
                           ),
                         ],
@@ -373,18 +372,11 @@ class ListingDetailScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 8),
             InkWell(
-              onTap: () async {
+              onTap: () {
                 if (kIsWeb) {
-                  // 웹에서는 HTML 파일로 직접 이동
-                  final currentUrl = Uri.base;
-                  final targetUrl = currentUrl.replace(path: '/termsofuse.html');
-                  await launchUrl(
-                    targetUrl,
-                    webOnlyWindowName: '_self', // 현재 탭에서 열기
-                  );
-                } else {
-                  // 모바일에서는 라우트 사용
                   context.push(Routes.terms);
+                } else {
+                  Navigator.pushNamed(context, Routes.terms);
                 }
               },
               child: Row(
@@ -490,18 +482,11 @@ class ListingDetailScreen extends ConsumerWidget {
 
           // 상세 정책 링크
           TextButton.icon(
-            onPressed: () async {
+            onPressed: () {
               if (kIsWeb) {
-                // 웹에서는 HTML 파일로 직접 이동
-                final currentUrl = Uri.base;
-                final targetUrl = currentUrl.replace(path: '/refund.html');
-                await launchUrl(
-                  targetUrl,
-                  webOnlyWindowName: '_self', // 현재 탭에서 열기
-                );
-              } else {
-                // 모바일에서는 라우트 사용
                 context.push(Routes.refund);
+              } else {
+                Navigator.pushNamed(context, Routes.refund);
               }
             },
             icon: const Icon(Icons.info_outline, size: 18),
