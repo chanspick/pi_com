@@ -77,7 +77,7 @@ export const processRefundCompletion = functions
         refundCompletedAt: admin.firestore.FieldValue.serverTimestamp(),
         kakaoPayCancelTid: cancelResult.tid,
         kakaoPayCancelAid: cancelResult.aid,
-        kakaoPa yRefundResponse: cancelResult,
+        kakaoPayRefundResponse: cancelResult,
         updatedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 

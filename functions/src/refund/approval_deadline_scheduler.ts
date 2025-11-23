@@ -47,7 +47,7 @@ export const notifyRefundApprovalDeadline = functions
           today
         );
 
-        const userId = refund.userId;
+        // [수정됨] userId 변수 삭제 (사용하지 않음)
         const sellerId = refund.sellerId;
         const orderId = refund.orderId;
         const refundId = doc.id;
