@@ -18,14 +18,13 @@ class PartsCategoryScreen extends ConsumerStatefulWidget {
 class _PartsCategoryScreenState extends ConsumerState<PartsCategoryScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final List<String> _categories = ['cpu', 'gpu', 'ram', 'mainboard', 'ssd', 'psu'];
+  final List<String> _categories = ['cpu', 'gpu', 'ram', 'mainboard', 'ssd'];
   final Map<String, String> _categoryNames = {
     'cpu': 'CPU',
     'gpu': 'GPU',
     'ram': 'RAM',
     'mainboard': '메인보드',
     'ssd': 'SSD',
-    'psu': '파워',
   };
 
   @override
@@ -111,6 +110,7 @@ class _PartsCategoryScreenState extends ConsumerState<PartsCategoryScreen>
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Icon(Icons.search, color: Colors.grey),
                     SizedBox(width: 8),

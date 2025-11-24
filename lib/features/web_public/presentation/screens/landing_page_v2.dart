@@ -32,7 +32,7 @@ class LandingPageV2 extends ConsumerWidget {
             const SizedBox(height: 80),
 
             // Featured products
-            _buildFeaturedSection(context, ref, '인기 부품', '가장 많이 찾는 부품'),
+            _buildFeaturedSection(context, ref, '최신 부품', '최근 등록된 부품'),
             const SizedBox(height: 80),
 
             // Why choose us
@@ -64,7 +64,6 @@ class LandingPageV2 extends ConsumerWidget {
       {'icon': Icons.developer_board, 'label': '메인보드', 'route': '${Routes.partShop}?category=mainboard'},
       {'icon': Icons.dns, 'label': 'RAM', 'route': '${Routes.partShop}?category=ram'},
       {'icon': Icons.storage, 'label': '저장장치', 'route': '${Routes.partShop}?category=ssd'},
-      {'icon': Icons.power, 'label': '파워', 'route': '${Routes.partShop}?category=psu'},
     ];
 
     return ResponsiveHelper.centeredMaxWidthContainer(
