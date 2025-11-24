@@ -829,23 +829,26 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
 
   Widget _buildBannerItem(
     BuildContext context,
-    Map<String, String> banner,
+    Map<String, String?> banner,
     bool isMobile,
     bool isTablet,
   ) {
     final titleSize = isMobile ? 32.0 : isTablet ? 42.0 : 56.0;
     final subtitleSize = isMobile ? 14.0 : isTablet ? 18.0 : 24.0;
     final buttonFontSize = isMobile ? 14.0 : isTablet ? 16.0 : 18.0;
+    final route = banner['route'];
 
     return InkWell(
-      onTap: () => context.go(banner['route']!),
+      onTap: route != null ? () => context.go(route) : null,
       child: Semantics(
         label: '${banner['title']} 배너 이미지',
         child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: NetworkImage(banner['image']!),
+              image: banner['image']!.startsWith('assets/')
+                  ? AssetImage(banner['image']!) as ImageProvider
+                  : NetworkImage(banner['image']!),
               fit: BoxFit.cover,
             ),
           ),
