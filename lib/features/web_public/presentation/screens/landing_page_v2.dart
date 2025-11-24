@@ -748,84 +748,20 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
     bool isMobile,
     bool isTablet,
   ) {
-    final titleSize = isMobile ? 32.0 : isTablet ? 42.0 : 56.0;
-    final subtitleSize = isMobile ? 14.0 : isTablet ? 18.0 : 24.0;
-    final buttonFontSize = isMobile ? 14.0 : isTablet ? 16.0 : 18.0;
     final route = banner['route'];
 
     return InkWell(
       onTap: route != null ? () => context.go(route) : null,
-      child: Semantics(
-        label: '${banner['title']} 배너 이미지',
-        child: Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: banner['image']!.startsWith('assets/')
-                  ? AssetImage(banner['image']!) as ImageProvider
-                  : NetworkImage(banner['image']!),
-              fit: BoxFit.cover,
-            ),
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  Colors.black.withValues(alpha: 0.7),
-                  Colors.black.withValues(alpha: 0.3),
-                ],
-              ),
-            ),
-          child: ResponsiveHelper.centeredMaxWidthContainer(
-            context: context,
-            child: Padding(
-              padding: ResponsiveHelper.getHorizontalPadding(context),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    banner['title']!,
-                    style: TextStyle(
-                      fontSize: titleSize,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      height: 1.2,
-                    ),
-                  ),
-                  SizedBox(height: isMobile ? 12 : 20),
-                  Text(
-                    banner['subtitle']!,
-                    style: TextStyle(
-                      fontSize: subtitleSize,
-                      color: Colors.white.withValues(alpha: 0.9),
-                      height: 1.5,
-                    ),
-                  ),
-                  SizedBox(height: isMobile ? 24 : 40),
-                  ElevatedButton(
-                    onPressed: () => context.go(banner['route']!),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isMobile ? 24.0 : isTablet ? 32.0 : 48.0,
-                        vertical: isMobile ? 14.0 : isTablet ? 18.0 : 24.0,
-                      ),
-                      textStyle: TextStyle(
-                        fontSize: buttonFontSize,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    child: const Text('지금 보기'),
-                  ),
-                ],
-              ),
-            ),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: banner['image']!.startsWith('assets/')
+                ? AssetImage(banner['image']!) as ImageProvider
+                : NetworkImage(banner['image']!),
+            fit: BoxFit.cover,
           ),
         ),
-      ),
       ),
     );
   }
