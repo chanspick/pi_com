@@ -677,7 +677,7 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
   Timer? _autoSlideTimer;
 
   // 배너 이미지 목록 (Firebase Storage 또는 assets)
-  final List<Map<String, String>> banners = [
+  final List<Map<String, String?>> banners = [
     {
       'image': 'assets/images/banner_pc_warranty.png',
       'title': '나만의 PC, 이제 안전하게 시작하세요',
