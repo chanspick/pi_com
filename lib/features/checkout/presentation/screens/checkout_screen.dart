@@ -253,6 +253,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 },
               ),
               const SizedBox(height: 32),
+
+              // 결제 금액 요약
+              _PaymentSummary(
+                cartItems: cartItems,
+                shippingFee: _selectedShippingMethod == ShippingMethod.immediate ? 10000 : 0,
+              ),
+              const SizedBox(height: 24),
+
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.red,
@@ -1141,6 +1149,162 @@ class _NoAddressCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 결제 금액 요약 위젯
+class _PaymentSummary extends StatelessWidget {
+  final List<CartItemEntity> cartItems;
+  final int shippingFee;
+
+  const _PaymentSummary({
+    required this.cartItems,
+    required this.shippingFee,
+  });
+
+  String _formatPrice(int price) {
+    return price.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // 상품 금액 계산
+    int subtotal = 0;
+    for (final item in cartItems) {
+      subtotal += (item.price * item.quantity).toInt();
+    }
+
+    // 총 결제 금액
+    final totalAmount = subtotal + shippingFee;
+
+    return Card(
+      elevation: 3,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: Theme.of(context).primaryColor.withOpacity(0.3), width: 2),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white,
+              Theme.of(context).primaryColor.withOpacity(0.05),
+            ],
+          ),
+        ),
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 제목
+            Row(
+              children: [
+                Icon(Icons.receipt_long, color: Theme.of(context).primaryColor),
+                const SizedBox(width: 8),
+                const Text(
+                  '결제 금액',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 12),
+
+            // 상품 금액
+            _buildPriceRow('상품 금액', subtotal, isSubtotal: true),
+            const SizedBox(height: 12),
+
+            // 배송비
+            _buildPriceRow(
+              '배송비',
+              shippingFee,
+              isSubtotal: true,
+              isFree: shippingFee == 0,
+            ),
+            const SizedBox(height: 16),
+            const Divider(thickness: 2),
+            const SizedBox(height: 16),
+
+            // 총 결제 금액 (강조)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Theme.of(context).primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Theme.of(context).primaryColor,
+                  width: 2,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '총 결제 금액',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    '${_formatPrice(totalAmount)}원',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPriceRow(String label, int amount, {bool isSubtotal = false, bool isFree = false}) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: isSubtotal ? FontWeight.w500 : FontWeight.normal,
+            color: Colors.grey[700],
+          ),
+        ),
+        if (isFree)
+          const Text(
+            '무료',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Colors.green,
+            ),
+          )
+        else
+          Text(
+            '${_formatPrice(amount)}원',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[800],
+            ),
+          ),
+      ],
     );
   }
 }
