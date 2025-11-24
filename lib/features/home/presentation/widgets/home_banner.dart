@@ -16,11 +16,11 @@ class _HomeBannerState extends State<HomeBanner> {
 
   final List<Map<String, dynamic>> bannerItems = [
     {
-      "image": "assets/images/banner_pc_warranty.png",
+      "image": "assets/images/banner_pc_warranty_mobile.png",
       "route": Routes.dragonBallStorage,
     },
     {
-      "image": "assets/images/banner_used_parts.png",
+      "image": "assets/images/banner_used_parts_mobile.png",
       "route": Routes.partShop,
     },
   ];
@@ -36,7 +36,7 @@ class _HomeBannerState extends State<HomeBanner> {
     // 화면 너비에 따른 배너 높이 계산
     final screenWidth = MediaQuery.of(context).size.width;
     final bannerWidth = screenWidth - 32; // 양쪽 마진 16씩
-    final bannerHeight = bannerWidth * 0.4; // 5:2 비율 (더 넓은 배너)
+    final bannerHeight = bannerWidth * 0.4; // 5:2 비율
 
     return Column(
       children: [

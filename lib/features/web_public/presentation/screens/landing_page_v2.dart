@@ -639,12 +639,12 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
     final isTablet = ResponsiveHelper.isTablet(context);
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // 반응형 높이 - 더 컴팩트하게
+    // 반응형 높이
     final bannerHeight = isMobile
-        ? 300.0
+        ? 400.0
         : isTablet
-            ? 350.0
-            : (screenHeight * 0.5).clamp(350.0, 450.0);
+            ? 450.0
+            : (screenHeight * 0.7).clamp(500.0, 600.0);
 
     return SizedBox(
       height: bannerHeight,
@@ -748,88 +748,20 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
     bool isMobile,
     bool isTablet,
   ) {
-    final titleSize = isMobile ? 24.0 : isTablet ? 32.0 : 40.0;
-    final subtitleSize = isMobile ? 13.0 : isTablet ? 16.0 : 18.0;
-    final buttonFontSize = isMobile ? 13.0 : isTablet ? 15.0 : 16.0;
     final route = banner['route'];
 
     return InkWell(
       onTap: route != null ? () => context.go(route) : null,
-      child: Semantics(
-        label: '${banner['title']} 배너 이미지',
-        child: Container(
-          width: double.infinity,
-          decoration: BoxDecoration(
-            image: DecorationImage(
-              image: banner['image']!.startsWith('assets/')
-                  ? AssetImage(banner['image']!) as ImageProvider
-                  : NetworkImage(banner['image']!),
-              fit: BoxFit.cover,
-            ),
-          ),
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-                colors: [
-                  Colors.black.withValues(alpha: 0.7),
-                  Colors.black.withValues(alpha: 0.3),
-                ],
-              ),
-            ),
-          child: ResponsiveHelper.centeredMaxWidthContainer(
-            context: context,
-            child: Padding(
-              padding: ResponsiveHelper.getHorizontalPadding(context),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    banner['title']!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: titleSize,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      height: 1.2,
-                    ),
-                  ),
-                  SizedBox(height: isMobile ? 8 : 12),
-                  Text(
-                    banner['subtitle']!,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: subtitleSize,
-                      color: Colors.white.withValues(alpha: 0.9),
-                      height: 1.4,
-                    ),
-                  ),
-                  SizedBox(height: isMobile ? 16 : 24),
-                  ElevatedButton(
-                    onPressed: () => context.go(banner['route']!),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Theme.of(context).primaryColor,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: isMobile ? 20.0 : isTablet ? 28.0 : 36.0,
-                        vertical: isMobile ? 12.0 : isTablet ? 14.0 : 16.0,
-                      ),
-                      textStyle: TextStyle(
-                        fontSize: buttonFontSize,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    child: const Text('지금 보기'),
-                  ),
-                ],
-              ),
-            ),
+      child: Container(
+        width: double.infinity,
+        decoration: BoxDecoration(
+          image: DecorationImage(
+            image: banner['image']!.startsWith('assets/')
+                ? AssetImage(banner['image']!) as ImageProvider
+                : NetworkImage(banner['image']!),
+            fit: BoxFit.cover,
           ),
         ),
-      ),
       ),
     );
   }
