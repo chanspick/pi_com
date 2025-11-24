@@ -178,8 +178,8 @@ class _BasePartSearchScreenState extends ConsumerState<BasePartSearchScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // 검색 키워드 표시 (항상 표시하여 사용자가 현재 검색어를 쉽게 확인 가능)
-        if (_searchController.text.isNotEmpty)
+        // 검색 키워드 표시 (검색 후 표시하여 사용자가 현재 검색어를 쉽게 확인 가능)
+        if (_hasSearched && _searchController.text.isNotEmpty)
           Container(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
