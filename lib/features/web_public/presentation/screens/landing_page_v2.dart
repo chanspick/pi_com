@@ -39,10 +39,6 @@ class LandingPageV2 extends ConsumerWidget {
             _buildWhyChooseUs(context),
             const SizedBox(height: 80),
 
-            // Stats
-            _buildStats(context),
-            const SizedBox(height: 60),
-
             // Footer
             const AppFooter(),
           ],
@@ -577,87 +573,6 @@ class LandingPageV2 extends ConsumerWidget {
             textAlign: TextAlign.center,
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildStats(BuildContext context) {
-    final isMobile = ResponsiveHelper.isMobile(context);
-    final isTablet = ResponsiveHelper.isTablet(context);
-
-    final numberSize = isMobile ? 32.0 : isTablet ? 40.0 : 48.0;
-    final labelSize = isMobile ? 12.0 : isTablet ? 14.0 : 16.0;
-    final verticalPadding = isMobile ? 40.0 : isTablet ? 50.0 : 60.0;
-
-    final stats = [
-      {'number': '10,000+', 'label': '거래 완료'},
-      {'number': '5,000+', 'label': '활성 사용자'},
-      {'number': '98%', 'label': '만족도'},
-      {'number': '24/7', 'label': '고객 지원'},
-    ];
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: verticalPadding),
-      color: Theme.of(context).primaryColor,
-      child: ResponsiveHelper.centeredMaxWidthContainer(
-        context: context,
-        child: Padding(
-          padding: ResponsiveHelper.getHorizontalPadding(context),
-          child: isMobile
-              ? Column(
-                  children: stats.map((stat) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      child: Column(
-                        children: [
-                          Text(
-                            stat['number']!,
-                            style: TextStyle(
-                              fontSize: numberSize,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: isMobile ? 4 : 8),
-                          Text(
-                            stat['label']!,
-                            style: TextStyle(
-                              fontSize: labelSize,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: stats.map((stat) {
-                    return Column(
-                      children: [
-                        Text(
-                          stat['number']!,
-                          style: TextStyle(
-                            fontSize: numberSize,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        SizedBox(height: isMobile ? 4 : 8),
-                        Text(
-                          stat['label']!,
-                          style: TextStyle(
-                            fontSize: labelSize,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
-                ),
-        ),
       ),
     );
   }

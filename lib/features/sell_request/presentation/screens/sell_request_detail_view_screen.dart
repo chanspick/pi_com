@@ -102,6 +102,12 @@ class SellRequestDetailViewScreen extends ConsumerWidget {
         statusText = '검토 중';
         icon = Icons.schedule;
         break;
+      case SellRequestStatus.testing:
+        bgColor = Colors.purple.withValues(alpha: 0.1);
+        textColor = Colors.purple;
+        statusText = '테스트 중';
+        icon = Icons.science;
+        break;
       case SellRequestStatus.approved:
         bgColor = Colors.green.withValues(alpha: 0.1);
         textColor = Colors.green;
@@ -119,6 +125,12 @@ class SellRequestDetailViewScreen extends ConsumerWidget {
         textColor = Colors.blue;
         statusText = '판매완료';
         icon = Icons.verified;
+        break;
+      case SellRequestStatus.cancelled:
+        bgColor = Colors.grey.withValues(alpha: 0.1);
+        textColor = Colors.grey;
+        statusText = '취소됨';
+        icon = Icons.block;
         break;
     }
 

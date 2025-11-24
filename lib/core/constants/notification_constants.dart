@@ -27,9 +27,12 @@ class NotificationMessageHelper {
         return '판매 요청 거절됨';
       case SellRequestStatus.sold:
         return '판매 완료';
+      case SellRequestStatus.testing:
+        return '부품 테스트 중';
+      case SellRequestStatus.cancelled:
+        return '판매 요청 취소됨';
       case SellRequestStatus.pending:
         return '판매 요청 상태 변경';
-    // ❌ default 제거 (모든 케이스가 커버됨)
     }
   }
 
@@ -46,9 +49,12 @@ class NotificationMessageHelper {
         return '$partName 판매 요청이 거절되었습니다. 자세한 내용은 관리자 메모를 확인해주세요.';
       case SellRequestStatus.sold:
         return '$partName이(가) 판매되었습니다! 대금 입금을 기다려주세요.';
+      case SellRequestStatus.testing:
+        return '$partName에 대한 부품 테스트가 진행 중입니다.';
+      case SellRequestStatus.cancelled:
+        return '$partName 판매 요청이 취소되었습니다.';
       case SellRequestStatus.pending:
         return '$partName 판매 요청 상태가 변경되었습니다.';
-    // ❌ default 제거
     }
   }
 
