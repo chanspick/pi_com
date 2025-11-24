@@ -105,9 +105,10 @@ class _ListingCardState extends ConsumerState<ListingCard> {
               flex: 3,
               child: Stack(
                 children: [
-                  ClipRRect(
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                    child: kIsWeb
+                  Positioned.fill(
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                      child: kIsWeb
                         ? (widget.listing.imageUrls.isNotEmpty
                             ? Image.network(
                                 widget.listing.imageUrls.first,
@@ -157,6 +158,7 @@ class _ListingCardState extends ConsumerState<ListingCard> {
                               color: Colors.grey,
                             ),
                           ),
+                    ),
                   ),
                   // 찜 버튼 (우측 상단)
                   if (currentUser != null)
