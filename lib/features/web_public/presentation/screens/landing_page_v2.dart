@@ -679,39 +679,30 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
   // 배너 이미지 목록 (Firebase Storage 또는 assets)
   final List<Map<String, String>> banners = [
     {
-      'image': 'https://images.unsplash.com/photo-1587202372583-49330a15584d?w=1200',
-      'title': 'RTX 4090 특가',
-      'subtitle': '최신 그래픽카드를 합리적인 가격에',
-      'route': '/shop?category=gpu',
-    },
-    {
-      'image': 'https://images.unsplash.com/photo-1555617981-dac3880eac6e?w=1200',
-      'title': 'Intel Core i9 13세대',
-      'subtitle': '강력한 성능, 합리적인 가격',
-      'route': '/shop?category=cpu',
-    },
-    {
-      'image': 'https://images.unsplash.com/photo-1625948515291-69613efd103f?w=1200',
-      'title': 'DDR5 메모리 특가',
-      'subtitle': '최고 속도의 램을 경험하세요',
-      'route': '/shop?category=ram',
+      'image': 'assets/images/banner_pc_warranty.png', // 이미지를 assets/images/ 폴더에 저장하세요
+      'title': '나만의 PC, 이제 안전하게 시작하세요',
+      'subtitle': '원하는 부품 먼저 결제! 안전 보관부터 일괄 배송까지 책임집니다.',
+      'route': '/terms',
     },
   ];
 
   @override
   void initState() {
     super.initState();
-    // 자동 슬라이드 (5초마다)
-    _autoSlideTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!mounted) return;
+    // 배너가 1개이므로 자동 슬라이드 비활성화
+    // 배너가 여러개일 때만 자동 슬라이드 활성화
+    if (banners.length > 1) {
+      _autoSlideTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+        if (!mounted) return;
 
-      final nextPage = (_currentPage + 1) % banners.length;
-      _pageController.animateToPage(
-        nextPage,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
-    });
+        final nextPage = (_currentPage + 1) % banners.length;
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      });
+    }
   }
 
   @override
