@@ -666,6 +666,7 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
                 banners[index],
                 isMobile,
                 isTablet,
+                bannerHeight,
               );
             },
           ),
@@ -747,6 +748,7 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
     Map<String, String?> banner,
     bool isMobile,
     bool isTablet,
+    double height,
   ) {
     final route = banner['route'];
 
@@ -754,6 +756,7 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
       onTap: route != null ? () => context.go(route) : null,
       child: Container(
         width: double.infinity,
+        height: height,
         decoration: BoxDecoration(
           image: DecorationImage(
             image: banner['image']!.startsWith('assets/')

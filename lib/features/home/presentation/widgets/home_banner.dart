@@ -33,10 +33,15 @@ class _HomeBannerState extends State<HomeBanner> {
 
   @override
   Widget build(BuildContext context) {
+    // 화면 너비에 따른 배너 높이 계산
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bannerWidth = screenWidth - 32; // 양쪽 마진 16씩
+    final bannerHeight = bannerWidth * 0.4; // 5:2 비율 (더 넓은 배너)
+
     return Column(
       children: [
         SizedBox(
-          height: 210,
+          height: bannerHeight,
           child: PageView.builder(
             controller: _controller,
             onPageChanged: (index) {
@@ -71,7 +76,7 @@ class _HomeBannerState extends State<HomeBanner> {
                     image,
                     fit: BoxFit.cover,
                     width: double.infinity,
-                    height: 210,
+                    height: bannerHeight,
                   ),
                 ),
               );
