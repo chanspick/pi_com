@@ -120,7 +120,7 @@ class MyPageScreen extends ConsumerWidget {
                   icon: Icons.inventory_2_outlined,
                   title: '보관 PC',
                   subtitle: '보관 중인 부품 확인 및 배송 요청',
-                  onTap: () => _navigateTo(context, Routes.dragonBallStorage),
+                  onTap: () => _navigateTo(context, Routes.pcStorage),
                 ),
                 _MenuItem(
                   icon: Icons.local_shipping_outlined,

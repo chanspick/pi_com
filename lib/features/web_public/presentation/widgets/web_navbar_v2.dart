@@ -270,7 +270,7 @@ class _WebNavBarV2State extends ConsumerState<WebNavBarV2> {
                   context.go(Routes.sellRequestHistory);
                   break;
                 case 'storage':
-                  context.go(Routes.dragonBallStorage);
+                  context.go(Routes.pcStorage);
                   break;
                 case 'logout':
                   await ref.read(signOutUseCaseProvider).call();

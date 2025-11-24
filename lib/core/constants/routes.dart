@@ -53,9 +53,9 @@ class Routes {
   static const String paymentFailure = '/payment/failure';
   static const String paymentCancel = '/payment/cancel';
 
-  // ✅ 새로 추가: PC 보관함 피처 (DragonBall → PC Storage 리브랜딩)
-  static const String dragonBallStorage = '/dragon-ball-storage'; // 실제 화면: PC 보관함
-  static const String pcStorage = '/dragon-ball-storage'; // Alias for clarity
+  // ✅ 새로 추가: PC 보관함 피처
+  static const String pcStorage = '/pc-storage'; // PC 보관함
+  static const String dragonBallStorage = '/pc-storage'; // @deprecated: pcStorage 사용 권장
   static const String batchShipmentRequest = '/batch-shipment-request';
   static const String batchShipmentHistory = '/batch-shipment-history';
 

@@ -682,7 +682,7 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
       'image': 'assets/images/banner_pc_warranty.png', // 이미지를 assets/images/ 폴더에 저장하세요
       'title': '나만의 PC, 이제 안전하게 시작하세요',
       'subtitle': '원하는 부품 먼저 결제! 안전 보관부터 일괄 배송까지 책임집니다.',
-      'route': '/terms',
+      'route': '/pc-storage',
     },
   ];
 
