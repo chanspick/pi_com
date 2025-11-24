@@ -679,10 +679,16 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
   // 배너 이미지 목록 (Firebase Storage 또는 assets)
   final List<Map<String, String>> banners = [
     {
-      'image': 'assets/images/banner_pc_warranty.png', // 이미지를 assets/images/ 폴더에 저장하세요
+      'image': 'assets/images/banner_pc_warranty.png',
       'title': '나만의 PC, 이제 안전하게 시작하세요',
       'subtitle': '원하는 부품 먼저 결제! 안전 보관부터 일괄 배송까지 책임집니다.',
       'route': '/pc-storage',
+    },
+    {
+      'image': 'assets/images/banner_used_parts.png',
+      'title': '중고 부품, 고장 걱정 없이 구매하세요',
+      'subtitle': '전문 엔지니어의 완벽한 테스트로 성능 보증까지 완료된 부품만 판매합니다.',
+      'route': null, // 클릭 이벤트 없음
     },
   ];
 
