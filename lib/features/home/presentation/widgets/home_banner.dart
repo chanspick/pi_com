@@ -16,22 +16,12 @@ class _HomeBannerState extends State<HomeBanner> {
 
   final List<Map<String, dynamic>> bannerItems = [
     {
-      "title": "신뢰의 시작, PiCom 보증",
-      "description": "엄격한 검수를 통과한 중고 컴퓨터, 안심하고 구매하세요.",
-      "color": "purple",
-      "route": null,
+      "image": "assets/images/banner_pc_warranty.png",
+      "route": Routes.dragonBallStorage,
     },
     {
-      "title": "어떤 컴퓨터를 살지 고민되나요?",
-      "description": "PiCom의 전문가가 당신에게 딱 맞는 PC를 찾아드립니다.",
-      "color": "blue",
-      "route": Routes.myEstimate, // 질문지로 연결
-    },
-    {
-      "title": "PiCom이 처음이라면?",
-      "description": "바로 거래 가이드라인 확인!",
-      "color": "green",
-      "route": null,
+      "image": "assets/images/banner_used_parts.png",
+      "route": Routes.partShop,
     },
   ];
 
@@ -43,10 +33,15 @@ class _HomeBannerState extends State<HomeBanner> {
 
   @override
   Widget build(BuildContext context) {
+    // 화면 너비에 따른 배너 높이 계산
+    final screenWidth = MediaQuery.of(context).size.width;
+    final bannerWidth = screenWidth - 32; // 양쪽 마진 16씩
+    final bannerHeight = bannerWidth * 0.4; // 5:2 비율
+
     return Column(
       children: [
         SizedBox(
-          height: 210,
+          height: bannerHeight,
           child: PageView.builder(
             controller: _controller,
             onPageChanged: (index) {
@@ -57,12 +52,8 @@ class _HomeBannerState extends State<HomeBanner> {
             itemCount: bannerItems.length,
             itemBuilder: (context, index) {
               final item = bannerItems[index];
-              final color = item['color'] == 'purple'
-                  ? Colors.deepPurple
-                  : item['color'] == 'blue'
-                  ? Colors.blue
-                  : Colors.green;
               final route = item['route'] as String?;
+              final image = item['image'] as String;
 
               return GestureDetector(
                 onTap: route != null
@@ -72,71 +63,20 @@ class _HomeBannerState extends State<HomeBanner> {
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        color,
-                        color.withValues(alpha: 0.7),
-                      ],
-                    ),
-                    // 클릭 가능한 배너는 그림자 추가
-                    boxShadow: route != null
-                        ? [
-                            BoxShadow(
-                              color: color.withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ]
-                        : null,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item['title']!,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          item['description']!,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
-                          ),
-                        ),
-                        if (route != null) ...[
-                          const SizedBox(height: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: const Text(
-                              '지금 시작하기',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Image.asset(
+                    image,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: bannerHeight,
                   ),
                 ),
               );
