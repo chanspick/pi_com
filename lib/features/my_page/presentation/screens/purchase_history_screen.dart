@@ -425,7 +425,7 @@ class _OrderCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        '드래곤볼 보관함에 보관 중',
+                        'PC 보관함에 보관 중',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,

@@ -133,19 +133,45 @@ class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
     setState(() => _isAddingToCart = true);
 
     try {
-      // 1. 구매 가능 여부 검증
+      // 1. 장바구니에 이미 있는지 확인
+      final cartItemsAsync = ref.read(cartItemsStreamProvider);
+      final alreadyInCart = cartItemsAsync.when(
+        data: (items) => items.any((item) => item.listingId == widget.listing.listingId),
+        loading: () => false,
+        error: (_, __) => false,
+      );
+
+      if (alreadyInCart) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('이미 장바구니에 있는 상품입니다'),
+            action: SnackBarAction(
+              label: '장바구니 보기',
+              onPressed: () {
+                Navigator.pushNamed(context, Routes.cart);
+              },
+            ),
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // 2. 구매 가능 여부 검증
       final validatePurchaseUseCase = ref.read(validatePurchaseUseCaseProvider);
       validatePurchaseUseCase(widget.listing, userId);
 
-      // 2. CartItem 생성 (async 처리)
+      // 3. CartItem 생성 (async 처리)
       final createCartItemUseCase = ref.read(createCartItemUseCaseProvider);
       final cartItem = await createCartItemUseCase(widget.listing);
 
-      // 3. Firestore에 장바구니 추가
+      // 4. Firestore에 장바구니 추가
       final addToCart = ref.read(addToCartProvider);
       await addToCart(cartItem);
 
-      // 4. 성공 알림
+      // 5. 성공 알림
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

@@ -269,7 +269,13 @@ class _PartShopScreenState
           IconButton(
             icon: const Icon(Icons.shopping_cart_outlined),
             onPressed: () {
-              context.go('/cart');
+              // GoRouter를 안전하게 사용
+              try {
+                context.go(Routes.cart);
+              } catch (e) {
+                // GoRouter가 없는 경우 (모바일 등) Navigator 사용
+                Navigator.pushNamed(context, Routes.cart);
+              }
             },
           ),
         ],
@@ -486,15 +492,12 @@ class _PartShopScreenState
       'RAM',
       'mainboard',
       '저장장치',
-      '파워',
-      '기타',
     ];
 
     final sortOptions = [
       '최신순',
       '낮은 가격순',
       '높은 가격순',
-      '인기순',
     ];
 
     return Container(
@@ -550,7 +553,7 @@ class _PartShopScreenState
           const SizedBox(height: 8),
           // 정렬 옵션
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Text(
                 '정렬',
@@ -560,6 +563,7 @@ class _PartShopScreenState
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              const SizedBox(width: 12),
               Container(
                 height: 36,
                 padding: const EdgeInsets.symmetric(horizontal: 12),

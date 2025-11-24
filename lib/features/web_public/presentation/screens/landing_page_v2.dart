@@ -32,16 +32,12 @@ class LandingPageV2 extends ConsumerWidget {
             const SizedBox(height: 80),
 
             // Featured products
-            _buildFeaturedSection(context, ref, '인기 부품', '가장 많이 찾는 부품'),
+            _buildFeaturedSection(context, ref, '최신 부품', '최근 등록된 부품'),
             const SizedBox(height: 80),
 
             // Why choose us
             _buildWhyChooseUs(context),
             const SizedBox(height: 80),
-
-            // Stats
-            _buildStats(context),
-            const SizedBox(height: 60),
 
             // Footer
             const AppFooter(),
@@ -64,7 +60,6 @@ class LandingPageV2 extends ConsumerWidget {
       {'icon': Icons.developer_board, 'label': '메인보드', 'route': '${Routes.partShop}?category=mainboard'},
       {'icon': Icons.dns, 'label': 'RAM', 'route': '${Routes.partShop}?category=ram'},
       {'icon': Icons.storage, 'label': '저장장치', 'route': '${Routes.partShop}?category=ssd'},
-      {'icon': Icons.power, 'label': '파워', 'route': '${Routes.partShop}?category=psu'},
     ];
 
     return ResponsiveHelper.centeredMaxWidthContainer(
@@ -581,87 +576,6 @@ class LandingPageV2 extends ConsumerWidget {
       ),
     );
   }
-
-  Widget _buildStats(BuildContext context) {
-    final isMobile = ResponsiveHelper.isMobile(context);
-    final isTablet = ResponsiveHelper.isTablet(context);
-
-    final numberSize = isMobile ? 32.0 : isTablet ? 40.0 : 48.0;
-    final labelSize = isMobile ? 12.0 : isTablet ? 14.0 : 16.0;
-    final verticalPadding = isMobile ? 40.0 : isTablet ? 50.0 : 60.0;
-
-    final stats = [
-      {'number': '10,000+', 'label': '거래 완료'},
-      {'number': '5,000+', 'label': '활성 사용자'},
-      {'number': '98%', 'label': '만족도'},
-      {'number': '24/7', 'label': '고객 지원'},
-    ];
-
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: verticalPadding),
-      color: Theme.of(context).primaryColor,
-      child: ResponsiveHelper.centeredMaxWidthContainer(
-        context: context,
-        child: Padding(
-          padding: ResponsiveHelper.getHorizontalPadding(context),
-          child: isMobile
-              ? Column(
-                  children: stats.map((stat) {
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      child: Column(
-                        children: [
-                          Text(
-                            stat['number']!,
-                            style: TextStyle(
-                              fontSize: numberSize,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          SizedBox(height: isMobile ? 4 : 8),
-                          Text(
-                            stat['label']!,
-                            style: TextStyle(
-                              fontSize: labelSize,
-                              color: Colors.white70,
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: stats.map((stat) {
-                    return Column(
-                      children: [
-                        Text(
-                          stat['number']!,
-                          style: TextStyle(
-                            fontSize: numberSize,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        SizedBox(height: isMobile ? 4 : 8),
-                        Text(
-                          stat['label']!,
-                          style: TextStyle(
-                            fontSize: labelSize,
-                            color: Colors.white70,
-                          ),
-                        ),
-                      ],
-                    );
-                  }).toList(),
-                ),
-        ),
-      ),
-    );
-  }
 }
 
 /// Hero Banner Carousel Widget
@@ -678,41 +592,38 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
   Timer? _autoSlideTimer;
 
   // 배너 이미지 목록 (Firebase Storage 또는 assets)
-  final List<Map<String, String>> banners = [
+  final List<Map<String, String?>> banners = [
     {
-      'image': 'https://images.unsplash.com/photo-1587202372583-49330a15584d?w=1200',
-      'title': 'RTX 4090 특가',
-      'subtitle': '최신 그래픽카드를 합리적인 가격에',
-      'route': '/shop?category=gpu',
+      'image': 'assets/images/banner_pc_warranty.png',
+      'title': '나만의 PC, 이제 안전하게 시작하세요',
+      'subtitle': '원하는 부품 먼저 결제! 안전 보관부터 일괄 배송까지 책임집니다.',
+      'route': '/pc-storage',
     },
     {
-      'image': 'https://images.unsplash.com/photo-1555617981-dac3880eac6e?w=1200',
-      'title': 'Intel Core i9 13세대',
-      'subtitle': '강력한 성능, 합리적인 가격',
-      'route': '/shop?category=cpu',
-    },
-    {
-      'image': 'https://images.unsplash.com/photo-1625948515291-69613efd103f?w=1200',
-      'title': 'DDR5 메모리 특가',
-      'subtitle': '최고 속도의 램을 경험하세요',
-      'route': '/shop?category=ram',
+      'image': 'assets/images/banner_used_parts.png',
+      'title': '중고 부품, 고장 걱정 없이 구매하세요',
+      'subtitle': '전문 엔지니어의 완벽한 테스트로 성능 보증까지 완료된 부품만 판매합니다.',
+      'route': null, // 클릭 이벤트 없음
     },
   ];
 
   @override
   void initState() {
     super.initState();
-    // 자동 슬라이드 (5초마다)
-    _autoSlideTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (!mounted) return;
+    // 배너가 1개이므로 자동 슬라이드 비활성화
+    // 배너가 여러개일 때만 자동 슬라이드 활성화
+    if (banners.length > 1) {
+      _autoSlideTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+        if (!mounted) return;
 
-      final nextPage = (_currentPage + 1) % banners.length;
-      _pageController.animateToPage(
-        nextPage,
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
-      );
-    });
+        final nextPage = (_currentPage + 1) % banners.length;
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+      });
+    }
   }
 
   @override
@@ -833,23 +744,26 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
 
   Widget _buildBannerItem(
     BuildContext context,
-    Map<String, String> banner,
+    Map<String, String?> banner,
     bool isMobile,
     bool isTablet,
   ) {
     final titleSize = isMobile ? 32.0 : isTablet ? 42.0 : 56.0;
     final subtitleSize = isMobile ? 14.0 : isTablet ? 18.0 : 24.0;
     final buttonFontSize = isMobile ? 14.0 : isTablet ? 16.0 : 18.0;
+    final route = banner['route'];
 
     return InkWell(
-      onTap: () => context.go(banner['route']!),
+      onTap: route != null ? () => context.go(route) : null,
       child: Semantics(
         label: '${banner['title']} 배너 이미지',
         child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: NetworkImage(banner['image']!),
+              image: banner['image']!.startsWith('assets/')
+                  ? AssetImage(banner['image']!) as ImageProvider
+                  : NetworkImage(banner['image']!),
               fit: BoxFit.cover,
             ),
           ),

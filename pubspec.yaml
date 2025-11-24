@@ -93,6 +93,7 @@ flutter:
     - assets/data/estimate_full.json
     - assets/photos/app_icon.png
     - assets/photos/app_icon_whitever.png
+    - assets/images/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

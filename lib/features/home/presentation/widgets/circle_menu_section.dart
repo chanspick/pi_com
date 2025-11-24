@@ -20,7 +20,7 @@ class CircleMenuSection extends StatelessWidget {
     {
       'icon': Icons.inventory_2_outlined,
       'label': 'PC 보관함',
-      'route': Routes.dragonBallStorage, // ✅ PC 보관함 연결!
+      'route': Routes.pcStorage, // ✅ PC 보관함 연결!
     },
     {
       'icon': Icons.add_box_outlined,

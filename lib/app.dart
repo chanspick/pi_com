@@ -193,7 +193,7 @@ class MyApp extends ConsumerWidget {
         builder: (context, state) => const SellRequestScreen(),
       ),
       GoRoute(
-        path: '/dragon-ball-storage',
+        path: '/pc-storage',
         builder: (context, state) => const PcStorageScreen(),
       ),
       GoRoute(

@@ -46,7 +46,7 @@ class _HomeBannerState extends State<HomeBanner> {
     return Column(
       children: [
         SizedBox(
-          height: 200,
+          height: 210,
           child: PageView.builder(
             controller: _controller,
             onPageChanged: (index) {
@@ -94,28 +94,17 @@ class _HomeBannerState extends State<HomeBanner> {
                   child: Padding(
                     padding: const EdgeInsets.all(24),
                     child: Column(
+                      mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                item['title']!,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            if (route != null)
-                              const Icon(
-                                Icons.arrow_forward_ios,
-                                color: Colors.white,
-                                size: 20,
-                              ),
-                          ],
+                        Text(
+                          item['title']!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         Text(

@@ -9,10 +9,12 @@ enum AgeInfoType {
 }
 
 enum SellRequestStatus {
-  pending,
-  approved,
-  rejected,
-  sold,
+  pending,     // 검토 중
+  testing,     // 테스트 중
+  approved,    // 승인됨
+  rejected,    // 반려됨
+  sold,        // 판매완료
+  cancelled,   // 취소됨 (사용자가 취소)
 }
 
 // --- Model Class ---
