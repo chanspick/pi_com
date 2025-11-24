@@ -637,6 +637,7 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
   Widget build(BuildContext context) {
     final isMobile = ResponsiveHelper.isMobile(context);
     final isTablet = ResponsiveHelper.isTablet(context);
+    final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
     // 반응형 높이 - 16:9 비율 유지
