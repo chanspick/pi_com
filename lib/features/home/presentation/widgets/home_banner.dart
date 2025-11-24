@@ -16,11 +16,15 @@ class _HomeBannerState extends State<HomeBanner> {
 
   final List<Map<String, dynamic>> bannerItems = [
     {
-      "image": "assets/images/banner_pc_warranty_mobile.png",
+      "title": "나만의 PC, 이제 안전하게 시작하세요",
+      "description": "원하는 부품 먼저 결제! 안전 보관부터 일괄 배송까지 책임집니다.",
+      "gradient": [Color(0xFF1976D2), Color(0xFF42A5F5)],
       "route": Routes.dragonBallStorage,
     },
     {
-      "image": "assets/images/banner_used_parts_mobile.png",
+      "title": "중고 부품, 고장 걱정 없이 구매하세요",
+      "description": "전문 엔지니어의 완벽한 테스트로 성능 보증까지 완료된 부품만 판매합니다.",
+      "gradient": [Color(0xFF7B1FA2), Color(0xFFBA68C8)],
       "route": Routes.partShop,
     },
   ];
@@ -33,15 +37,10 @@ class _HomeBannerState extends State<HomeBanner> {
 
   @override
   Widget build(BuildContext context) {
-    // 화면 너비에 따른 배너 높이 계산
-    final screenWidth = MediaQuery.of(context).size.width;
-    final bannerWidth = screenWidth - 32; // 양쪽 마진 16씩
-    final bannerHeight = bannerWidth * 0.4; // 5:2 비율
-
     return Column(
       children: [
         SizedBox(
-          height: bannerHeight,
+          height: 200,
           child: PageView.builder(
             controller: _controller,
             onPageChanged: (index) {
@@ -53,7 +52,7 @@ class _HomeBannerState extends State<HomeBanner> {
             itemBuilder: (context, index) {
               final item = bannerItems[index];
               final route = item['route'] as String?;
-              final image = item['image'] as String;
+              final gradient = item['gradient'] as List<Color>;
 
               return GestureDetector(
                 onTap: route != null
@@ -62,6 +61,11 @@ class _HomeBannerState extends State<HomeBanner> {
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: gradient,
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
@@ -71,12 +75,52 @@ class _HomeBannerState extends State<HomeBanner> {
                       ),
                     ],
                   ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Image.asset(
-                    image,
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: bannerHeight,
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item['title']!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          item['description']!,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                          ),
+                        ),
+                        if (route != null) ...[
+                          const SizedBox(height: 12),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Text(
+                              '지금 시작하기',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
               );
