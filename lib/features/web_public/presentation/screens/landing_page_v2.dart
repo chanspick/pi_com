@@ -637,107 +637,35 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
   Widget build(BuildContext context) {
     final isMobile = ResponsiveHelper.isMobile(context);
     final isTablet = ResponsiveHelper.isTablet(context);
+    final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
 
-    // 반응형 높이
+    // 반응형 높이 - 16:9 비율 유지
     final bannerHeight = isMobile
         ? 400.0
         : isTablet
             ? 450.0
-            : (screenHeight * 0.7).clamp(500.0, 600.0);
+            : screenWidth * 0.4; // 화면 너비 기준으로 비율 계산
 
     return SizedBox(
       height: bannerHeight,
       width: double.infinity,
-      child: Stack(
-        children: [
-          // PageView for banner images
-          PageView.builder(
-            controller: _pageController,
-            onPageChanged: (index) {
-              setState(() {
-                _currentPage = index;
-              });
-            },
-            itemCount: banners.length,
-            itemBuilder: (context, index) {
-              return _buildBannerItem(
-                context,
-                banners[index],
-                isMobile,
-                isTablet,
-              );
-            },
-          ),
-
-          // Navigation arrows (desktop only)
-          if (!isMobile) ...[
-            // Left arrow
-            Positioned(
-              left: 20,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: IconButton(
-                  onPressed: () {
-                    _pageController.previousPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                  icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 30),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.black.withValues(alpha: 0.3),
-                  ),
-                ),
-              ),
-            ),
-            // Right arrow
-            Positioned(
-              right: 20,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: IconButton(
-                  onPressed: () {
-                    _pageController.nextPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                  icon: const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 30),
-                  style: IconButton.styleFrom(
-                    backgroundColor: Colors.black.withValues(alpha: 0.3),
-                  ),
-                ),
-              ),
-            ),
-          ],
-
-          // Dots indicator
-          Positioned(
-            bottom: 20,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(
-                banners.length,
-                (index) => Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  width: _currentPage == index ? 24 : 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: _currentPage == index
-                        ? Colors.white
-                        : Colors.white.withValues(alpha: 0.5),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+      child: PageView.builder(
+        controller: _pageController,
+        onPageChanged: (index) {
+          setState(() {
+            _currentPage = index;
+          });
+        },
+        itemCount: banners.length,
+        itemBuilder: (context, index) {
+          return _buildBannerItem(
+            context,
+            banners[index],
+            isMobile,
+            isTablet,
+          );
+        },
       ),
     );
   }
@@ -755,12 +683,12 @@ class _HeroBannerCarouselState extends State<HeroBannerCarousel> {
       child: Container(
         width: double.infinity,
         decoration: BoxDecoration(
-          image: DecorationImage(
-            image: banner['image']!.startsWith('assets/')
-                ? AssetImage(banner['image']!) as ImageProvider
-                : NetworkImage(banner['image']!),
-            fit: BoxFit.cover,
-          ),
+          color: Colors.grey[100],
+        ),
+        child: Image.asset(
+          banner['image']!,
+          fit: BoxFit.contain,
+          width: double.infinity,
         ),
       ),
     );
