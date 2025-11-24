@@ -23,7 +23,7 @@ class DragonBallStorageScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('드래곤볼 보관함'),
+        title: const Text('PC 보관함'),
         actions: [
           if (storedDragonBalls.isNotEmpty)
             TextButton(
@@ -58,7 +58,7 @@ class DragonBallStorageScreen extends ConsumerWidget {
                     children: [
                       // 헤더
                       Text(
-                        '드래곤볼 보관함',
+                        'PC 보관함',
                         style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -77,7 +77,7 @@ class DragonBallStorageScreen extends ConsumerWidget {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                '부품 구매 시 드래곤볼 보관을 선택하면 7일간 무료 보관 후 합배송으로 배송비를 절약할 수 있어요!',
+                                '부품 구매 시 PC 보관함을 선택하면 7일간 무료 보관 후 합배송으로 배송비를 절약할 수 있어요!',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.blue[900],
@@ -117,7 +117,7 @@ class DragonBallStorageScreen extends ConsumerWidget {
                               ),
                               const SizedBox(height: 8),
                               Text(
-                                '부품 쇼핑몰에서 부품을 구매하고\n드래곤볼 보관을 선택해보세요',
+                                '부품 쇼핑몰에서 부품을 구매하고\nPC 보관함을 선택해보세요',
                                 textAlign: TextAlign.center,
                                 style: TextStyle(
                                   fontSize: 14,

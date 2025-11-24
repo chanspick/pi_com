@@ -59,14 +59,19 @@ class StoragePolicy {
   // 배송비 정책
   // ==========================================
 
-  /// 개별 배송비 (부품당)
-  static const int INDIVIDUAL_SHIPPING_COST = 5000;
+  /// 부품 배송비 (케이스 미포함)
+  static const int PARTS_SHIPPING_COST = 4500;
 
-  /// 일괄 배송비 (묶음 배송)
-  static const int BATCH_SHIPPING_COST = 6000;
+  /// 완제품 배송비 (케이스 포함)
+  static const int COMPLETE_PC_SHIPPING_COST = 5000;
 
-  /// 배송비 할인 최소 부품 수
-  static const int MIN_PARTS_FOR_DISCOUNT = 2;
+  /// 기본 배송비 (하위 호환성을 위해 유지)
+  @Deprecated('Use PARTS_SHIPPING_COST or COMPLETE_PC_SHIPPING_COST instead')
+  static const int INDIVIDUAL_SHIPPING_COST = 4500;
+
+  /// 일괄 배송비 (하위 호환성을 위해 유지)
+  @Deprecated('Use PARTS_SHIPPING_COST or COMPLETE_PC_SHIPPING_COST instead')
+  static const int BATCH_SHIPPING_COST = 4500;
 
   // ==========================================
   // 계산 메서드
@@ -102,21 +107,28 @@ class StoragePolicy {
     return calculateDaysUntilExpiration(storedAt) <= 0;
   }
 
-  /// 개별 배송 총 비용 계산
-  static int calculateIndividualShippingCost(int partCount) {
-    return partCount * INDIVIDUAL_SHIPPING_COST;
+  /// 배송비 계산 (케이스 포함 여부로 판단)
+  static int calculateShippingCost({required bool hasCase}) {
+    return hasCase ? COMPLETE_PC_SHIPPING_COST : PARTS_SHIPPING_COST;
   }
 
-  /// 일괄 배송 총 비용 계산
+  /// 개별 배송 총 비용 계산 (하위 호환성)
+  @Deprecated('Use calculateShippingCost instead')
+  static int calculateIndividualShippingCost(int partCount) {
+    return partCount * PARTS_SHIPPING_COST;
+  }
+
+  /// 일괄 배송 총 비용 계산 (하위 호환성)
+  @Deprecated('Use calculateShippingCost instead')
   static int calculateBatchShippingCost(int partCount) {
     if (partCount == 0) return 0;
-    return BATCH_SHIPPING_COST;
+    return PARTS_SHIPPING_COST;
   }
 
-  /// 배송비 절감액 계산
+  /// 배송비 절감액 계산 (하위 호환성)
+  @Deprecated('No longer applicable with flat shipping fee')
   static int calculateShippingSavings(int partCount) {
-    if (partCount < MIN_PARTS_FOR_DISCOUNT) return 0;
-    return calculateIndividualShippingCost(partCount) - calculateBatchShippingCost(partCount);
+    return 0; // 더 이상 배송비 할인 없음
   }
 
   /// 보관료 계산 (무료 기간 이후)

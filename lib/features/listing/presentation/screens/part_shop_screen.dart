@@ -269,7 +269,13 @@ class _PartShopScreenState
           IconButton(
             icon: const Icon(Icons.shopping_cart_outlined),
             onPressed: () {
-              context.go('/cart');
+              // GoRouter를 안전하게 사용
+              try {
+                context.go(Routes.cart);
+              } catch (e) {
+                // GoRouter가 없는 경우 (모바일 등) Navigator 사용
+                Navigator.pushNamed(context, Routes.cart);
+              }
             },
           ),
         ],

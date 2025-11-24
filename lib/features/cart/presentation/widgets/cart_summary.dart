@@ -29,9 +29,9 @@ class CartSummary extends ConsumerWidget {
   }
 
   int _getShippingCost(WidgetRef ref) {
-    // 판매자 수에 따라 배송비 계산 (판매자당 3000원)
-    final totalShippingFee = ref.watch(totalShippingFeeProvider);
-    return totalShippingFee;
+    // 부품 배송비 고정 (4,500원)
+    // 장바구니는 부품만 취급하므로 항상 4,500원
+    return 4500;
   }
 
   int _getFinalTotal(WidgetRef ref) {
@@ -99,7 +99,7 @@ class CartSummary extends ConsumerWidget {
             _buildPriceRow('상품 금액', _totalProductPrice, isSubtotal: true),
             const SizedBox(height: 8),
             _buildPriceRow(
-              sellerCount > 1 ? '배송비 ($sellerCount명 × 3,000원)' : '배송비',
+              '배송비 (부품)',
               shippingCost,
               isSubtotal: true,
             ),

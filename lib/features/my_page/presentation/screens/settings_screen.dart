@@ -10,9 +10,6 @@ class SettingsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(themeModeProvider);
-    final isDarkMode = themeMode == ThemeMode.dark;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('설정'),

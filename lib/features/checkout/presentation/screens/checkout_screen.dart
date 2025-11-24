@@ -608,8 +608,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       subtotal += item.price * item.quantity;
     }
 
-    // 배송비 추가
-    final shippingFee = _selectedShippingMethod == ShippingMethod.immediate ? 10000 : 0;
+    // 배송비 추가 (즉시 배송 시 4,500원, PC 보관함은 합배송 시 부과)
+    final shippingFee = _selectedShippingMethod == ShippingMethod.immediate ? 4500 : 0;
 
     return (subtotal + shippingFee).toInt();
   }
@@ -682,7 +682,7 @@ class _ShippingMethodSelector extends StatelessWidget {
           groupValue: selectedMethod,
           onChanged: (value) => onMethodChanged(value!),
           title: const Text('즉시 배송', style: TextStyle(fontWeight: FontWeight.w600)),
-          subtitle: const Text('배송비: 10,000원\n예상 도착: 2-3일'),
+          subtitle: const Text('배송비: 4,500원 (부품)\n예상 도착: 2-3일'),
           contentPadding: const EdgeInsets.symmetric(horizontal: 8),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(8),
@@ -727,7 +727,7 @@ class _ShippingMethodSelector extends StatelessWidget {
           subtitle: Text(
             disableDragonBall
                 ? '⚠️ 케이스/쿨러/파워는 PC 보관함 서비스를 이용할 수 없습니다.'
-                : '배송비: 무료 (보관 후 합배송)\n보관 기간: 7일 무료\n💡 다른 부품과 함께 배송받아 배송비를 절약하세요!',
+                : '합배송비: 4,500원 (부품만) / 5,000원 (케이스 포함)\n보관 기간: 7일 무료\n💡 여러 부품을 조립하고 싶으세요? PC 보관함에서 조립 요청이 가능합니다!',
             style: TextStyle(
               color: disableDragonBall ? Colors.red : null,
             ),
