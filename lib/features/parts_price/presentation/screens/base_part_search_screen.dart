@@ -72,8 +72,9 @@ class _BasePartSearchScreenState extends ConsumerState<BasePartSearchScreen> {
     });
   }
 
-  void _navigateToListings(BasePartEntity basePart) {
-    Navigator.of(context).push(
+  void _navigateToListings(BasePartEntity basePart) async {
+    // 검색 키워드를 유지한 채 상세 페이지로 이동
+    await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ListingsByBasePartScreen(
           basePartId: basePart.basePartId,
@@ -81,6 +82,7 @@ class _BasePartSearchScreenState extends ConsumerState<BasePartSearchScreen> {
         ),
       ),
     );
+    // 돌아왔을 때 검색 결과가 그대로 유지됨 (상태 보존)
   }
 
   @override
@@ -176,6 +178,39 @@ class _BasePartSearchScreenState extends ConsumerState<BasePartSearchScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // 검색 키워드 표시 (항상 표시하여 사용자가 현재 검색어를 쉽게 확인 가능)
+        if (_searchController.text.isNotEmpty)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).primaryColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: Theme.of(context).primaryColor.withOpacity(0.3),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.search,
+                  size: 16,
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '검색: "${_searchController.text}"',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
         // 결과 개수
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

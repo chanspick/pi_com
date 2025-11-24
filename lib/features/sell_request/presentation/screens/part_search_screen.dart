@@ -238,38 +238,79 @@ class _PartSearchScreenState extends State<PartSearchScreen> {
               )
             else
               Expanded(
-                child: ListView.builder(
-                  itemCount: _searchResults.length,
-                  itemBuilder: (context, index) {
-                    final part = _searchResults[index];
-                    final modelName = part['modelName'] ?? part['model'] ?? part['name'] ?? '알 수 없음';
-                    final brand = part['brand'] ?? '';
-                    final price = (part['referencePrice'] as num?)?.toInt();
-
-                    return Card(
-                      child: ListTile(
-                        leading: CircleAvatar(
-                          child: Text(brand.isNotEmpty ? brand[0].toUpperCase() : '?'),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 검색 키워드 표시 (검색 결과가 있을 때만)
+                    if (_searchController.text.isNotEmpty && _searchResults.isNotEmpty)
+                      Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: Theme.of(context).primaryColor.withOpacity(0.3),
+                          ),
                         ),
-                        title: Text(modelName),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (brand.isNotEmpty) Text('제조사: $brand'),
-                            if (price != null)
-                              Text(
-                                '참고가: ${price.toString().replaceAllMapped(
-                                  RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                                  (Match m) => '${m[1]},',
-                                )}원',
+                            Icon(
+                              Icons.search,
+                              size: 16,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            const SizedBox(width: 8),
+                            Flexible(
+                              child: Text(
+                                '검색: "${_searchController.text}" · ${_searchResults.length}개 결과',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: Theme.of(context).primaryColor,
+                                ),
                               ),
+                            ),
                           ],
                         ),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        onTap: () => _selectPart(part),
                       ),
-                    );
-                  },
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: _searchResults.length,
+                        itemBuilder: (context, index) {
+                          final part = _searchResults[index];
+                          final modelName = part['modelName'] ?? part['model'] ?? part['name'] ?? '알 수 없음';
+                          final brand = part['brand'] ?? '';
+                          final price = (part['referencePrice'] as num?)?.toInt();
+
+                          return Card(
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                child: Text(brand.isNotEmpty ? brand[0].toUpperCase() : '?'),
+                              ),
+                              title: Text(modelName),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (brand.isNotEmpty) Text('제조사: $brand'),
+                                  if (price != null)
+                                    Text(
+                                      '참고가: ${price.toString().replaceAllMapped(
+                                        RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+                                        (Match m) => '${m[1]},',
+                                      )}원',
+                                    ),
+                                ],
+                              ),
+                              trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                              onTap: () => _selectPart(part),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
           ],
