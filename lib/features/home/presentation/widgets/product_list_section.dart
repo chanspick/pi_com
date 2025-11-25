@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../listing/presentation/providers/listing_provider.dart';
 import '../../../listing/presentation/widgets/listing_card.dart';
 import '../../../../core/constants/routes.dart';
+import '../../../../core/utils/responsive_helper.dart';
 
 class ProductListSection extends ConsumerWidget {
   const ProductListSection({super.key});
@@ -17,8 +18,10 @@ class ProductListSection extends ConsumerWidget {
       ),
     );
 
+    final horizontalPadding = ResponsiveHelper.isDesktop(context) ? 24.0 : 16.0;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -82,14 +85,18 @@ class ProductListSection extends ConsumerWidget {
               // 최대 4개만 표시
               final displayListings = listings.take(4).toList();
 
+              // 반응형 그리드 열 개수 및 간격
+              final crossAxisCount = ResponsiveHelper.getGridCrossAxisCount(context);
+              final spacing = ResponsiveHelper.isDesktop(context) ? 24.0 : 12.0;
+
               return GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: crossAxisCount,
                   childAspectRatio: 0.75,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
+                  crossAxisSpacing: spacing,
+                  mainAxisSpacing: spacing,
                 ),
                 itemCount: displayListings.length,
                 itemBuilder: (context, index) {

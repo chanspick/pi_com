@@ -8,6 +8,7 @@ import '../../domain/entities/listing_entity.dart';
 import '../screens/listing_detail_screen.dart';
 import '../../../my_page/presentation/providers/favorites_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../../core/utils/responsive_helper.dart';
 
 class ListingCard extends ConsumerStatefulWidget {
   final ListingEntity listing;
@@ -78,6 +79,17 @@ class _ListingCardState extends ConsumerState<ListingCard> {
   Widget build(BuildContext context) {
     final formatter = NumberFormat('#,###');
     final currentUser = ref.watch(currentUserProvider);
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // 반응형 폰트 크기
+    final brandFontSize = isMobile ? 9.0 : 10.0;
+    final modelFontSize = isMobile ? 11.0 : 12.0;
+    final priceFontSize = isMobile ? 12.0 : 14.0;
+    // 반응형 패딩
+    final cardPadding = isMobile ? 6.0 : 8.0;
+    // 반응형 아이콘 크기
+    final iconSize = screenWidth < 360 ? 14.0 : 18.0;
 
     return Container(
       decoration: BoxDecoration(
@@ -118,9 +130,9 @@ class _ListingCardState extends ConsumerState<ListingCard> {
                                   errorBuilder: (context, error, stackTrace) {
                                     return Container(
                                       color: Colors.grey[200],
-                                      child: const Icon(
+                                      child: Icon(
                                         Icons.broken_image,
-                                        size: 40,
+                                        size: iconSize * 2,
                                         color: Colors.grey,
                                       ),
                                     );
@@ -130,11 +142,16 @@ class _ListingCardState extends ConsumerState<ListingCard> {
                                     return Container(
                                       color: Colors.grey[200],
                                       child: Center(
-                                        child: CircularProgressIndicator(
-                                          value: loadingProgress.expectedTotalBytes != null
-                                              ? loadingProgress.cumulativeBytesLoaded /
-                                                  loadingProgress.expectedTotalBytes!
-                                              : null,
+                                        child: SizedBox(
+                                          width: 24,
+                                          height: 24,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            value: loadingProgress.expectedTotalBytes != null
+                                                ? loadingProgress.cumulativeBytesLoaded /
+                                                    loadingProgress.expectedTotalBytes!
+                                                : null,
+                                          ),
                                         ),
                                       ),
                                     );
@@ -142,9 +159,9 @@ class _ListingCardState extends ConsumerState<ListingCard> {
                                 )
                               : Container(
                                   color: Colors.grey[200],
-                                  child: const Icon(
+                                  child: Icon(
                                     Icons.image_not_supported,
-                                    size: 40,
+                                    size: iconSize * 2,
                                     color: Colors.grey,
                                   ),
                                 ))
@@ -154,9 +171,9 @@ class _ListingCardState extends ConsumerState<ListingCard> {
                               width: double.infinity,
                               height: double.infinity,
                               placeholder: (context, url) => Container(color: Colors.grey[200]),
-                              errorWidget: (context, url, error) => const Icon(
+                              errorWidget: (context, url, error) => Icon(
                                 Icons.broken_image,
-                                size: 40,
+                                size: iconSize * 2,
                                 color: Colors.grey,
                               ),
                             ),
@@ -165,8 +182,8 @@ class _ListingCardState extends ConsumerState<ListingCard> {
                   // 찜 버튼 (우측 상단)
                   if (currentUser != null)
                     Positioned(
-                      top: 6,
-                      right: 6,
+                      top: 4,
+                      right: 4,
                       child: Consumer(
                         builder: (context, ref, child) {
                           final favoritesIdsAsync = ref.watch(favoritesIdsProvider);
@@ -183,16 +200,16 @@ class _ListingCardState extends ConsumerState<ListingCard> {
                               customBorder: const CircleBorder(),
                               onTap: _isTogglingFavorite ? null : _toggleFavorite,
                               child: Padding(
-                                padding: const EdgeInsets.all(6),
+                                padding: EdgeInsets.all(isMobile ? 4 : 6),
                                 child: _isTogglingFavorite
-                                    ? const SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
+                                    ? SizedBox(
+                                        width: iconSize,
+                                        height: iconSize,
+                                        child: const CircularProgressIndicator(strokeWidth: 2),
                                       )
                                     : Icon(
                                         isFavorite ? Icons.favorite : Icons.favorite_border,
-                                        size: 18,
+                                        size: iconSize,
                                         color: isFavorite ? Colors.red : Colors.grey[700],
                                       ),
                               ),
@@ -207,7 +224,7 @@ class _ListingCardState extends ConsumerState<ListingCard> {
             Expanded(
               flex: 2,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: EdgeInsets.symmetric(horizontal: cardPadding, vertical: cardPadding / 2),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -221,28 +238,34 @@ class _ListingCardState extends ConsumerState<ListingCard> {
                             widget.listing.brand,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontSize: 10, color: Colors.grey),
+                            style: TextStyle(fontSize: brandFontSize, color: Colors.grey),
                           ),
+                          const SizedBox(height: 2),
                           Text(
                             widget.listing.modelName,
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              fontSize: 12,
+                              fontSize: modelFontSize,
+                              height: 1.2,
                             ),
                           ),
                         ],
                       ),
                     ),
-                    Text(
-                      '${formatter.format(widget.listing.price)}원',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).primaryColor,
-                        fontWeight: FontWeight.bold,
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        '${formatter.format(widget.listing.price)}원',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: priceFontSize,
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ],

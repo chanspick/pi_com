@@ -32,6 +32,14 @@ class _WebNavBarV2State extends ConsumerState<WebNavBarV2> {
     final currentUser = ref.watch(currentUserProvider);
     final isMobile = ResponsiveHelper.isMobile(context);
     final isTablet = ResponsiveHelper.isTablet(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // 작은 화면 기준 (320px 미만)
+    final isVerySmall = screenWidth < 320;
+    // 검색바 표시 여부
+    final showSearchBar = screenWidth > 360;
+    // 로고 간격
+    final logoSpacing = isMobile ? 12.0 : 24.0;
 
     return Container(
       height: 70,
@@ -48,18 +56,20 @@ class _WebNavBarV2State extends ConsumerState<WebNavBarV2> {
       child: ResponsiveHelper.centeredMaxWidthContainer(
         context: context,
         child: Padding(
-          padding: ResponsiveHelper.getHorizontalPadding(context),
+          padding: EdgeInsets.symmetric(
+            horizontal: isMobile ? 8.0 : isTablet ? 16.0 : 24.0,
+          ),
           child: Row(
             children: [
               // Logo
-              _buildLogo(context, isMobile, isTablet),
-              const SizedBox(width: 24),
+              _buildLogo(context, isMobile, isTablet, isVerySmall),
+              SizedBox(width: logoSpacing),
 
-              // Search bar
-              if (!isMobile || MediaQuery.of(context).size.width > 400)
+              // Search bar (조건부 렌더링)
+              if (showSearchBar)
                 Expanded(child: _buildSearchBar(context, isMobile, isTablet)),
-              if (!isMobile || MediaQuery.of(context).size.width > 400)
-                const SizedBox(width: 24),
+              if (showSearchBar)
+                SizedBox(width: isMobile ? 8 : 24),
 
               // Navigation Links (desktop only)
               if (!isMobile && !isTablet) ...[
@@ -79,10 +89,10 @@ class _WebNavBarV2State extends ConsumerState<WebNavBarV2> {
     );
   }
 
-  Widget _buildLogo(BuildContext context, bool isMobile, bool isTablet) {
-    final logoSize = isMobile ? 32.0 : isTablet ? 36.0 : 40.0;
-    final fontSize = isMobile ? 20.0 : isTablet ? 24.0 : 28.0;
-    final spacing = isMobile ? 8.0 : 12.0;
+  Widget _buildLogo(BuildContext context, bool isMobile, bool isTablet, bool isVerySmall) {
+    final logoSize = isVerySmall ? 28.0 : isMobile ? 32.0 : isTablet ? 36.0 : 40.0;
+    final fontSize = isVerySmall ? 16.0 : isMobile ? 18.0 : isTablet ? 22.0 : 26.0;
+    final spacing = isVerySmall ? 4.0 : isMobile ? 6.0 : 10.0;
 
     return InkWell(
       onTap: () => context.go('/'),
@@ -95,7 +105,6 @@ class _WebNavBarV2State extends ConsumerState<WebNavBarV2> {
             height: logoSize,
             fit: BoxFit.contain,
             errorBuilder: (context, error, stackTrace) {
-              // Fallback to icon if image fails to load
               return Icon(
                 Icons.computer,
                 size: logoSize,
@@ -104,15 +113,17 @@ class _WebNavBarV2State extends ConsumerState<WebNavBarV2> {
             },
           ),
           SizedBox(width: spacing),
-          Text(
-            'PiCom',
-            style: TextStyle(
-              fontSize: fontSize,
-              fontWeight: FontWeight.bold,
-              color: Colors.black87,
-              letterSpacing: -0.5,
+          // 매우 작은 화면에서는 로고 텍스트 숨김
+          if (!isVerySmall)
+            Text(
+              'PiCom',
+              style: TextStyle(
+                fontSize: fontSize,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+                letterSpacing: -0.5,
+              ),
             ),
-          ),
         ],
       ),
     );

@@ -8,6 +8,7 @@ import '../widgets/home_banner.dart';
 import '../widgets/circle_menu_section.dart';
 import '../widgets/product_list_section.dart';
 import '../../../../shared/widgets/app_footer.dart';
+import '../../../../core/utils/responsive_helper.dart';
 
 /// 홈 화면 - PiCom 메인 페이지
 class HomeScreen extends StatelessWidget {
@@ -20,7 +21,9 @@ class HomeScreen extends StatelessWidget {
         title: const HomeSearchBar(),
         actions: const [HomeAppBarActions()],
       ),
-      body: const _HomeContent(),
+      body: const SafeArea(
+        child: _HomeContent(),
+      ),
     );
   }
 }
@@ -30,19 +33,26 @@ class _HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const HomeBanner(),
-          const SizedBox(height: 24),
-          const CircleMenuSection(),
-          const SizedBox(height: 24),
-          const ProductListSection(),
-          const SizedBox(height: 32),
-          // ⭐️ 웹 배포용 법정 필수 정보 Footer
-          const AppFooter(),
-        ],
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final verticalSpacing = isMobile ? 16.0 : 24.0;
+
+    return ResponsiveHelper.centeredMaxWidthContainer(
+      context: context,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            SizedBox(height: isMobile ? 8 : 16),
+            const HomeBanner(),
+            SizedBox(height: verticalSpacing),
+            const CircleMenuSection(),
+            SizedBox(height: verticalSpacing),
+            const ProductListSection(),
+            SizedBox(height: isMobile ? 24 : 32),
+            // 웹 배포용 법정 필수 정보 Footer
+            const AppFooter(),
+          ],
+        ),
       ),
     );
   }

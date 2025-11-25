@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:pi_com/core/constants/routes.dart';
+import '../../../../core/utils/responsive_helper.dart';
 
 class HomeBanner extends StatefulWidget {
   const HomeBanner({super.key});
@@ -37,10 +38,24 @@ class _HomeBannerState extends State<HomeBanner> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = ResponsiveHelper.isMobile(context);
+    final isTablet = ResponsiveHelper.isTablet(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+
+    // 반응형 배너 높이
+    final bannerHeight = isMobile ? 180.0 : isTablet ? 200.0 : 220.0;
+    // 반응형 마진
+    final horizontalMargin = isMobile ? 12.0 : 16.0;
+    // 반응형 패딩
+    final contentPadding = isMobile ? 16.0 : 24.0;
+    // 반응형 폰트 크기
+    final titleFontSize = isMobile ? 16.0 : isTablet ? 18.0 : 20.0;
+    final descFontSize = isMobile ? 12.0 : isTablet ? 13.0 : 14.0;
+
     return Column(
       children: [
         SizedBox(
-          height: 200,
+          height: bannerHeight,
           child: PageView.builder(
             controller: _controller,
             onPageChanged: (index) {
@@ -59,7 +74,7 @@ class _HomeBannerState extends State<HomeBanner> {
                     ? () => Navigator.pushNamed(context, route)
                     : null,
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16),
+                  margin: EdgeInsets.symmetric(horizontal: horizontalMargin),
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: gradient,
@@ -76,44 +91,52 @@ class _HomeBannerState extends State<HomeBanner> {
                     ],
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: EdgeInsets.all(contentPadding),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          item['title']!,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                        Flexible(
+                          child: Text(
+                            item['title']!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: titleFontSize,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          item['description']!,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 14,
+                        SizedBox(height: isMobile ? 6 : 8),
+                        Flexible(
+                          child: Text(
+                            item['description']!,
+                            maxLines: isMobile ? 2 : 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: descFontSize,
+                            ),
                           ),
                         ),
                         if (route != null) ...[
-                          const SizedBox(height: 12),
+                          SizedBox(height: isMobile ? 8 : 12),
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 6,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: isMobile ? 10 : 12,
+                              vertical: isMobile ? 4 : 6,
                             ),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(16),
                             ),
-                            child: const Text(
+                            child: Text(
                               '지금 시작하기',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 12,
+                                fontSize: isMobile ? 11 : 12,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
