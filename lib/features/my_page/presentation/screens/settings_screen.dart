@@ -1,7 +1,9 @@
 // lib/features/my_page/presentation/screens/settings_screen.dart
 
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/providers/theme_provider.dart';
 
 /// 설정 화면
@@ -58,7 +60,11 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('이용약관'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
-              Navigator.of(context).pushNamed('/terms');
+              if (kIsWeb) {
+                context.go('/terms');
+              } else {
+                Navigator.of(context).pushNamed('/terms');
+              }
             },
           ),
           ListTile(
@@ -66,7 +72,11 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('개인정보 처리방침'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
-              Navigator.of(context).pushNamed('/privacy');
+              if (kIsWeb) {
+                context.go('/privacy');
+              } else {
+                Navigator.of(context).pushNamed('/privacy');
+              }
             },
           ),
         ],
