@@ -1,6 +1,9 @@
 // lib/features/listing/presentation/widgets/listing_bottom_bar.dart
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../domain/entities/listing_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../cart/presentation/providers/cart_provider.dart';
@@ -143,18 +146,11 @@ class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
 
       if (alreadyInCart) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('이미 장바구니에 있는 상품입니다'),
-            action: SnackBarAction(
-              label: '장바구니 보기',
-              onPressed: () {
-                Navigator.pushNamed(context, Routes.cart);
-              },
-            ),
-            duration: const Duration(seconds: 3),
-            backgroundColor: Colors.orange,
-          ),
+        _showCartBottomSheet(
+          context: context,
+          title: '이미 장바구니에 있어요',
+          message: '${widget.listing.modelName}',
+          isAlreadyInCart: true,
         );
         return;
       }
@@ -171,20 +167,13 @@ class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
       final addToCart = ref.read(addToCartProvider);
       await addToCart(cartItem);
 
-      // 5. 성공 알림
+      // 5. 성공 알림 - 소비자 친화적인 바텀시트
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${widget.listing.modelName}을(를) 장바구니에 담았습니다'),
-          action: SnackBarAction(
-            label: '장바구니 보기',
-            onPressed: () {
-              Navigator.pushNamed(context, Routes.cart);
-            },
-          ),
-          duration: const Duration(seconds: 3),
-          backgroundColor: Colors.green,
-        ),
+      _showCartBottomSheet(
+        context: context,
+        title: '장바구니에 담았어요',
+        message: '${widget.listing.modelName}',
+        isAlreadyInCart: false,
       );
     } catch (e) {
       if (!mounted) return;
@@ -233,5 +222,204 @@ class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
         ),
       );
     }
+  }
+
+  /// 장바구니 추가 완료 바텀시트 (소비자 친화적 UX)
+  void _showCartBottomSheet({
+    required BuildContext context,
+    required String title,
+    required String message,
+    required bool isAlreadyInCart,
+  }) {
+    final formatter = NumberFormat('#,###');
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 드래그 핸들
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+
+              // 체크 아이콘
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: isAlreadyInCart
+                      ? Colors.orange.withOpacity(0.1)
+                      : Colors.green.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  isAlreadyInCart ? Icons.info_outline : Icons.check_circle,
+                  size: 36,
+                  color: isAlreadyInCart ? Colors.orange : Colors.green,
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // 타이틀
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // 상품 정보
+              Container(
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey[50],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey[200]!),
+                ),
+                child: Row(
+                  children: [
+                    // 상품 이미지
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: widget.listing.imageUrls.isNotEmpty
+                          ? Image.network(
+                              widget.listing.imageUrls.first,
+                              width: 60,
+                              height: 60,
+                              fit: BoxFit.cover,
+                              errorBuilder: (_, __, ___) => Container(
+                                width: 60,
+                                height: 60,
+                                color: Colors.grey[200],
+                                child: const Icon(Icons.image, color: Colors.grey),
+                              ),
+                            )
+                          : Container(
+                              width: 60,
+                              height: 60,
+                              color: Colors.grey[200],
+                              child: const Icon(Icons.image, color: Colors.grey),
+                            ),
+                    ),
+                    const SizedBox(width: 12),
+
+                    // 상품 정보
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            widget.listing.brand,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          Text(
+                            widget.listing.modelName,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${formatter.format(widget.listing.price)}원',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // 버튼들
+              Row(
+                children: [
+                  // 계속 쇼핑하기
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        side: BorderSide(color: Colors.grey[400]!),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        '계속 쇼핑하기',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black87,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // 장바구니 보기
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context); // 바텀시트 닫기
+                        if (kIsWeb) {
+                          context.go(Routes.cart);
+                        } else {
+                          Navigator.pushNamed(context, Routes.cart);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Theme.of(context).primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        elevation: 0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        '장바구니 보기',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
