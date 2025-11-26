@@ -41,6 +41,13 @@ void main() async {
       javaScriptAppKey: 'aabc80253972e0504d05951a66373200',
     );
     debugPrint('✅ Kakao SDK initialized');
+
+    // 🔑 키 해시 출력 (디버그용 - 카카오 개발자 콘솔에 등록 필요)
+    if (!kIsWeb) {
+      final keyHash = await KakaoSdk.origin;
+      debugPrint('🔑 Kakao Key Hash: $keyHash');
+      debugPrint('👉 이 키 해시를 카카오 개발자 콘솔에 등록하세요!');
+    }
   } catch (e) {
     debugPrint('⚠️ Kakao SDK initialization failed: $e');
   }
