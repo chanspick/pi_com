@@ -71,7 +71,7 @@ class _ListingsByBasePartScreenState extends ConsumerState<ListingsByBasePartScr
       return listings;
     }
 
-    return listings.where((l) => l.category.toLowerCase() == categoryKey).toList();
+    return listings.where((l) => l.category?.toLowerCase() == categoryKey).toList();
   }
 
   @override
