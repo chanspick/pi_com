@@ -44,19 +44,6 @@ class SettingsScreen extends ConsumerWidget {
               },
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.chat_outlined),
-            title: const Text('커뮤니케이션 알림'),
-            subtitle: const Text('채팅 메시지 수신 알림'),
-            trailing: Switch(
-              value: false,
-              onChanged: (value) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('커뮤니케이션 알림 기능은 준비 중입니다')),
-                );
-              },
-            ),
-          ),
           const Divider(),
 
           // 웹 정보 및 버전 섹션
