@@ -808,7 +808,7 @@ app.get("/toss-payment/:paymentKey", async (req, res) => {
 });
 
 /**
- * 토스페이먼츠 결제 리다이렉트 - 성공
+ * 토스페이먼츠 결제 리다이렉트 - 성공 (모바일 앱용)
  * GET /toss-payment-redirect/success
  */
 app.get("/toss-payment-redirect/success", (req, res) => {
@@ -818,12 +818,136 @@ app.get("/toss-payment-redirect/success", (req, res) => {
 });
 
 /**
- * 토스페이먼츠 결제 리다이렉트 - 실패
+ * 토스페이먼츠 결제 리다이렉트 - 실패 (모바일 앱용)
  * GET /toss-payment-redirect/fail
  */
 app.get("/toss-payment-redirect/fail", (req, res) => {
   const {code, message, orderId} = req.query;
   res.redirect(`picom://toss-payment/fail?code=${code}&message=${encodeURIComponent(String(message || ""))}&orderId=${orderId}`);
+});
+
+/**
+ * 토스페이먼츠 결제 리다이렉트 - 성공 (웹 iframe용)
+ * GET /toss-payment-redirect/web-success
+ * iframe 내에서 postMessage로 부모 창에 결과 전달
+ */
+app.get("/toss-payment-redirect/web-success", (req, res) => {
+  const {paymentKey, orderId, amount} = req.query;
+  // postMessage를 보내는 HTML 반환
+  res.send(`
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>결제 완료</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background: #f5f5f5;
+    }
+    .success-icon {
+      width: 80px;
+      height: 80px;
+      background: #0064FF;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .success-icon::after {
+      content: '✓';
+      color: white;
+      font-size: 40px;
+    }
+    h1 { color: #333; margin-bottom: 10px; }
+    p { color: #666; }
+  </style>
+</head>
+<body>
+  <div class="success-icon"></div>
+  <h1>결제 완료</h1>
+  <p>잠시만 기다려주세요...</p>
+  <script>
+    // 부모 창에 결제 성공 메시지 전송
+    window.parent.postMessage({
+      type: 'TOSS_PAYMENT_SUCCESS',
+      paymentKey: '${paymentKey || ""}',
+      orderId: '${orderId || ""}',
+      amount: ${Number(amount) || 0}
+    }, '*');
+  </script>
+</body>
+</html>
+  `);
+});
+
+/**
+ * 토스페이먼츠 결제 리다이렉트 - 실패 (웹 iframe용)
+ * GET /toss-payment-redirect/web-fail
+ * iframe 내에서 postMessage로 부모 창에 결과 전달
+ */
+app.get("/toss-payment-redirect/web-fail", (req, res) => {
+  const {code, message, orderId} = req.query;
+  // postMessage를 보내는 HTML 반환
+  res.send(`
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>결제 실패</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background: #f5f5f5;
+    }
+    .error-icon {
+      width: 80px;
+      height: 80px;
+      background: #ff4444;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    .error-icon::after {
+      content: '✕';
+      color: white;
+      font-size: 40px;
+    }
+    h1 { color: #333; margin-bottom: 10px; }
+    p { color: #666; }
+  </style>
+</head>
+<body>
+  <div class="error-icon"></div>
+  <h1>결제 실패</h1>
+  <p>${String(message || "결제 처리 중 오류가 발생했습니다.")}</p>
+  <script>
+    // 부모 창에 결제 실패 메시지 전송
+    window.parent.postMessage({
+      type: 'TOSS_PAYMENT_FAIL',
+      code: '${code || "UNKNOWN_ERROR"}',
+      message: '${String(message || "결제 처리 중 오류가 발생했습니다.").replace(/'/g, "\\'")}',
+      orderId: '${orderId || ""}'
+    }, '*');
+  </script>
+</body>
+</html>
+  `);
 });
 
 // Express 앱을 Firebase Function으로 export

@@ -18,6 +18,9 @@ import 'package:pi_com/features/payment/presentation/screens/payment_success_scr
 import 'package:pi_com/features/payment/presentation/screens/payment_failure_screen.dart';
 import 'package:pi_com/features/payment/presentation/screens/payment_cancel_screen.dart';
 import 'package:pi_com/features/payment/presentation/screens/toss_payment_webview_screen.dart';
+// 웹 전용 결제 화면 (조건부 import - 웹에서는 dart:html 사용, 모바일에서는 스텁)
+import 'package:pi_com/features/payment/presentation/screens/toss_payment_web_screen_stub.dart'
+    if (dart.library.html) 'package:pi_com/features/payment/presentation/screens/toss_payment_web_screen.dart';
 import 'package:pi_com/features/address/domain/entities/address_entity.dart';
 import 'package:pi_com/features/address/data/repositories/address_repository.dart';
 import 'package:pi_com/features/address/presentation/screens/address_list_screen.dart';
@@ -345,13 +348,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         ? _selectedAddress!.fullAddressOneLine
         : 'DragonBall Storage';
 
-    // 웹에서는 테스트 모드로 바로 주문 처리
-    if (kIsWeb) {
-      await _processDirectOrder(userId, cartItems, shippingAddress);
-      return;
-    }
-
-    // 모바일: 결제 수단별 처리
+    // 모바일/웹 공통: 결제 수단별 처리
     if (_selectedPaymentMethod == PaymentMethod.kakaoPay) {
       await _processKakaoPayment(userId, cartItems, shippingAddress);
     } else if (_selectedPaymentMethod == PaymentMethod.tossPayments) {
@@ -541,8 +538,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       // 1. 주문 번호 생성
       final orderId = 'ORDER_${const Uuid().v4()}';
 
-      // 2. 결제 금액 계산
-      final totalAmount = _calculateTotalAmount(cartItems);
+      // 2. 결제 금액 계산 (상품금액, 배송비 분리)
+      final productAmount = _calculateProductAmount(cartItems);
+      final shippingFee = _selectedShippingMethod == ShippingMethod.immediate ? 4500 : 0;
+      final totalAmount = productAmount + shippingFee;
 
       // 3. 상품명 생성
       final itemName = _getItemName(cartItems);
@@ -557,25 +556,62 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       final customerEmail = currentUser?.email ?? '';
       final customerPhone = _selectedAddress?.recipientPhone ?? '';
 
-      // 6. 토스페이먼츠 결제 화면 열기
+      // 6. 토스페이먼츠 결제 화면 열기 (웹/모바일 분기)
       if (!mounted) return;
 
-      final paymentResult = await Navigator.push<Map<String, dynamic>>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => TossPaymentWebViewScreen(
-            orderId: orderId,
-            userId: userId,
-            orderName: itemName,
-            amount: totalAmount,
-            customerName: customerName,
-            customerEmail: customerEmail,
-            customerPhone: customerPhone,
-            successUrl: successUrl,
-            failUrl: failUrl,
+      // 디버깅: 결제 화면으로 전달할 값 확인
+      print('💰 [Checkout] === 토스페이먼츠 결제 시작 ===');
+      print('💰 [Checkout] orderId: $orderId');
+      print('💰 [Checkout] userId: $userId');
+      print('💰 [Checkout] orderName: $itemName');
+      print('💰 [Checkout] productAmount (상품금액): $productAmount');
+      print('💰 [Checkout] shippingFee (배송비): $shippingFee');
+      print('💰 [Checkout] totalAmount (총액): $totalAmount');
+      print('💰 [Checkout] customerName: $customerName');
+      print('💰 [Checkout] customerEmail: $customerEmail');
+      print('💰 [Checkout] customerPhone: $customerPhone');
+
+      final Map<String, dynamic>? paymentResult;
+
+      if (kIsWeb) {
+        // 웹: iframe 기반 결제 화면
+        paymentResult = await Navigator.push<Map<String, dynamic>>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TossPaymentWebScreen(
+              orderId: orderId,
+              userId: userId,
+              orderName: itemName,
+              amount: totalAmount,
+              productAmount: productAmount,
+              shippingFee: shippingFee,
+              customerName: customerName,
+              customerEmail: customerEmail,
+              customerPhone: customerPhone,
+              successUrl: successUrl,
+              failUrl: failUrl,
+            ),
           ),
-        ),
-      );
+        );
+      } else {
+        // 모바일: WebView 기반 결제 화면
+        paymentResult = await Navigator.push<Map<String, dynamic>>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TossPaymentWebViewScreen(
+              orderId: orderId,
+              userId: userId,
+              orderName: itemName,
+              amount: totalAmount,
+              customerName: customerName,
+              customerEmail: customerEmail,
+              customerPhone: customerPhone,
+              successUrl: successUrl,
+              failUrl: failUrl,
+            ),
+          ),
+        );
+      }
 
       // 7. 결제 결과 처리
       if (!mounted) return;
@@ -801,17 +837,21 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     }
   }
 
-  /// 총 결제 금액 계산
-  int _calculateTotalAmount(List<CartItemEntity> cartItems) {
+  /// 상품 금액 계산 (배송비 제외)
+  int _calculateProductAmount(List<CartItemEntity> cartItems) {
     double subtotal = 0;
     for (final item in cartItems) {
       subtotal += item.price * item.quantity;
     }
+    return subtotal.toInt();
+  }
 
+  /// 총 결제 금액 계산 (배송비 포함)
+  int _calculateTotalAmount(List<CartItemEntity> cartItems) {
+    final productAmount = _calculateProductAmount(cartItems);
     // 배송비 추가 (즉시 배송 시 4,500원, PC 보관함은 합배송 시 부과)
     final shippingFee = _selectedShippingMethod == ShippingMethod.immediate ? 4500 : 0;
-
-    return (subtotal + shippingFee).toInt();
+    return productAmount + shippingFee;
   }
 
   /// 상품명 생성
