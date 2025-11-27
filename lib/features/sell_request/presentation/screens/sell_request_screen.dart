@@ -34,8 +34,6 @@ class _SellRequestScreenState extends ConsumerState<SellRequestScreen> {
   // 폼 필드
   bool _hasWarranty = false;
   int? _warrantyMonthsLeft;
-  int? _usageDaysPerWeek;
-  int? _usageHoursPerDay;
   String? _selectedPurpose;
   AgeInfoType _ageInfoType = AgeInfoType.unknown;
   int? _ageInfoYear;
@@ -120,11 +118,8 @@ class _SellRequestScreenState extends ConsumerState<SellRequestScreen> {
       final user = ref.read(currentUserProvider);
       if (user == null) throw Exception('로그인이 필요합니다');
 
-      // 사용 빈도 계산
-      String usageFrequency = 'unknown';
-      if (_usageDaysPerWeek != null && _usageHoursPerDay != null) {
-        usageFrequency = '주 $_usageDaysPerWeek일, 하루 $_usageHoursPerDay시간';
-      }
+      // 사용 빈도 (더 이상 사용하지 않음)
+      const String usageFrequency = '';
 
       // 🔍 디버그: 선택된 부품 정보 확인
       print('🔍 sell_request_screen - _selectedPart 정보:');
@@ -210,8 +205,6 @@ class _SellRequestScreenState extends ConsumerState<SellRequestScreen> {
               _buildAgeInfo(),
               const SizedBox(height: 24),
               _buildWarrantyInfo(),
-              const SizedBox(height: 24),
-              _buildUsageInfo(),
               const SizedBox(height: 24),
               _buildPurposeInput(),
               const SizedBox(height: 32),
@@ -432,15 +425,113 @@ class _SellRequestScreenState extends ConsumerState<SellRequestScreen> {
             ],
           ),
         ],
-        const SizedBox(height: 12),
-        SwitchListTile(
-          title: const Text('중고 제품'),
-          value: _isSecondHand,
-          onChanged: (value) {
-            setState(() {
-              _isSecondHand = value;
-            });
-          },
+        const SizedBox(height: 16),
+        // 개봉 여부 (더 명확한 표현)
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.grey[300]!),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '제품 상태',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _isSecondHand = false),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: !_isSecondHand
+                              ? Theme.of(context).primaryColor
+                              : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: !_isSecondHand
+                                ? Theme.of(context).primaryColor
+                                : Colors.grey[300]!,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.new_releases_outlined,
+                              color: !_isSecondHand ? Colors.white : Colors.grey[600],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '미개봉',
+                              style: TextStyle(
+                                color: !_isSecondHand ? Colors.white : Colors.grey[700],
+                                fontWeight: !_isSecondHand ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                            Text(
+                              '(새 제품)',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: !_isSecondHand ? Colors.white70 : Colors.grey[500],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _isSecondHand = true),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        decoration: BoxDecoration(
+                          color: _isSecondHand
+                              ? Theme.of(context).primaryColor
+                              : Colors.grey[100],
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: _isSecondHand
+                                ? Theme.of(context).primaryColor
+                                : Colors.grey[300]!,
+                          ),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.inventory_2_outlined,
+                              color: _isSecondHand ? Colors.white : Colors.grey[600],
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              '개봉 / 중고',
+                              style: TextStyle(
+                                color: _isSecondHand ? Colors.white : Colors.grey[700],
+                                fontWeight: _isSecondHand ? FontWeight.bold : FontWeight.normal,
+                              ),
+                            ),
+                            Text(
+                              '(사용한 제품)',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: _isSecondHand ? Colors.white70 : Colors.grey[500],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -475,50 +566,6 @@ class _SellRequestScreenState extends ConsumerState<SellRequestScreen> {
               },
             ),
           ),
-      ],
-    );
-  }
-
-  Widget _buildUsageInfo() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          '사용 빈도',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        Row(
-          children: [
-            Expanded(
-              child: TextFormField(
-                decoration: const InputDecoration(
-                  labelText: '주 사용 일수',
-                  hintText: '일/주',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  _usageDaysPerWeek = int.tryParse(value);
-                },
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: TextFormField(
-                decoration: const InputDecoration(
-                  labelText: '하루 사용 시간',
-                  hintText: '시간/일',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  _usageHoursPerDay = int.tryParse(value);
-                },
-              ),
-            ),
-          ],
-        ),
       ],
     );
   }

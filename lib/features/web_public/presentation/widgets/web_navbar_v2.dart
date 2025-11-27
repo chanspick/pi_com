@@ -216,6 +216,18 @@ class _WebNavBarV2State extends ConsumerState<WebNavBarV2> {
 
     return Row(
       children: [
+        // Notifications (로그인 사용자만)
+        if (currentUser != null) ...[
+          _buildIconButton(
+            context: context,
+            icon: Icons.notifications_outlined,
+            label: isMobile ? '' : '알림',
+            onTap: () => context.go(Routes.notifications),
+            isMobile: isMobile,
+          ),
+          SizedBox(width: spacing),
+        ],
+
         // Cart
         _buildIconButton(
           context: context,
