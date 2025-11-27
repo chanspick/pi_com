@@ -2,11 +2,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
 
 /// 알림 설정 Provider
 final notificationSettingsProvider = StateNotifierProvider<NotificationSettingsNotifier, NotificationSettings>((ref) {
-  return NotificationSettingsNotifier();
+  final currentUser = ref.watch(currentUserProvider);
+  return NotificationSettingsNotifier(userId: currentUser?.uid);
 });
 
 /// 알림 설정 상태
@@ -16,7 +18,7 @@ class NotificationSettings {
   final bool orderUpdates; // 주문 상태 업데이트
   final bool promotions; // 프로모션 및 이벤트
   final bool newListings; // 새 상품 알림
-  final bool chatMessages; // 채팅 메시지
+  final bool isLoading; // 로딩 상태
 
   const NotificationSettings({
     required this.pushEnabled,
@@ -24,7 +26,7 @@ class NotificationSettings {
     required this.orderUpdates,
     required this.promotions,
     required this.newListings,
-    required this.chatMessages,
+    this.isLoading = false,
   });
 
   NotificationSettings copyWith({
@@ -33,7 +35,7 @@ class NotificationSettings {
     bool? orderUpdates,
     bool? promotions,
     bool? newListings,
-    bool? chatMessages,
+    bool? isLoading,
   }) {
     return NotificationSettings(
       pushEnabled: pushEnabled ?? this.pushEnabled,
@@ -41,100 +43,136 @@ class NotificationSettings {
       orderUpdates: orderUpdates ?? this.orderUpdates,
       promotions: promotions ?? this.promotions,
       newListings: newListings ?? this.newListings,
-      chatMessages: chatMessages ?? this.chatMessages,
+      isLoading: isLoading ?? this.isLoading,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'pushEnabled': pushEnabled,
+      'priceAlerts': priceAlerts,
+      'orderUpdates': orderUpdates,
+      'promotions': promotions,
+      'newListings': newListings,
+      'updatedAt': FieldValue.serverTimestamp(),
+    };
+  }
+
+  factory NotificationSettings.fromMap(Map<String, dynamic>? map) {
+    if (map == null) {
+      return const NotificationSettings(
+        pushEnabled: true,
+        priceAlerts: true,
+        orderUpdates: true,
+        promotions: true,
+        newListings: true,
+      );
+    }
+    return NotificationSettings(
+      pushEnabled: map['pushEnabled'] as bool? ?? true,
+      priceAlerts: map['priceAlerts'] as bool? ?? true,
+      orderUpdates: map['orderUpdates'] as bool? ?? true,
+      promotions: map['promotions'] as bool? ?? true,
+      newListings: map['newListings'] as bool? ?? true,
     );
   }
 }
 
-/// 알림 설정 Notifier
+/// 알림 설정 Notifier - Firestore에 저장
 class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
-  static const String _keyPushEnabled = 'notification_push_enabled';
-  static const String _keyPriceAlerts = 'notification_price_alerts';
-  static const String _keyOrderUpdates = 'notification_order_updates';
-  static const String _keyPromotions = 'notification_promotions';
-  static const String _keyNewListings = 'notification_new_listings';
-  static const String _keyChatMessages = 'notification_chat_messages';
+  final String? userId;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  NotificationSettingsNotifier() : super(const NotificationSettings(
+  NotificationSettingsNotifier({this.userId}) : super(const NotificationSettings(
     pushEnabled: true,
     priceAlerts: true,
     orderUpdates: true,
     promotions: true,
     newListings: true,
-    chatMessages: true,
+    isLoading: true,
   )) {
     _loadSettings();
   }
 
+  /// Firestore에서 설정 로드
   Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    state = NotificationSettings(
-      pushEnabled: prefs.getBool(_keyPushEnabled) ?? true,
-      priceAlerts: prefs.getBool(_keyPriceAlerts) ?? true,
-      orderUpdates: prefs.getBool(_keyOrderUpdates) ?? true,
-      promotions: prefs.getBool(_keyPromotions) ?? true,
-      newListings: prefs.getBool(_keyNewListings) ?? true,
-      chatMessages: prefs.getBool(_keyChatMessages) ?? true,
-    );
+    if (userId == null) {
+      state = state.copyWith(isLoading: false);
+      return;
+    }
+
+    try {
+      final doc = await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('settings')
+          .doc('notifications')
+          .get();
+
+      if (doc.exists) {
+        final settings = NotificationSettings.fromMap(doc.data());
+        state = settings.copyWith(isLoading: false);
+      } else {
+        // 기본값 저장
+        await _saveSettings();
+        state = state.copyWith(isLoading: false);
+      }
+    } catch (e) {
+      print('알림 설정 로드 실패: $e');
+      state = state.copyWith(isLoading: false);
+    }
+  }
+
+  /// Firestore에 설정 저장
+  Future<void> _saveSettings() async {
+    if (userId == null) return;
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(userId)
+          .collection('settings')
+          .doc('notifications')
+          .set(state.toMap(), SetOptions(merge: true));
+    } catch (e) {
+      print('알림 설정 저장 실패: $e');
+    }
   }
 
   Future<void> setPushEnabled(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyPushEnabled, value);
     state = state.copyWith(pushEnabled: value);
 
     // 푸시를 끄면 모든 알림 비활성화
     if (!value) {
-      await _disableAllNotifications();
+      state = state.copyWith(
+        priceAlerts: false,
+        orderUpdates: false,
+        promotions: false,
+        newListings: false,
+      );
     }
+
+    await _saveSettings();
   }
 
   Future<void> setPriceAlerts(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyPriceAlerts, value);
     state = state.copyWith(priceAlerts: value);
+    await _saveSettings();
   }
 
   Future<void> setOrderUpdates(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyOrderUpdates, value);
     state = state.copyWith(orderUpdates: value);
+    await _saveSettings();
   }
 
   Future<void> setPromotions(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyPromotions, value);
     state = state.copyWith(promotions: value);
+    await _saveSettings();
   }
 
   Future<void> setNewListings(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyNewListings, value);
     state = state.copyWith(newListings: value);
-  }
-
-  Future<void> setChatMessages(bool value) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyChatMessages, value);
-    state = state.copyWith(chatMessages: value);
-  }
-
-  Future<void> _disableAllNotifications() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyPriceAlerts, false);
-    await prefs.setBool(_keyOrderUpdates, false);
-    await prefs.setBool(_keyPromotions, false);
-    await prefs.setBool(_keyNewListings, false);
-    await prefs.setBool(_keyChatMessages, false);
-
-    state = NotificationSettings(
-      pushEnabled: false,
-      priceAlerts: false,
-      orderUpdates: false,
-      promotions: false,
-      newListings: false,
-      chatMessages: false,
-    );
+    await _saveSettings();
   }
 }
 
@@ -146,6 +184,44 @@ class NotificationSettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(notificationSettingsProvider);
     final notifier = ref.read(notificationSettingsProvider.notifier);
+    final currentUser = ref.watch(currentUserProvider);
+
+    // 로그인하지 않은 경우
+    if (currentUser == null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('알림 설정'),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.notifications_off_outlined, size: 80, color: Colors.grey[400]),
+              const SizedBox(height: 16),
+              Text(
+                '로그인이 필요합니다',
+                style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '알림 설정을 변경하려면 로그인하세요',
+                style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // 로딩 중
+    if (settings.isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('알림 설정'),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -231,7 +307,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
 
           const SizedBox(height: 8),
 
-          // 개별 알림 설정
+          // 거래 알림
           _buildSection(
             context,
             title: '거래 알림',
@@ -247,7 +323,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
               _NotificationSettingItem(
                 icon: Icons.local_shipping_outlined,
                 title: '주문 상태 업데이트',
-                subtitle: '주문, 배송 상태가 변경되면 알려드려요',
+                subtitle: '주문, 배송, 검수 상태가 변경되면 알려드려요',
                 value: settings.orderUpdates,
                 enabled: settings.pushEnabled,
                 onChanged: (value) => notifier.setOrderUpdates(value),
@@ -257,6 +333,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
 
           const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
 
+          // 상품 알림
           _buildSection(
             context,
             title: '상품 알림',
@@ -274,23 +351,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
 
           const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
 
-          _buildSection(
-            context,
-            title: '커뮤니케이션',
-            items: [
-              _NotificationSettingItem(
-                icon: Icons.chat_bubble_outline,
-                title: '채팅 메시지',
-                subtitle: '새로운 채팅 메시지가 도착하면 알려드려요',
-                value: settings.chatMessages,
-                enabled: settings.pushEnabled,
-                onChanged: (value) => notifier.setChatMessages(value),
-              ),
-            ],
-          ),
-
-          const Divider(thickness: 8, color: Color(0xFFF5F5F5)),
-
+          // 마케팅
           _buildSection(
             context,
             title: '마케팅',

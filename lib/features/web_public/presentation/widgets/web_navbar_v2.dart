@@ -138,13 +138,16 @@ class _WebNavBarV2State extends ConsumerState<WebNavBarV2> {
             child: TextField(
               controller: _searchController,
               style: TextStyle(fontSize: fontSize),
+              textAlignVertical: TextAlignVertical.center,
               decoration: InputDecoration(
                 hintText: hintText,
                 hintStyle: TextStyle(fontSize: fontSize),
                 border: InputBorder.none,
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: isMobile ? 12 : 16,
+                  vertical: 0,
                 ),
+                isCollapsed: true,
               ),
               onSubmitted: (value) {
                 if (value.trim().isNotEmpty) {
