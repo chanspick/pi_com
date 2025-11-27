@@ -41,7 +41,10 @@ class _TossPaymentWebViewScreenState
   bool _isLoading = true;
 
   // 토스페이먼츠 테스트용 클라이언트 키 (실제 배포시 환경변수로 관리)
-  static const String _testClientKey = 'test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq';
+  // ⚠️ 중요: 결제위젯 연동에는 '결제위젯 연동 키'를 사용해야 함 (API 개별 연동 키 아님)
+  // 테스트 키: test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm
+  // 실제 키는 토스페이먼츠 개발자센터 > 내 개발정보 > 결제위젯 연동 키에서 확인
+  static const String _testClientKey = 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm';
 
   @override
   void initState() {

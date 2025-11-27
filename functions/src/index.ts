@@ -549,8 +549,10 @@ const TOSS_PAYMENTS_API_URL = "https://api.tosspayments.com/v1/payments";
 const getTossPaymentsConfig = () => {
   const config = functions.config();
   return {
-    // 테스트 시크릿 키 (실제 배포 시 환경변수로 교체)
-    secretKey: config.tosspayments?.secret_key || process.env.TOSS_SECRET_KEY || "test_sk_zXLkKEypNArWmo50nX3lmeaxYG5R",
+    // ⚠️ 중요: 결제위젯 연동에는 '결제위젯 연동 시크릿 키'를 사용해야 함 (API 개별 연동 키 아님)
+    // 테스트 키: test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6
+    // 실제 키는 토스페이먼츠 개발자센터 > 내 개발정보 > 결제위젯 연동 키에서 확인
+    secretKey: config.tosspayments?.secret_key || process.env.TOSS_SECRET_KEY || "test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6",
   };
 };
 
