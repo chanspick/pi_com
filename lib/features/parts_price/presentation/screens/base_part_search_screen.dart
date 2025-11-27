@@ -79,7 +79,6 @@ class _BasePartSearchScreenState extends ConsumerState<BasePartSearchScreen> {
         builder: (_) => ListingsByBasePartScreen(
           basePartId: basePart.basePartId,
           partName: basePart.modelName,
-          searchKeyword: _searchController.text.trim(), // 검색어 전달
         ),
       ),
     );
@@ -101,11 +100,9 @@ class _BasePartSearchScreenState extends ConsumerState<BasePartSearchScreen> {
               children: [
                 TextField(
                   controller: _searchController,
-                  textAlignVertical: TextAlignVertical.center,
                   decoration: InputDecoration(
                     hintText: '부품 모델명을 입력하세요 (예: RTX 4090)',
                     border: const OutlineInputBorder(),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchController.text.isNotEmpty
                         ? IconButton(

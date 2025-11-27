@@ -43,7 +43,6 @@ import 'features/dragon_ball/presentation/screens/batch_shipment_history_screen.
 import 'features/address/presentation/screens/address_list_screen.dart';
 import 'features/price_alert/presentation/screens/price_alerts_screen.dart';
 import 'features/auth/presentation/screens/auth_screen.dart';
-import 'features/notification/presentations/screens/notification_list_screen.dart';
 
 // ✅ 관리자 페이지 (GoRouter 사용)
 import 'features/admin/presentation/screens/admin_login_page.dart';
@@ -235,10 +234,6 @@ class MyApp extends ConsumerWidget {
       GoRoute(
         path: '/batch-shipment-history',
         builder: (context, state) => const BatchShipmentHistoryScreen(),
-      ),
-      GoRoute(
-        path: '/notifications',
-        builder: (context, state) => const NotificationListScreen(),
       ),
 
       // === Admin 페이지 ===

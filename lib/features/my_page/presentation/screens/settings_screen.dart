@@ -1,9 +1,7 @@
 // lib/features/my_page/presentation/screens/settings_screen.dart
 
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../../core/providers/theme_provider.dart';
 
 /// 설정 화면
@@ -46,6 +44,19 @@ class SettingsScreen extends ConsumerWidget {
               },
             ),
           ),
+          ListTile(
+            leading: const Icon(Icons.chat_outlined),
+            title: const Text('커뮤니케이션 알림'),
+            subtitle: const Text('채팅 메시지 수신 알림'),
+            trailing: Switch(
+              value: false,
+              onChanged: (value) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('커뮤니케이션 알림 기능은 준비 중입니다')),
+                );
+              },
+            ),
+          ),
           const Divider(),
 
           // 웹 정보 및 버전 섹션
@@ -60,11 +71,7 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('이용약관'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
-              if (kIsWeb) {
-                context.go('/terms');
-              } else {
-                Navigator.of(context).pushNamed('/terms');
-              }
+              Navigator.of(context).pushNamed('/terms');
             },
           ),
           ListTile(
@@ -72,11 +79,7 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('개인정보 처리방침'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
-              if (kIsWeb) {
-                context.go('/privacy');
-              } else {
-                Navigator.of(context).pushNamed('/privacy');
-              }
+              Navigator.of(context).pushNamed('/privacy');
             },
           ),
         ],
