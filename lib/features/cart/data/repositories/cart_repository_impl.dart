@@ -37,4 +37,10 @@ class CartRepositoryImpl implements CartRepository {
   Future<void> clearCart() {
     return remoteDataSource.clearCart();
   }
+
+  @override
+  Future<List<CartItemEntity>> removeSoldItemsFromCart() async {
+    final removedModels = await remoteDataSource.removeSoldItemsFromCart();
+    return removedModels.map((model) => model.toEntity()).toList();
+  }
 }

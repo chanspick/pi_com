@@ -311,6 +311,31 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
     final userId = ref.read(currentUserProvider)!.uid;
 
+    // 🔒 결제 전 sold 상품 검증 및 제거
+    try {
+      final removedItems = await ref.read(removeSoldItemsProvider).call();
+      if (removedItems.isNotEmpty) {
+        if (mounted) {
+          final itemNames = removedItems.map((e) => e.partName).join(', ');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('이미 판매된 상품이 장바구니에서 제거되었습니다: $itemNames'),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        }
+        // 장바구니가 비었으면 결제 중단
+        final remainingItems = await ref.read(cartItemsStreamProvider.future);
+        if (remainingItems.isEmpty && widget.directPurchaseItem == null) {
+          return;
+        }
+      }
+    } catch (e) {
+      print('⚠️ [Checkout] Error checking sold items: $e');
+      // 검증 실패해도 결제 진행 (Firestore 규칙에서 최종 검증)
+    }
+
     // 바로구매 모드 또는 장바구니 모드에 따라 상품 목록 가져오기
     final cartItems = widget.directPurchaseItem != null
         ? [widget.directPurchaseItem!]

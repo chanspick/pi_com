@@ -74,4 +74,52 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
     }
     return batch.commit();
   }
+
+  @override
+  Future<List<CartItemModel>> removeSoldItemsFromCart() async {
+    final List<CartItemModel> removedItems = [];
+
+    try {
+      // 1. 장바구니 아이템 가져오기
+      final cartSnapshot = await _cartCollection().get();
+      if (cartSnapshot.docs.isEmpty) {
+        return removedItems;
+      }
+
+      // 2. 각 아이템의 listing 상태 확인
+      for (final cartDoc in cartSnapshot.docs) {
+        final cartItem = CartItemModel.fromFirestore(cartDoc.data());
+        final listingId = cartItem.listingId;
+
+        // listing 문서 가져오기
+        final listingDoc = await _firestore
+            .collection('listings')
+            .doc(listingId)
+            .get();
+
+        // listing이 없거나 sold 상태인 경우 장바구니에서 제거
+        if (!listingDoc.exists) {
+          print('⚠️ [Cart] Listing not found, removing from cart: $listingId');
+          await removeFromCart(listingId);
+          removedItems.add(cartItem);
+        } else {
+          final status = listingDoc.data()?['status'] as String?;
+          if (status != 'available') {
+            print('⚠️ [Cart] Listing is $status, removing from cart: $listingId');
+            await removeFromCart(listingId);
+            removedItems.add(cartItem);
+          }
+        }
+      }
+
+      if (removedItems.isNotEmpty) {
+        print('🛒 [Cart] Removed ${removedItems.length} sold items from cart');
+      }
+
+      return removedItems;
+    } catch (e) {
+      print('❌ [Cart] Error removing sold items: $e');
+      rethrow;
+    }
+  }
 }
