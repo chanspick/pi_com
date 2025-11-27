@@ -260,33 +260,47 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
       button.textContent = '결제 처리 중...';
 
       try {
+        // ⚠️ 웹(PC)에서는 Promise 방식 사용 - successUrl/failUrl 설정하지 않음
+        // iframe 내에서는 리다이렉트가 불가능하므로 Promise로 결과를 받아야 함
         const result = await widgets.requestPayment({
           orderId: "${widget.orderId}",
           orderName: "${widget.orderName}",
           customerName: "${widget.customerName}",
           customerEmail: "${widget.customerEmail}",
-          customerMobilePhone: "${widget.customerPhone}",
-          successUrl: window.location.origin + "/payment/toss/success",
-          failUrl: window.location.origin + "/payment/toss/fail"
+          customerMobilePhone: "${widget.customerPhone}"
+          // successUrl, failUrl 제거 - Promise 방식에서는 사용하지 않음
         });
+
+        console.log('Payment result:', result);
 
         // 결제 성공 시 부모 창에 메시지 전송
         if (result && result.paymentKey) {
           window.parent.postMessage({
             type: 'TOSS_PAYMENT_SUCCESS',
             paymentKey: result.paymentKey,
-            orderId: result.orderId,
+            orderId: result.orderId || "${widget.orderId}",
+            amount: ${widget.amount}
+          }, '*');
+        } else {
+          // 결과는 있지만 paymentKey가 없는 경우
+          console.log('Payment completed but no paymentKey:', result);
+          window.parent.postMessage({
+            type: 'TOSS_PAYMENT_SUCCESS',
+            paymentKey: result?.paymentKey || '',
+            orderId: "${widget.orderId}",
             amount: ${widget.amount}
           }, '*');
         }
       } catch (error) {
-        if (error.code === 'USER_CANCEL') {
+        console.error('Payment error:', error);
+
+        if (error.code === 'USER_CANCEL' || error.code === 'PAY_PROCESS_CANCELED') {
           window.parent.postMessage({ type: 'TOSS_PAYMENT_CANCEL' }, '*');
         } else {
           window.parent.postMessage({
             type: 'TOSS_PAYMENT_FAIL',
-            code: error.code,
-            message: error.message
+            code: error.code || 'UNKNOWN_ERROR',
+            message: error.message || '결제 처리 중 오류가 발생했습니다.'
           }, '*');
         }
         button.disabled = false;
