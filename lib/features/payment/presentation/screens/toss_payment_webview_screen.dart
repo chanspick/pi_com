@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:pi_com/features/payment/presentation/providers/payment_provider.dart';
 
 /// 토스페이먼츠 WebView 결제 화면
@@ -195,31 +196,59 @@ class _TossPaymentWebViewScreenState
     let widgets = null;
     let selectedPaymentMethod = null;
 
+    // SDK 로딩 확인
+    function checkSDKLoaded() {
+      if (typeof TossPayments === 'undefined') {
+        console.error('TossPayments SDK not loaded');
+        showError('결제 SDK를 불러오지 못했습니다. 네트워크 연결을 확인해주세요.');
+        return false;
+      }
+      console.log('TossPayments SDK loaded successfully');
+      return true;
+    }
+
     async function initializePayment() {
+      console.log('Initializing payment...');
+      console.log('Client Key:', clientKey.substring(0, 20) + '...');
+      console.log('Customer Key:', customerKey);
+      console.log('Amount:', ${widget.amount});
+
+      // SDK 로딩 확인
+      if (!checkSDKLoaded()) {
+        return;
+      }
+
       try {
         // 토스페이먼츠 SDK 초기화
+        console.log('Creating TossPayments instance...');
         const tossPayments = TossPayments(clientKey);
-        widgets = tossPayments.widgets({ customerKey });
+
+        console.log('Creating widgets...');
+        widgets = tossPayments.widgets({ customerKey: customerKey });
 
         // 결제 금액 설정
+        console.log('Setting amount...');
         await widgets.setAmount({
           currency: "KRW",
           value: ${widget.amount}
         });
 
         // 결제 수단 위젯 렌더링
+        console.log('Rendering payment methods...');
         await widgets.renderPaymentMethods({
           selector: "#payment-method",
           variantKey: "DEFAULT"
         });
 
         // 약관 동의 위젯 렌더링
+        console.log('Rendering agreement...');
         await widgets.renderAgreement({
           selector: "#agreement",
           variantKey: "AGREEMENT"
         });
 
         // 로딩 숨기고 위젯 표시
+        console.log('Payment widget initialized successfully');
         document.getElementById('loading').style.display = 'none';
         document.getElementById('payment-method').style.display = 'block';
         document.getElementById('agreement').style.display = 'block';
@@ -227,7 +256,8 @@ class _TossPaymentWebViewScreenState
 
       } catch (error) {
         console.error('Payment initialization error:', error);
-        showError('결제 수단을 불러오는 중 오류가 발생했습니다: ' + error.message);
+        console.error('Error details:', JSON.stringify(error, null, 2));
+        showError('결제 수단을 불러오는 중 오류가 발생했습니다: ' + (error.message || error.code || '알 수 없는 오류'));
       }
     }
 
@@ -243,6 +273,20 @@ class _TossPaymentWebViewScreenState
       button.disabled = true;
       button.textContent = '결제 처리 중...';
 
+      console.log('Requesting payment...');
+      console.log('Order ID:', "${widget.orderId}");
+      console.log('Order Name:', "${widget.orderName}");
+      console.log('Success URL:', "${widget.successUrl}");
+      console.log('Fail URL:', "${widget.failUrl}");
+
+      if (!widgets) {
+        console.error('Widgets not initialized');
+        showError('결제 위젯이 초기화되지 않았습니다. 페이지를 새로고침해주세요.');
+        button.disabled = false;
+        button.textContent = '${_formatPrice(widget.amount)}원 결제하기';
+        return;
+      }
+
       try {
         await widgets.requestPayment({
           orderId: "${widget.orderId}",
@@ -253,13 +297,22 @@ class _TossPaymentWebViewScreenState
           successUrl: "${widget.successUrl}",
           failUrl: "${widget.failUrl}"
         });
+        console.log('Payment request completed');
       } catch (error) {
         console.error('Payment request error:', error);
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+
         if (error.code === 'USER_CANCEL') {
           // 사용자가 결제를 취소한 경우
-          window.location.href = '${widget.failUrl}?code=USER_CANCEL&message=사용자가 결제를 취소했습니다';
+          console.log('User cancelled payment');
+          window.location.href = '${widget.failUrl}?code=USER_CANCEL&message=' + encodeURIComponent('사용자가 결제를 취소했습니다');
+        } else if (error.code === 'INVALID_CARD_COMPANY') {
+          showError('지원하지 않는 카드사입니다.');
+        } else if (error.code === 'INVALID_CUSTOMER_KEY') {
+          showError('고객 정보가 올바르지 않습니다.');
         } else {
-          showError('결제 요청 중 오류가 발생했습니다: ' + error.message);
+          showError('결제 요청 중 오류가 발생했습니다: ' + (error.message || error.code || '알 수 없는 오류'));
         }
         button.disabled = false;
         button.textContent = '${_formatPrice(widget.amount)}원 결제하기';
@@ -285,6 +338,10 @@ class _TossPaymentWebViewScreenState
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(const Color(0xFFF5F5F5))
+      ..setOnConsoleMessage((JavaScriptConsoleMessage message) {
+        // JavaScript 콘솔 메시지 출력 (디버깅용)
+        print('🌐 JS [${message.level.name}]: ${message.message}');
+      })
       ..setNavigationDelegate(
         NavigationDelegate(
           onProgress: (int progress) {
@@ -310,16 +367,29 @@ class _TossPaymentWebViewScreenState
           onNavigationRequest: (NavigationRequest request) {
             final url = request.url;
 
-            // 결제 성공 URL 감지
+            // 결제 성공 URL 감지 (토스페이먼츠는 paymentKey 사용)
             if (url.contains('/toss-payment/success') ||
-                url.contains('payment_key=')) {
+                url.contains('toss-payment/success') ||
+                (url.contains('paymentKey=') && url.contains('orderId=') && url.contains('amount='))) {
               _handleSuccess(url);
+              return NavigationDecision.prevent;
+            }
+
+            // 앱 딥링크 성공/실패 감지 (Firebase Functions에서 리다이렉트)
+            if (url.startsWith('picom://toss-payment/success')) {
+              _handleSuccess(url);
+              return NavigationDecision.prevent;
+            }
+
+            if (url.startsWith('picom://toss-payment/fail')) {
+              _handleFail(url);
               return NavigationDecision.prevent;
             }
 
             // 결제 실패 URL 감지
             if (url.contains('/toss-payment/fail') ||
-                url.contains('code=') && url.contains('message=')) {
+                url.contains('toss-payment/fail') ||
+                (url.contains('code=') && url.contains('message=') && !url.contains('paymentKey='))) {
               _handleFail(url);
               return NavigationDecision.prevent;
             }
@@ -367,20 +437,60 @@ class _TossPaymentWebViewScreenState
 
   Future<void> _handleDeepLink(String url) async {
     try {
-      // 앱 딥링크 처리
+      print('🔗 Handling deep link: $url');
+
       // intent:// 스킴의 경우 Android에서 앱 실행
       if (url.startsWith('intent://')) {
-        // intent 스킴에서 package 추출하여 마켓으로 이동
+        // intent 스킴에서 package 추출
         final packageMatch = RegExp(r'package=([^;]+)').firstMatch(url);
+
         if (packageMatch != null) {
           final package = packageMatch.group(1);
-          // 플레이 스토어로 이동
-          final marketUrl = 'market://details?id=$package';
-          // URL Launcher로 열기
+          print('📦 Intent package: $package');
+
+          // 먼저 intent URL을 직접 실행 시도
+          try {
+            final intentUri = Uri.parse(url);
+            if (await canLaunchUrl(intentUri)) {
+              await launchUrl(intentUri, mode: LaunchMode.externalApplication);
+              return;
+            }
+          } catch (e) {
+            print('Intent URL launch failed: $e');
+          }
+
+          // 실패 시 플레이 스토어로 이동
+          final marketUrl = Uri.parse('market://details?id=$package');
+          if (await canLaunchUrl(marketUrl)) {
+            await launchUrl(marketUrl, mode: LaunchMode.externalApplication);
+          } else {
+            // 마켓도 안되면 웹 플레이스토어
+            final webMarketUrl = Uri.parse('https://play.google.com/store/apps/details?id=$package');
+            await launchUrl(webMarketUrl, mode: LaunchMode.externalApplication);
+          }
+        }
+        return;
+      }
+
+      // 일반 딥링크 (카드사 앱, 은행 앱 등)
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        print('🚀 Launching URL: $url');
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        print('⚠️ Cannot launch URL: $url');
+        // 앱이 설치되지 않은 경우 안내
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('필요한 앱이 설치되어 있지 않습니다.'),
+              duration: Duration(seconds: 2),
+            ),
+          );
         }
       }
     } catch (e) {
-      print('딥링크 처리 오류: $e');
+      print('❌ 딥링크 처리 오류: $e');
     }
   }
 
