@@ -111,6 +111,13 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
   }
 
   String _buildPaymentHtml() {
+    // 웹 전용 redirect URL (postMessage로 결과 전달)
+    const webSuccessUrl = 'https://asia-northeast3-picom-team.cloudfunctions.net/api/toss-payment-redirect/web-success';
+    const webFailUrl = 'https://asia-northeast3-picom-team.cloudfunctions.net/api/toss-payment-redirect/web-fail';
+
+    // 전화번호에서 특수문자 제거
+    final cleanPhone = widget.customerPhone.replaceAll(RegExp(r'[^0-9]'), '');
+
     return '''
 <!DOCTYPE html>
 <html>
@@ -235,12 +242,33 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
     const customerKey = "${widget.userId}";
     let widgets = null;
 
+    // 결제 정보 (Dart에서 전달)
+    const orderId = "${widget.orderId}";
+    const orderName = "${widget.orderName}";
+    const amount = ${widget.amount};
+    const customerName = "${widget.customerName}";
+    const customerEmail = "${widget.customerEmail}";
+    const customerPhone = "$cleanPhone";
+    const successUrl = "$webSuccessUrl";
+    const failUrl = "$webFailUrl";
+
+    console.log('=== 결제 정보 초기화 ===');
+    console.log('orderId:', orderId);
+    console.log('orderName:', orderName);
+    console.log('amount:', amount);
+    console.log('customerPhone:', customerPhone);
+    console.log('successUrl:', successUrl);
+
     async function initializePayment() {
       try {
+        console.log('TossPayments 초기화 중...');
         const tossPayments = TossPayments(clientKey);
         widgets = tossPayments.widgets({ customerKey: customerKey });
 
-        await widgets.setAmount({ currency: "KRW", value: ${widget.amount} });
+        console.log('금액 설정:', amount);
+        await widgets.setAmount({ currency: "KRW", value: amount });
+
+        console.log('결제 수단 렌더링...');
         await widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" });
         await widgets.renderAgreement({ selector: "#agreement", variantKey: "AGREEMENT" });
 
@@ -248,7 +276,9 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
         document.getElementById('payment-method').style.display = 'block';
         document.getElementById('agreement').style.display = 'block';
         document.getElementById('pay-button').style.display = 'block';
+        console.log('결제 위젯 초기화 완료!');
       } catch (error) {
+        console.error('초기화 오류:', error);
         showError('결제 수단을 불러오는 중 오류가 발생했습니다: ' + (error.message || '알 수 없는 오류'));
       }
     }
@@ -265,10 +295,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
       button.textContent = '결제 처리 중...';
 
       console.log('=== requestPayment 시작 ===');
-      console.log('widgets 객체:', widgets);
-      console.log('orderId:', "${widget.orderId}");
-      console.log('orderName:', "${widget.orderName}");
-      console.log('amount:', ${widget.amount});
+      console.log('widgets:', widgets ? 'OK' : 'NULL');
 
       if (!widgets) {
         console.error('widgets 객체가 없습니다!');
@@ -281,70 +308,43 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
       }
 
       try {
-        // ⚠️ 웹(PC)에서는 Promise 방식 사용 - successUrl/failUrl 설정하지 않음
-        // iframe 내에서는 리다이렉트가 불가능하므로 Promise로 결과를 받아야 함
-        console.log('widgets.requestPayment 호출...');
-
-        // 전화번호에서 특수문자 제거 (토스페이먼츠는 숫자만 허용)
-        const rawPhone = "${widget.customerPhone}";
-        const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
-        console.log('Phone sanitized:', rawPhone, '->', cleanPhone);
-
-        // 결제 요청 파라미터 (빈 값은 제외)
+        // 결제 요청 파라미터
         const paymentParams = {
-          orderId: "${widget.orderId}",
-          orderName: "${widget.orderName}"
+          orderId: orderId,
+          orderName: orderName,
+          // ✅ Redirect 방식: successUrl/failUrl 설정
+          // iframe 내에서 이 URL로 리다이렉트되고, 해당 페이지에서 postMessage 전송
+          successUrl: successUrl,
+          failUrl: failUrl
         };
 
-        // 선택적 파라미터 추가 (빈 값이 아닌 경우만)
-        const customerName = "${widget.customerName}";
-        const customerEmail = "${widget.customerEmail}";
-
+        // 선택적 파라미터 추가
         if (customerName && customerName.trim()) {
           paymentParams.customerName = customerName;
         }
         if (customerEmail && customerEmail.trim()) {
           paymentParams.customerEmail = customerEmail;
         }
-        if (cleanPhone && cleanPhone.length >= 10) {
-          paymentParams.customerMobilePhone = cleanPhone;
+        if (customerPhone && customerPhone.length >= 10) {
+          paymentParams.customerMobilePhone = customerPhone;
         }
 
-        console.log('Payment params:', paymentParams);
+        console.log('Payment params:', JSON.stringify(paymentParams, null, 2));
+        console.log('widgets.requestPayment 호출...');
 
-        const result = await widgets.requestPayment(paymentParams);
+        // ✅ Redirect 방식으로 결제 요청
+        // 성공 시: successUrl로 리다이렉트 → 해당 페이지에서 postMessage 전송
+        // 실패/취소 시: catch 블록에서 처리
+        await widgets.requestPayment(paymentParams);
 
-        console.log('=== Payment result ===');
-        console.log('result:', result);
-        console.log('result type:', typeof result);
-        console.log('result JSON:', JSON.stringify(result, null, 2));
+        // 이 코드는 실행되지 않음 (성공 시 리다이렉트됨)
+        console.log('requestPayment 완료 (이 로그가 보이면 문제 있음)');
 
-        // 결제 성공 시 부모 창에 메시지 전송
-        if (result && result.paymentKey) {
-          console.log('결제 성공! paymentKey:', result.paymentKey);
-          window.parent.postMessage({
-            type: 'TOSS_PAYMENT_SUCCESS',
-            paymentKey: result.paymentKey,
-            orderId: result.orderId || "${widget.orderId}",
-            amount: ${widget.amount}
-          }, '*');
-        } else {
-          // 결과는 있지만 paymentKey가 없는 경우
-          console.log('Payment completed but no paymentKey:', result);
-          window.parent.postMessage({
-            type: 'TOSS_PAYMENT_SUCCESS',
-            paymentKey: result?.paymentKey || '',
-            orderId: "${widget.orderId}",
-            amount: ${widget.amount}
-          }, '*');
-        }
       } catch (error) {
         console.error('=== Payment error ===');
         console.error('error:', error);
-        console.error('error type:', typeof error);
         console.error('error.code:', error?.code);
         console.error('error.message:', error?.message);
-        console.error('error JSON:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
 
         const errorCode = error?.code || 'UNKNOWN_ERROR';
         const errorMessage = error?.message || String(error) || '결제 처리 중 오류가 발생했습니다.';
