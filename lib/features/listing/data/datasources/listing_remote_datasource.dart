@@ -247,11 +247,27 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
     final listingData = listingDoc.data()!;
     final basePartId = listingData['basePartId'] as String?;
 
+    // 🔍 디버깅: 현재 listing 상태 확인
+    final currentStatus = listingData['status'];
+    final sellerId = listingData['sellerId'];
+    print('═══════════════════════════════════════════════════════');
+    print('🔍 [updateListingStatus] listingId: $listingId');
+    print('📊 현재 status: $currentStatus');
+    print('👤 sellerId: $sellerId');
+    print('🎯 변경하려는 status: ${status.name}');
+    print('═══════════════════════════════════════════════════════');
+
     // Listing 상태 업데이트
-    await _firestore.collection('listings').doc(listingId).update({
-      'status': status.name,
-      if (status == ListingStatus.sold) 'soldAt': FieldValue.serverTimestamp(),
-    });
+    try {
+      await _firestore.collection('listings').doc(listingId).update({
+        'status': status.name,
+        if (status == ListingStatus.sold) 'soldAt': FieldValue.serverTimestamp(),
+      });
+      print('✅ [updateListingStatus] Firestore 업데이트 성공');
+    } catch (e) {
+      print('❌ [updateListingStatus] Firestore 업데이트 실패: $e');
+      rethrow;
+    }
 
     // 판매 완료된 경우, BasePart 통계 재계산
     if (status == ListingStatus.sold && basePartId != null) {
