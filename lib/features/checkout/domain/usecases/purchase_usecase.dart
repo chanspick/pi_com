@@ -92,27 +92,48 @@ class PurchaseUseCase {
       }
 
       // ✅ 구매자에게 결제 완료 알림 발송
-      await _notificationHelper.notifyPaymentCompleted(
-        buyerId: userId,
-        orderId: order.orderId,
-        listingId: sellerItems.first.listingId,
-        partName: sellerItems.length == 1
-            ? sellerItems.first.partName
-            : '${sellerItems.first.partName} 외 ${sellerItems.length - 1}건',
-        totalAmount: (totalPrice + shippingFee).toInt(),
-      );
+      print('📢 [PurchaseUseCase] 구매자 알림 발송 시도...');
+      try {
+        await _notificationHelper.notifyPaymentCompleted(
+          buyerId: userId,
+          orderId: order.orderId,
+          listingId: sellerItems.first.listingId,
+          partName: sellerItems.length == 1
+              ? sellerItems.first.partName
+              : '${sellerItems.first.partName} 외 ${sellerItems.length - 1}건',
+          totalAmount: (totalPrice + shippingFee).toInt(),
+        );
+        print('✅ [PurchaseUseCase] 구매자 알림 발송 성공');
+      } catch (e) {
+        print('❌ [PurchaseUseCase] 구매자 알림 발송 실패: $e');
+        rethrow;
+      }
 
       // 2. 해당 판매자의 listing 상태 업데이트 + 가격 스냅샷 생성
       for (final item in sellerItems) {
-        await _listingRepository.updateListingStatus(item.listingId, ListingStatus.sold);
+        print('📦 [PurchaseUseCase] listing 상태 업데이트 시도: ${item.listingId}');
+        try {
+          await _listingRepository.updateListingStatus(item.listingId, ListingStatus.sold);
+          print('✅ [PurchaseUseCase] listing 상태 업데이트 성공: ${item.listingId}');
+        } catch (e) {
+          print('❌ [PurchaseUseCase] listing 상태 업데이트 실패: ${item.listingId}, 에러: $e');
+          rethrow;
+        }
 
         // ✅ 판매자에게 매물 판매 완료 알림 발송
-        await _notificationHelper.notifyListingSold(
-          sellerId: sellerId,
-          listingId: item.listingId,
-          partName: item.partName,
-          soldPrice: (item.price * item.quantity).toInt(),
-        );
+        print('📢 [PurchaseUseCase] 판매자 알림 발송 시도...');
+        try {
+          await _notificationHelper.notifyListingSold(
+            sellerId: sellerId,
+            listingId: item.listingId,
+            partName: item.partName,
+            soldPrice: (item.price * item.quantity).toInt(),
+          );
+          print('✅ [PurchaseUseCase] 판매자 알림 발송 성공');
+        } catch (e) {
+          print('❌ [PurchaseUseCase] 판매자 알림 발송 실패: $e');
+          rethrow;
+        }
 
         // NOTE: Cloud Functions의 onListingUpdated 트리거가
         // listing 상태 변경을 감지하여 자동으로 PriceHistory를 업데이트합니다.
