@@ -18,6 +18,9 @@ import 'package:pi_com/features/payment/presentation/screens/payment_success_scr
 import 'package:pi_com/features/payment/presentation/screens/payment_failure_screen.dart';
 import 'package:pi_com/features/payment/presentation/screens/payment_cancel_screen.dart';
 import 'package:pi_com/features/payment/presentation/screens/toss_payment_webview_screen.dart';
+// 웹 전용 결제 화면 (조건부 import - 웹에서는 dart:html 사용, 모바일에서는 스텁)
+import 'package:pi_com/features/payment/presentation/screens/toss_payment_web_screen_stub.dart'
+    if (dart.library.html) 'package:pi_com/features/payment/presentation/screens/toss_payment_web_screen.dart';
 import 'package:pi_com/features/address/domain/entities/address_entity.dart';
 import 'package:pi_com/features/address/data/repositories/address_repository.dart';
 import 'package:pi_com/features/address/presentation/screens/address_list_screen.dart';
@@ -551,25 +554,48 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       final customerEmail = currentUser?.email ?? '';
       final customerPhone = _selectedAddress?.recipientPhone ?? '';
 
-      // 6. 토스페이먼츠 결제 화면 열기
+      // 6. 토스페이먼츠 결제 화면 열기 (웹/모바일 분기)
       if (!mounted) return;
 
-      final paymentResult = await Navigator.push<Map<String, dynamic>>(
-        context,
-        MaterialPageRoute(
-          builder: (context) => TossPaymentWebViewScreen(
-            orderId: orderId,
-            userId: userId,
-            orderName: itemName,
-            amount: totalAmount,
-            customerName: customerName,
-            customerEmail: customerEmail,
-            customerPhone: customerPhone,
-            successUrl: successUrl,
-            failUrl: failUrl,
+      final Map<String, dynamic>? paymentResult;
+
+      if (kIsWeb) {
+        // 웹: iframe 기반 결제 화면
+        paymentResult = await Navigator.push<Map<String, dynamic>>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TossPaymentWebScreen(
+              orderId: orderId,
+              userId: userId,
+              orderName: itemName,
+              amount: totalAmount,
+              customerName: customerName,
+              customerEmail: customerEmail,
+              customerPhone: customerPhone,
+              successUrl: successUrl,
+              failUrl: failUrl,
+            ),
           ),
-        ),
-      );
+        );
+      } else {
+        // 모바일: WebView 기반 결제 화면
+        paymentResult = await Navigator.push<Map<String, dynamic>>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TossPaymentWebViewScreen(
+              orderId: orderId,
+              userId: userId,
+              orderName: itemName,
+              amount: totalAmount,
+              customerName: customerName,
+              customerEmail: customerEmail,
+              customerPhone: customerPhone,
+              successUrl: successUrl,
+              failUrl: failUrl,
+            ),
+          ),
+        );
+      }
 
       // 7. 결제 결과 처리
       if (!mounted) return;
