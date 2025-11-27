@@ -40,6 +40,7 @@ class TossPaymentWebScreen extends ConsumerStatefulWidget {
 class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
   late final String _viewId;
   bool _isLoading = true;
+  bool _isNavigating = false; // 중복 네비게이션 방지 플래그
 
   // 토스페이먼츠 결제위젯 연동 클라이언트 키
   static const String _testClientKey = 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm';
@@ -76,22 +77,28 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
 
   void _setupMessageListener() {
     html.window.onMessage.listen((event) {
+      // 이미 네비게이션 중이면 무시
+      if (_isNavigating || !mounted) return;
+
       final data = event.data;
       if (data is Map) {
         final type = data['type'];
 
         if (type == 'TOSS_PAYMENT_SUCCESS') {
+          _isNavigating = true;
           _handleSuccess(
             data['paymentKey'] as String,
             data['orderId'] as String,
             data['amount'] as int,
           );
         } else if (type == 'TOSS_PAYMENT_FAIL') {
+          _isNavigating = true;
           _handleFail(
             data['code'] as String? ?? 'UNKNOWN',
             data['message'] as String? ?? '알 수 없는 오류',
           );
         } else if (type == 'TOSS_PAYMENT_CANCEL') {
+          _isNavigating = true;
           _handleCancel();
         }
       }
@@ -316,12 +323,17 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
       ref.read(isApprovingPaymentProvider.notifier).state = false;
 
       if (mounted) {
-        Navigator.pop(context, {
-          'success': true,
-          'paymentKey': paymentKey,
-          'orderId': orderId,
-          'amount': amount,
-          'payment': approvedPayment,
+        // 안전한 네비게이션: 현재 프레임 완료 후 실행
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            Navigator.pop(context, {
+              'success': true,
+              'paymentKey': paymentKey,
+              'orderId': orderId,
+              'amount': amount,
+              'payment': approvedPayment,
+            });
+          }
         });
       }
     } catch (e) {
@@ -333,20 +345,28 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
   void _handleFail(String code, String message) {
     ref.read(paymentErrorProvider.notifier).state = message;
     if (mounted) {
-      Navigator.pop(context, {
-        'success': false,
-        'errorCode': code,
-        'errorMessage': message,
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.pop(context, {
+            'success': false,
+            'errorCode': code,
+            'errorMessage': message,
+          });
+        }
       });
     }
   }
 
   void _handleCancel() {
     if (mounted) {
-      Navigator.pop(context, {
-        'success': false,
-        'errorCode': 'USER_CANCEL',
-        'errorMessage': '사용자가 결제를 취소했습니다',
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.pop(context, {
+            'success': false,
+            'errorCode': 'USER_CANCEL',
+            'errorMessage': '사용자가 결제를 취소했습니다',
+          });
+        }
       });
     }
   }
@@ -357,7 +377,11 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(message), backgroundColor: Colors.red),
       );
-      Navigator.pop(context, {'success': false, 'errorMessage': message});
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.pop(context, {'success': false, 'errorMessage': message});
+        }
+      });
     }
   }
 
