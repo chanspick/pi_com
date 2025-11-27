@@ -82,8 +82,11 @@ service cloud.firestore {
     match /listings/{listingId} {
       allow read: if true; // 모든 사용자 읽기 가능
       allow create: if isAuthenticated(); // 인증된 사용자만 생성
+      // 수정: 판매자 본인 또는 구매자가 상태(sold)를 업데이트할 수 있도록 허용
       allow update: if isAuthenticated() &&
-                       (request.resource.data.sellerId == request.auth.uid || isAdmin()); // 본인 또는 관리자만 수정
+                       (resource.data.sellerId == request.auth.uid || // 판매자 본인
+                        request.resource.data.status == 'sold' || // 구매 완료 시 상태 변경
+                        isAdmin());
       allow delete: if isAuthenticated() &&
                        (resource.data.sellerId == request.auth.uid || isAdmin()); // 본인 또는 관리자만 삭제
     }
