@@ -73,7 +73,13 @@ service cloud.firestore {
     // ============================================
     match /base_parts/{basePartId} {
       allow read: if true; // 모든 사용자 읽기 가능 (공개 데이터)
-      allow write: if isAdmin(); // 관리자만 수정 가능
+      allow create, delete: if isAdmin(); // 관리자만 생성/삭제 가능
+      // 관리자는 모든 필드 수정 가능
+      // 인증된 사용자는 통계 필드(lowestPrice, averagePrice, listingCount)만 수정 가능
+      allow update: if isAdmin() ||
+                       (isAuthenticated() &&
+                        request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['lowestPrice', 'averagePrice', 'listingCount']));
     }
 
     // ============================================
@@ -82,8 +88,13 @@ service cloud.firestore {
     match /listings/{listingId} {
       allow read: if true; // 모든 사용자 읽기 가능
       allow create: if isAuthenticated(); // 인증된 사용자만 생성
+      // 수정: 판매자 본인, 관리자, 또는 인증된 사용자가 available → sold 변경 가능
       allow update: if isAuthenticated() &&
-                       (request.resource.data.sellerId == request.auth.uid || isAdmin()); // 본인 또는 관리자만 수정
+                       (resource.data.sellerId == request.auth.uid || // 판매자 본인
+                        isAdmin() ||
+                        // 구매자가 available 상태를 sold로 변경하는 경우만 허용
+                        (request.resource.data.status == 'sold' &&
+                         resource.data.status == 'available'));
       allow delete: if isAuthenticated() &&
                        (resource.data.sellerId == request.auth.uid || isAdmin()); // 본인 또는 관리자만 삭제
     }
@@ -144,7 +155,8 @@ service cloud.firestore {
     match /notifications/{notificationId} {
       allow read: if isAuthenticated() &&
                      (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAdmin(); // 알림 생성은 관리자/시스템만 가능
+      // 알림 생성: 인증된 사용자가 다른 사용자에게 알림 발송 가능 (결제 완료, 판매 완료 등)
+      allow create: if isAuthenticated();
       allow update: if isAuthenticated() &&
                        (resource.data.userId == request.auth.uid || isAdmin());
       allow delete: if isAuthenticated() &&

@@ -8,4 +8,7 @@ abstract class CartRemoteDataSource {
   Future<void> removeFromCart(String listingId);
   Future<void> updateCartItemQuantity(String listingId, int quantity);
   Future<void> clearCart();
+
+  /// 장바구니에서 이미 판매된 상품을 제거하고 제거된 상품 목록 반환
+  Future<List<CartItemModel>> removeSoldItemsFromCart();
 }

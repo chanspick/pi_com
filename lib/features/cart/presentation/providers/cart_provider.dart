@@ -10,6 +10,7 @@ import 'package:pi_com/features/cart/domain/usecases/get_cart_items.dart';
 import 'package:pi_com/features/cart/domain/usecases/remove_from_cart.dart';
 import 'package:pi_com/features/cart/domain/usecases/update_cart_item_quantity.dart';
 import 'package:pi_com/features/cart/domain/usecases/clear_cart.dart';
+import 'package:pi_com/features/cart/domain/usecases/remove_sold_items.dart';
 import 'package:pi_com/features/cart/domain/entities/cart_item_entity.dart';
 
 // ===========================
@@ -52,6 +53,11 @@ final updateCartItemQuantityProvider = Provider<UpdateCartItemQuantity>((ref) {
 final clearCartProvider = Provider<ClearCart>((ref) {
   final repository = ref.watch(cartRepositoryProvider);
   return ClearCart(repository);
+});
+
+final removeSoldItemsProvider = Provider<RemoveSoldItems>((ref) {
+  final repository = ref.watch(cartRepositoryProvider);
+  return RemoveSoldItems(repository);
 });
 
 // ===========================
