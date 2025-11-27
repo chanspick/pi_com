@@ -144,7 +144,8 @@ service cloud.firestore {
     match /notifications/{notificationId} {
       allow read: if isAuthenticated() &&
                      (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isAdmin(); // 알림 생성은 관리자/시스템만 가능
+      // 알림 생성: 인증된 사용자가 다른 사용자에게 알림 발송 가능 (결제 완료, 판매 완료 등)
+      allow create: if isAuthenticated();
       allow update: if isAuthenticated() &&
                        (resource.data.userId == request.auth.uid || isAdmin());
       allow delete: if isAuthenticated() &&
