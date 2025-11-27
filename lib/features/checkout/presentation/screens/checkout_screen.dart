@@ -538,8 +538,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       // 1. 주문 번호 생성
       final orderId = 'ORDER_${const Uuid().v4()}';
 
-      // 2. 결제 금액 계산
-      final totalAmount = _calculateTotalAmount(cartItems);
+      // 2. 결제 금액 계산 (상품금액, 배송비 분리)
+      final productAmount = _calculateProductAmount(cartItems);
+      final shippingFee = _selectedShippingMethod == ShippingMethod.immediate ? 4500 : 0;
+      final totalAmount = productAmount + shippingFee;
 
       // 3. 상품명 생성
       final itemName = _getItemName(cartItems);
@@ -562,7 +564,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       print('💰 [Checkout] orderId: $orderId');
       print('💰 [Checkout] userId: $userId');
       print('💰 [Checkout] orderName: $itemName');
-      print('💰 [Checkout] amount: $totalAmount');
+      print('💰 [Checkout] productAmount (상품금액): $productAmount');
+      print('💰 [Checkout] shippingFee (배송비): $shippingFee');
+      print('💰 [Checkout] totalAmount (총액): $totalAmount');
       print('💰 [Checkout] customerName: $customerName');
       print('💰 [Checkout] customerEmail: $customerEmail');
       print('💰 [Checkout] customerPhone: $customerPhone');
@@ -579,6 +583,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               userId: userId,
               orderName: itemName,
               amount: totalAmount,
+              productAmount: productAmount,
+              shippingFee: shippingFee,
               customerName: customerName,
               customerEmail: customerEmail,
               customerPhone: customerPhone,
@@ -831,17 +837,21 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     }
   }
 
-  /// 총 결제 금액 계산
-  int _calculateTotalAmount(List<CartItemEntity> cartItems) {
+  /// 상품 금액 계산 (배송비 제외)
+  int _calculateProductAmount(List<CartItemEntity> cartItems) {
     double subtotal = 0;
     for (final item in cartItems) {
       subtotal += item.price * item.quantity;
     }
+    return subtotal.toInt();
+  }
 
+  /// 총 결제 금액 계산 (배송비 포함)
+  int _calculateTotalAmount(List<CartItemEntity> cartItems) {
+    final productAmount = _calculateProductAmount(cartItems);
     // 배송비 추가 (즉시 배송 시 4,500원, PC 보관함은 합배송 시 부과)
     final shippingFee = _selectedShippingMethod == ShippingMethod.immediate ? 4500 : 0;
-
-    return (subtotal + shippingFee).toInt();
+    return productAmount + shippingFee;
   }
 
   /// 상품명 생성

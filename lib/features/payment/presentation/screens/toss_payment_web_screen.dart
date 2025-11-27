@@ -12,7 +12,9 @@ class TossPaymentWebScreen extends ConsumerStatefulWidget {
   final String orderId;
   final String userId;
   final String orderName;
-  final int amount;
+  final int amount; // 총 결제 금액 (상품 + 배송비)
+  final int productAmount; // 상품 금액
+  final int shippingFee; // 배송비
   final String customerName;
   final String customerEmail;
   final String customerPhone;
@@ -25,6 +27,8 @@ class TossPaymentWebScreen extends ConsumerStatefulWidget {
     required this.userId,
     required this.orderName,
     required this.amount,
+    required this.productAmount,
+    required this.shippingFee,
     required this.customerName,
     required this.customerEmail,
     required this.customerPhone,
@@ -53,7 +57,9 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
     print('🔍 [TossPaymentWeb] orderId: ${widget.orderId}');
     print('🔍 [TossPaymentWeb] userId: ${widget.userId}');
     print('🔍 [TossPaymentWeb] orderName: ${widget.orderName}');
-    print('🔍 [TossPaymentWeb] amount: ${widget.amount}');
+    print('🔍 [TossPaymentWeb] amount (총액): ${widget.amount}');
+    print('🔍 [TossPaymentWeb] productAmount (상품금액): ${widget.productAmount}');
+    print('🔍 [TossPaymentWeb] shippingFee (배송비): ${widget.shippingFee}');
     print('🔍 [TossPaymentWeb] customerName: ${widget.customerName}');
     print('🔍 [TossPaymentWeb] customerEmail: ${widget.customerEmail}');
     print('🔍 [TossPaymentWeb] customerPhone: ${widget.customerPhone}');
@@ -140,102 +146,63 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f5f5f5;
+      background: #FFFFFF;
       min-height: 100vh;
     }
     .container {
       max-width: 600px;
       margin: 0 auto;
-      padding: 20px;
+      padding: 16px;
     }
-    .order-info {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    .order-info h3 {
-      font-size: 18px;
-      margin-bottom: 16px;
-      color: #333;
-    }
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 12px 0;
-      border-bottom: 1px solid #eee;
-    }
-    .info-row:last-child { border-bottom: none; }
-    .info-label { color: #666; }
-    .info-value { font-weight: 600; color: #333; }
-    .total-amount { font-size: 24px; color: #0064FF; }
     #payment-method, #agreement {
-      background: white;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 16px;
     }
     .pay-button {
       width: 100%;
-      padding: 18px;
-      background: #0064FF;
+      padding: 16px;
+      background: #000000;
       color: white;
       border: none;
-      border-radius: 12px;
-      font-size: 18px;
+      border-radius: 8px;
+      font-size: 16px;
       font-weight: 600;
       cursor: pointer;
+      margin-top: 16px;
     }
-    .pay-button:disabled { background: #ccc; cursor: not-allowed; }
+    .pay-button:hover { background: #333333; }
+    .pay-button:disabled { background: #CCCCCC; cursor: not-allowed; }
     .loading {
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 40px;
+      padding: 60px 20px;
     }
     .spinner {
-      width: 40px;
-      height: 40px;
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #0064FF;
+      width: 32px;
+      height: 32px;
+      border: 3px solid #EEEEEE;
+      border-top: 3px solid #000000;
       border-radius: 50%;
-      animation: spin 1s linear infinite;
+      animation: spin 0.8s linear infinite;
     }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     .error-message {
-      background: #fff3f3;
-      border: 1px solid #ffcccc;
+      background: #FEF2F2;
+      border: 1px solid #FCA5A5;
       border-radius: 8px;
       padding: 16px;
-      color: #cc0000;
-      margin-bottom: 20px;
+      color: #DC2626;
+      margin-bottom: 16px;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="order-info">
-      <h3>주문 정보</h3>
-      <div class="info-row">
-        <span class="info-label">상품명</span>
-        <span class="info-value">${widget.orderName}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">주문번호</span>
-        <span class="info-value">${widget.orderId}</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">결제금액</span>
-        <span class="info-value total-amount">${_formatPrice(widget.amount)}원</span>
-      </div>
-    </div>
-
     <div id="loading" class="loading">
       <div class="spinner"></div>
-      <p style="margin-top: 16px; color: #666;">결제 수단을 불러오는 중...</p>
+      <p style="margin-top: 16px; color: #666; font-size: 14px;">결제 수단을 불러오는 중...</p>
     </div>
 
     <div id="error-container" style="display: none;"></div>
@@ -254,6 +221,8 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
 
     // 결제 정보 (Dart에서 전달)
     const orderId = "${widget.orderId}";
+    const productAmount = ${widget.productAmount};
+    const shippingFee = ${widget.shippingFee};
     const orderName = "${widget.orderName}";
     const amount = ${widget.amount};
     const customerName = "${widget.customerName}";
@@ -265,7 +234,9 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
     console.log('=== 결제 정보 초기화 ===');
     console.log('orderId:', orderId);
     console.log('orderName:', orderName);
-    console.log('amount:', amount);
+    console.log('productAmount (상품금액):', productAmount);
+    console.log('shippingFee (배송비):', shippingFee);
+    console.log('amount (총액):', amount);
     console.log('customerPhone:', customerPhone);
     console.log('successUrl:', successUrl);
 
@@ -275,8 +246,17 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
         const tossPayments = TossPayments(clientKey);
         widgets = tossPayments.widgets({ customerKey: customerKey });
 
-        console.log('금액 설정:', amount);
-        await widgets.setAmount({ currency: "KRW", value: amount });
+        // 금액 설정 (배송비 포함)
+        console.log('금액 설정 - 상품:', productAmount, '배송비:', shippingFee, '총액:', amount);
+        const amountConfig = {
+          currency: "KRW",
+          value: amount
+        };
+        // 배송비가 있으면 별도로 설정
+        if (shippingFee > 0) {
+          amountConfig.shipping = shippingFee;
+        }
+        await widgets.setAmount(amountConfig);
 
         console.log('결제 수단 렌더링...');
         await widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" });

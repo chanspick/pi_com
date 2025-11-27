@@ -8,6 +8,8 @@ class TossPaymentWebScreen extends ConsumerStatefulWidget {
   final String userId;
   final String orderName;
   final int amount;
+  final int productAmount;
+  final int shippingFee;
   final String customerName;
   final String customerEmail;
   final String customerPhone;
@@ -20,6 +22,8 @@ class TossPaymentWebScreen extends ConsumerStatefulWidget {
     required this.userId,
     required this.orderName,
     required this.amount,
+    required this.productAmount,
+    required this.shippingFee,
     required this.customerName,
     required this.customerEmail,
     required this.customerPhone,
