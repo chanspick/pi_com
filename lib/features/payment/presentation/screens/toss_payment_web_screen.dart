@@ -80,25 +80,30 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
       // 이미 네비게이션 중이면 무시
       if (_isNavigating || !mounted) return;
 
+      print('📩 [TossPaymentWeb] Message received: ${event.data}');
+
       final data = event.data;
       if (data is Map) {
         final type = data['type'];
+        print('📩 [TossPaymentWeb] Message type: $type');
 
         if (type == 'TOSS_PAYMENT_SUCCESS') {
           _isNavigating = true;
+          print('✅ [TossPaymentWeb] Payment success - paymentKey: ${data['paymentKey']}');
           _handleSuccess(
-            data['paymentKey'] as String,
-            data['orderId'] as String,
-            data['amount'] as int,
+            data['paymentKey'] as String? ?? '',
+            data['orderId'] as String? ?? widget.orderId,
+            data['amount'] as int? ?? widget.amount,
           );
         } else if (type == 'TOSS_PAYMENT_FAIL') {
           _isNavigating = true;
-          _handleFail(
-            data['code'] as String? ?? 'UNKNOWN',
-            data['message'] as String? ?? '알 수 없는 오류',
-          );
+          final code = data['code'] as String? ?? 'UNKNOWN';
+          final message = data['message'] as String? ?? '알 수 없는 오류';
+          print('❌ [TossPaymentWeb] Payment failed - code: $code, message: $message');
+          _handleFail(code, message);
         } else if (type == 'TOSS_PAYMENT_CANCEL') {
           _isNavigating = true;
+          print('🚫 [TossPaymentWeb] Payment cancelled');
           _handleCancel();
         }
       }
@@ -259,9 +264,27 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
       button.disabled = true;
       button.textContent = '결제 처리 중...';
 
+      console.log('=== requestPayment 시작 ===');
+      console.log('widgets 객체:', widgets);
+      console.log('orderId:', "${widget.orderId}");
+      console.log('orderName:', "${widget.orderName}");
+      console.log('amount:', ${widget.amount});
+
+      if (!widgets) {
+        console.error('widgets 객체가 없습니다!');
+        window.parent.postMessage({
+          type: 'TOSS_PAYMENT_FAIL',
+          code: 'WIDGETS_NOT_INITIALIZED',
+          message: '결제 위젯이 초기화되지 않았습니다.'
+        }, '*');
+        return;
+      }
+
       try {
         // ⚠️ 웹(PC)에서는 Promise 방식 사용 - successUrl/failUrl 설정하지 않음
         // iframe 내에서는 리다이렉트가 불가능하므로 Promise로 결과를 받아야 함
+        console.log('widgets.requestPayment 호출...');
+
         const result = await widgets.requestPayment({
           orderId: "${widget.orderId}",
           orderName: "${widget.orderName}",
@@ -271,10 +294,14 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
           // successUrl, failUrl 제거 - Promise 방식에서는 사용하지 않음
         });
 
-        console.log('Payment result:', result);
+        console.log('=== Payment result ===');
+        console.log('result:', result);
+        console.log('result type:', typeof result);
+        console.log('result JSON:', JSON.stringify(result, null, 2));
 
         // 결제 성공 시 부모 창에 메시지 전송
         if (result && result.paymentKey) {
+          console.log('결제 성공! paymentKey:', result.paymentKey);
           window.parent.postMessage({
             type: 'TOSS_PAYMENT_SUCCESS',
             paymentKey: result.paymentKey,
@@ -292,15 +319,23 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
           }, '*');
         }
       } catch (error) {
-        console.error('Payment error:', error);
+        console.error('=== Payment error ===');
+        console.error('error:', error);
+        console.error('error type:', typeof error);
+        console.error('error.code:', error?.code);
+        console.error('error.message:', error?.message);
+        console.error('error JSON:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
 
-        if (error.code === 'USER_CANCEL' || error.code === 'PAY_PROCESS_CANCELED') {
+        const errorCode = error?.code || 'UNKNOWN_ERROR';
+        const errorMessage = error?.message || String(error) || '결제 처리 중 오류가 발생했습니다.';
+
+        if (errorCode === 'USER_CANCEL' || errorCode === 'PAY_PROCESS_CANCELED') {
           window.parent.postMessage({ type: 'TOSS_PAYMENT_CANCEL' }, '*');
         } else {
           window.parent.postMessage({
             type: 'TOSS_PAYMENT_FAIL',
-            code: error.code || 'UNKNOWN_ERROR',
-            message: error.message || '결제 처리 중 오류가 발생했습니다.'
+            code: errorCode,
+            message: errorMessage
           }, '*');
         }
         button.disabled = false;
