@@ -30,7 +30,7 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Deep Link for Kakao Pay Redirect -->
+            <!-- Deep Link for Payment Redirect (KakaoPay, TossPayments) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -38,6 +38,15 @@
                 <data
                     android:scheme="picom"
                     android:host="payment" />
+            </intent-filter>
+            <!-- TossPayments Redirect -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="picom"
+                    android:host="toss-payment" />
             </intent-filter>
             <!-- Kakao Talk Share/Message -->
             <intent-filter>
@@ -87,5 +96,53 @@
 
         <!-- Kakao SDK: Query KakaoTalk app -->
         <package android:name="com.kakao.talk" />
+
+        <!-- 토스페이먼츠 결제용 카드사/은행/간편결제 앱 -->
+        <!-- 토스 -->
+        <package android:name="viva.republica.toss" />
+        <!-- 카카오페이 -->
+        <package android:name="com.kakao.pay" />
+        <!-- 네이버페이 -->
+        <package android:name="com.nhn.android.search" />
+        <!-- 삼성페이 -->
+        <package android:name="com.samsung.android.spay" />
+        <!-- PAYCO -->
+        <package android:name="com.nhnent.payapp" />
+        <!-- 신한카드 -->
+        <package android:name="com.shcard.smartpay" />
+        <package android:name="com.shinhancard.smartshinhan" />
+        <!-- KB국민카드 -->
+        <package android:name="com.kbcard.cxh.appcard" />
+        <package android:name="com.kbstar.kbbank" />
+        <!-- 현대카드 -->
+        <package android:name="com.hyundaicard.appcard" />
+        <!-- 삼성카드 -->
+        <package android:name="kr.co.samsungcard.mpocket" />
+        <!-- 롯데카드 -->
+        <package android:name="com.lottemembers.android" />
+        <package android:name="com.lcacApp" />
+        <!-- 우리카드 -->
+        <package android:name="com.wooricard.smartapp" />
+        <!-- 하나카드 -->
+        <package android:name="com.hanaskcard.paycla" />
+        <!-- NH농협카드 -->
+        <package android:name="nh.smart.nhallonepay" />
+        <!-- BC카드 -->
+        <package android:name="com.bccard.paybooc" />
+        <!-- 씨티카드 -->
+        <package android:name="kr.co.citibank.citimobile" />
+        <!-- 은행 앱 -->
+        <package android:name="com.kbankwith.smartbank" /> <!-- 케이뱅크 -->
+        <package android:name="com.kakaobank.channel" /> <!-- 카카오뱅크 -->
+        <package android:name="com.wooribank.smart.npib" /> <!-- 우리은행 -->
+        <package android:name="com.shinhan.sbanking" /> <!-- 신한은행 -->
+        <package android:name="com.hanabank.ebk.channel.android.hananbank" /> <!-- 하나은행 -->
+        <package android:name="com.epost.psf.sdsi" /> <!-- 우체국 -->
+        <!-- ISP/페이북 -->
+        <package android:name="kvp.jjy.MispAndroid320" />
+        <!-- 기타 결제앱 -->
+        <package android:name="com.lguplus.paynow" /> <!-- 페이나우 -->
+        <package android:name="com.ssg.serviceapp.android.egiftcertificate" /> <!-- SSG페이 -->
+        <package android:name="com.nhnent.payapp" /> <!-- 페이코 -->
     </queries>
 </manifest>
