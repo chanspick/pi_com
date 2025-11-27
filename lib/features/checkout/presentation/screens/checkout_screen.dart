@@ -682,6 +682,32 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     String orderId,
   ) async {
     try {
+      // 🔍 디버깅: 주문 생성 전 상태 확인
+      final currentUser = ref.read(currentUserProvider);
+      print('═══════════════════════════════════════════════════════');
+      print('🛒 주문 생성 시작');
+      print('📋 Order ID: $orderId');
+      print('👤 userId (파라미터): $userId');
+      print('👤 currentUser?.uid: ${currentUser?.uid}');
+      print('🔐 인증 상태: ${currentUser != null ? "로그인됨" : "로그아웃됨"}');
+      print('📍 배송지: $shippingAddress');
+      print('📦 장바구니 아이템 수: ${cartItems.length}');
+      for (int i = 0; i < cartItems.length; i++) {
+        final item = cartItems[i];
+        print('  [$i] ${item.partName}');
+        print('      - listingId: ${item.listingId}');
+        print('      - sellerId: ${item.sellerId}');
+        print('      - sellerName: ${item.sellerName}');
+        print('      - price: ${item.price}');
+        print('      - quantity: ${item.quantity}');
+      }
+      print('═══════════════════════════════════════════════════════');
+
+      // userId 불일치 체크
+      if (currentUser?.uid != userId) {
+        print('⚠️ 경고: userId 불일치! 파라미터($userId) != currentUser(${currentUser?.uid})');
+      }
+
       // 1. 주문 생성 (가장 중요 - 실패 시 결제 취소 필요)
       await ref.read(purchaseUseCaseProvider).call(
         userId: userId,

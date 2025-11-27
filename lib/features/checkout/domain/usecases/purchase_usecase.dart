@@ -31,6 +31,8 @@ class PurchaseUseCase {
     required List<CartItemEntity> items,
     required String shippingAddress,
   }) async {
+    print('🔍 [PurchaseUseCase] 시작 - userId: $userId, items: ${items.length}개');
+
     // 판매자별로 아이템 그룹화
     final Map<String, List<CartItemEntity>> itemsBySeller = {};
     for (final item in items) {
@@ -39,6 +41,8 @@ class PurchaseUseCase {
       }
       itemsBySeller[item.sellerId]!.add(item);
     }
+
+    print('🔍 [PurchaseUseCase] 판매자 수: ${itemsBySeller.length}');
 
     final timestamp = DateTime.now().millisecondsSinceEpoch;
 
@@ -65,8 +69,27 @@ class PurchaseUseCase {
         shippingAddress: shippingAddress,
       );
 
+      // 🔍 디버깅: 주문 데이터 확인
+      print('═══════════════════════════════════════════════════════');
+      print('📝 [PurchaseUseCase] 주문 생성 시도');
+      print('   orderId: ${order.orderId}');
+      print('   userId: ${order.userId}');
+      print('   sellerId: ${order.sellerId}');
+      print('   sellerName: ${order.sellerName}');
+      print('   totalPrice: ${order.totalPrice}');
+      print('   shippingFee: ${order.shippingFee}');
+      print('   items: ${order.items.length}개');
+      print('═══════════════════════════════════════════════════════');
+
       // 1. 판매자별 주문 생성
-      await _orderRepository.createOrder(order);
+      try {
+        await _orderRepository.createOrder(order);
+        print('✅ [PurchaseUseCase] 주문 생성 성공: ${order.orderId}');
+      } catch (e) {
+        print('❌ [PurchaseUseCase] 주문 생성 실패: ${order.orderId}');
+        print('   에러: $e');
+        rethrow;
+      }
 
       // ✅ 구매자에게 결제 완료 알림 발송
       await _notificationHelper.notifyPaymentCompleted(
