@@ -285,14 +285,34 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
         // iframe 내에서는 리다이렉트가 불가능하므로 Promise로 결과를 받아야 함
         console.log('widgets.requestPayment 호출...');
 
-        const result = await widgets.requestPayment({
+        // 전화번호에서 특수문자 제거 (토스페이먼츠는 숫자만 허용)
+        const rawPhone = "${widget.customerPhone}";
+        const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
+        console.log('Phone sanitized:', rawPhone, '->', cleanPhone);
+
+        // 결제 요청 파라미터 (빈 값은 제외)
+        const paymentParams = {
           orderId: "${widget.orderId}",
-          orderName: "${widget.orderName}",
-          customerName: "${widget.customerName}",
-          customerEmail: "${widget.customerEmail}",
-          customerMobilePhone: "${widget.customerPhone}"
-          // successUrl, failUrl 제거 - Promise 방식에서는 사용하지 않음
-        });
+          orderName: "${widget.orderName}"
+        };
+
+        // 선택적 파라미터 추가 (빈 값이 아닌 경우만)
+        const customerName = "${widget.customerName}";
+        const customerEmail = "${widget.customerEmail}";
+
+        if (customerName && customerName.trim()) {
+          paymentParams.customerName = customerName;
+        }
+        if (customerEmail && customerEmail.trim()) {
+          paymentParams.customerEmail = customerEmail;
+        }
+        if (cleanPhone && cleanPhone.length >= 10) {
+          paymentParams.customerMobilePhone = cleanPhone;
+        }
+
+        console.log('Payment params:', paymentParams);
+
+        const result = await widgets.requestPayment(paymentParams);
 
         console.log('=== Payment result ===');
         console.log('result:', result);

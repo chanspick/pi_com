@@ -291,15 +291,36 @@ class _TossPaymentWebViewScreenState
       }
 
       try {
-        await widgets.requestPayment({
+        // 전화번호에서 특수문자 제거 (토스페이먼츠는 숫자만 허용)
+        const rawPhone = "${widget.customerPhone}";
+        const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
+        console.log('Phone sanitized:', rawPhone, '->', cleanPhone);
+
+        // 결제 요청 파라미터
+        const paymentParams = {
           orderId: "${widget.orderId}",
           orderName: "${widget.orderName}",
-          customerName: "${widget.customerName}",
-          customerEmail: "${widget.customerEmail}",
-          customerMobilePhone: "${widget.customerPhone}",
           successUrl: "${widget.successUrl}",
           failUrl: "${widget.failUrl}"
-        });
+        };
+
+        // 선택적 파라미터 추가 (빈 값이 아닌 경우만)
+        const customerName = "${widget.customerName}";
+        const customerEmail = "${widget.customerEmail}";
+
+        if (customerName && customerName.trim()) {
+          paymentParams.customerName = customerName;
+        }
+        if (customerEmail && customerEmail.trim()) {
+          paymentParams.customerEmail = customerEmail;
+        }
+        if (cleanPhone && cleanPhone.length >= 10) {
+          paymentParams.customerMobilePhone = cleanPhone;
+        }
+
+        console.log('Payment params:', paymentParams);
+
+        await widgets.requestPayment(paymentParams);
         console.log('Payment request completed');
       } catch (error) {
         console.error('Payment request error:', error);
