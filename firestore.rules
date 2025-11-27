@@ -73,7 +73,13 @@ service cloud.firestore {
     // ============================================
     match /base_parts/{basePartId} {
       allow read: if true; // 모든 사용자 읽기 가능 (공개 데이터)
-      allow write: if isAdmin(); // 관리자만 수정 가능
+      allow create, delete: if isAdmin(); // 관리자만 생성/삭제 가능
+      // 관리자는 모든 필드 수정 가능
+      // 인증된 사용자는 통계 필드(lowestPrice, averagePrice, listingCount)만 수정 가능
+      allow update: if isAdmin() ||
+                       (isAuthenticated() &&
+                        request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['lowestPrice', 'averagePrice', 'listingCount']));
     }
 
     // ============================================
@@ -82,11 +88,13 @@ service cloud.firestore {
     match /listings/{listingId} {
       allow read: if true; // 모든 사용자 읽기 가능
       allow create: if isAuthenticated(); // 인증된 사용자만 생성
-      // 수정: 판매자 본인 또는 구매자가 상태(sold)를 업데이트할 수 있도록 허용
+      // 수정: 판매자 본인, 또는 인증된 사용자가 sold 상태로 변경 가능
       allow update: if isAuthenticated() &&
                        (resource.data.sellerId == request.auth.uid || // 판매자 본인
-                        request.resource.data.status == 'sold' || // 구매 완료 시 상태 변경
-                        isAdmin());
+                        isAdmin() ||
+                        // 구매자가 상태를 sold로 변경하는 경우 허용
+                        (request.resource.data.status == 'sold' &&
+                         resource.data.status == 'available'));
       allow delete: if isAuthenticated() &&
                        (resource.data.sellerId == request.auth.uid || isAdmin()); // 본인 또는 관리자만 삭제
     }
