@@ -43,12 +43,12 @@ class FavoritesScreen extends ConsumerWidget {
           }
 
           return GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
+            padding: const EdgeInsets.all(12),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: MediaQuery.of(context).size.width > 600 ? 4 : 2,
               childAspectRatio: 0.7,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
             ),
             itemCount: listings.length,
             itemBuilder: (context, index) {
@@ -111,7 +111,7 @@ class _FavoriteCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 이미지 영역 (3:2 비율)
+            // 이미지 영역 (flex: 3)
             Expanded(
               flex: 3,
               child: Stack(
@@ -125,15 +125,22 @@ class _FavoriteCard extends ConsumerWidget {
                               fit: BoxFit.cover,
                               width: double.infinity,
                               height: double.infinity,
-                              placeholder: (context, url) => Container(color: Colors.grey[200]),
-                              errorWidget: (context, url, error) => Container(
+                              placeholder: (context, url) => Container(
                                 color: Colors.grey[200],
-                                child: const Icon(Icons.broken_image, size: 40, color: Colors.grey),
+                                child: const Center(
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
                               ),
+                              errorWidget: (context, url, error) => Container(
+                                color: Colors.grey[300],
+                                child: const Icon(Icons.image, size: 40, color: Colors.grey),
+                              ),
+                              memCacheWidth: 400,
+                              maxWidthDiskCache: 800,
                             )
                           : Container(
-                              color: Colors.grey[200],
-                              child: const Icon(Icons.image_not_supported, size: 40, color: Colors.grey),
+                              color: Colors.grey[300],
+                              child: const Icon(Icons.image, size: 40, color: Colors.grey),
                             ),
                     ),
                   ),
@@ -162,7 +169,11 @@ class _FavoriteCard extends ConsumerWidget {
                         },
                         child: const Padding(
                           padding: EdgeInsets.all(6),
-                          child: Icon(Icons.favorite, size: 18, color: Colors.red),
+                          child: Icon(
+                            Icons.favorite,
+                            size: 18,
+                            color: Colors.red,
+                          ),
                         ),
                       ),
                     ),
@@ -170,18 +181,18 @@ class _FavoriteCard extends ConsumerWidget {
                   // 판매 완료 오버레이
                   if (listing.status == ListingStatus.sold)
                     Positioned.fill(
-                      child: ClipRRect(
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                        child: Container(
+                      child: Container(
+                        decoration: const BoxDecoration(
                           color: Colors.black54,
-                          child: const Center(
-                            child: Text(
-                              '판매 완료',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                        ),
+                        child: const Center(
+                          child: Text(
+                            '판매 완료',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
@@ -190,7 +201,8 @@ class _FavoriteCard extends ConsumerWidget {
                 ],
               ),
             ),
-            // 상품 정보 영역 (2:3 비율)
+
+            // 상품 정보 영역 (flex: 2)
             Expanded(
               flex: 2,
               child: Padding(
