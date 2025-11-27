@@ -59,6 +59,7 @@ dependencies:
   kakao_flutter_sdk_user: ^1.9.6  # 카카오 로그인
   flutter_dotenv: ^5.1.0  # 환경 변수 관리
   js: ^0.7.1  # JavaScript interop for web
+  tosspayments_widget_sdk_flutter: ^2.0.3  # 토스페이먼츠 결제위젯 SDK
 dev_dependencies:
   flutter_test:
     sdk: flutter
