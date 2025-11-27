@@ -345,13 +345,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         ? _selectedAddress!.fullAddressOneLine
         : 'DragonBall Storage';
 
-    // 웹에서는 테스트 모드로 바로 주문 처리
-    if (kIsWeb) {
-      await _processDirectOrder(userId, cartItems, shippingAddress);
-      return;
-    }
-
-    // 모바일: 결제 수단별 처리
+    // 모바일/웹 공통: 결제 수단별 처리
     if (_selectedPaymentMethod == PaymentMethod.kakaoPay) {
       await _processKakaoPayment(userId, cartItems, shippingAddress);
     } else if (_selectedPaymentMethod == PaymentMethod.tossPayments) {
