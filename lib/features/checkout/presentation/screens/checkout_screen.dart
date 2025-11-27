@@ -557,6 +557,16 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       // 6. 토스페이먼츠 결제 화면 열기 (웹/모바일 분기)
       if (!mounted) return;
 
+      // 디버깅: 결제 화면으로 전달할 값 확인
+      print('💰 [Checkout] === 토스페이먼츠 결제 시작 ===');
+      print('💰 [Checkout] orderId: $orderId');
+      print('💰 [Checkout] userId: $userId');
+      print('💰 [Checkout] orderName: $itemName');
+      print('💰 [Checkout] amount: $totalAmount');
+      print('💰 [Checkout] customerName: $customerName');
+      print('💰 [Checkout] customerEmail: $customerEmail');
+      print('💰 [Checkout] customerPhone: $customerPhone');
+
       final Map<String, dynamic>? paymentResult;
 
       if (kIsWeb) {

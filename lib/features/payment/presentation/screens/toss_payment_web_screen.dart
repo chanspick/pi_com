@@ -48,6 +48,16 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
   @override
   void initState() {
     super.initState();
+    // 디버깅: 전달받은 값 확인
+    print('🔍 [TossPaymentWeb] === Widget 값 확인 ===');
+    print('🔍 [TossPaymentWeb] orderId: ${widget.orderId}');
+    print('🔍 [TossPaymentWeb] userId: ${widget.userId}');
+    print('🔍 [TossPaymentWeb] orderName: ${widget.orderName}');
+    print('🔍 [TossPaymentWeb] amount: ${widget.amount}');
+    print('🔍 [TossPaymentWeb] customerName: ${widget.customerName}');
+    print('🔍 [TossPaymentWeb] customerEmail: ${widget.customerEmail}');
+    print('🔍 [TossPaymentWeb] customerPhone: ${widget.customerPhone}');
+
     _viewId = 'toss-payment-${DateTime.now().millisecondsSinceEpoch}';
     _registerWebView();
     _setupMessageListener();
