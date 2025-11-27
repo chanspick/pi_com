@@ -133,27 +133,32 @@ class _WebNavBarV2State extends ConsumerState<WebNavBarV2> {
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Expanded(
-            child: TextField(
-              controller: _searchController,
-              style: TextStyle(fontSize: fontSize),
-              decoration: InputDecoration(
-                hintText: hintText,
-                hintStyle: TextStyle(fontSize: fontSize),
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 12 : 16,
+            child: Center(
+              child: TextField(
+                controller: _searchController,
+                style: TextStyle(fontSize: fontSize),
+                textAlignVertical: TextAlignVertical.center,
+                decoration: InputDecoration(
+                  hintText: hintText,
+                  hintStyle: TextStyle(fontSize: fontSize, color: Colors.grey),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 12 : 16,
+                  ),
+                  isDense: true,
                 ),
+                onSubmitted: (value) {
+                  if (value.trim().isNotEmpty) {
+                    // GoRouter가 자동으로 인코딩 처리
+                    context.go('${Routes.partShop}?basePartSearch=${value.trim()}');
+                  } else {
+                    context.go(Routes.partShop);
+                  }
+                },
               ),
-              onSubmitted: (value) {
-                if (value.trim().isNotEmpty) {
-                  // GoRouter가 자동으로 인코딩 처리
-                  context.go('${Routes.partShop}?basePartSearch=${value.trim()}');
-                } else {
-                  context.go(Routes.partShop);
-                }
-              },
             ),
           ),
           Container(

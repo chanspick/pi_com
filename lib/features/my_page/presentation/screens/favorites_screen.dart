@@ -182,9 +182,9 @@ class _FavoriteCard extends ConsumerWidget {
                   if (listing.status == ListingStatus.sold)
                     Positioned.fill(
                       child: Container(
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           color: Colors.black54,
-                          borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
+                          borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                         ),
                         child: const Center(
                           child: Text(

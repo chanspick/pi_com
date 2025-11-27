@@ -50,7 +50,7 @@
 	<key>KAKAO_APP_KEY</key>
 	<string>8e75eecf0338c9b84861f8000b664336</string>
 
-	<!-- Kakao URL Scheme -->
+	<!-- URL Schemes (Kakao, App Deep Link) -->
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -59,16 +59,71 @@
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>kakao8e75eecf0338c9b84861f8000b664336</string>
+				<string>picom</string>
 			</array>
 		</dict>
 	</array>
 
-	<!-- Query Schemes for KakaoTalk -->
+	<!-- Query Schemes for Payment Apps (Kakao, Toss, Card Companies, Banks) -->
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
+		<!-- 카카오 -->
 		<string>kakaokompassauth</string>
 		<string>kakaolink</string>
 		<string>kakao8e75eecf0338c9b84861f8000b664336</string>
+		<string>kakaotalk</string>
+		<string>kakaopay</string>
+		<!-- 토스 -->
+		<string>supertoss</string>
+		<string>tosspay</string>
+		<!-- 네이버페이 -->
+		<string>naversearchapp</string>
+		<string>naverpay</string>
+		<!-- 삼성페이 -->
+		<string>samsungpay</string>
+		<!-- PAYCO -->
+		<string>payco</string>
+		<!-- 신한카드 -->
+		<string>shinhan-sr-ansimclick</string>
+		<string>smshinhanansimclick</string>
+		<!-- KB국민카드 -->
+		<string>kb-acp</string>
+		<string>kb-bankpay</string>
+		<string>kbbank</string>
+		<!-- 현대카드 -->
+		<string>hdcardappcardansimclick</string>
+		<string>smhyundaiansimclick</string>
+		<!-- 삼성카드 -->
+		<string>mpocket.online.ansimclick</string>
+		<!-- 롯데카드 -->
+		<string>lotteappcard</string>
+		<string>lottesmartpay</string>
+		<!-- 우리카드 -->
+		<string>com.wooricard.wcard</string>
+		<string>newsmartpib</string>
+		<!-- 하나카드 -->
+		<string>cloudpay</string>
+		<string>hanawalletmembers</string>
+		<!-- NH농협카드 -->
+		<string>nhallonepayansimclick</string>
+		<string>nonghyupcardansimclick</string>
+		<!-- BC카드 -->
+		<string>ispmobile</string>
+		<string>paybooc</string>
+		<!-- 씨티카드 -->
+		<string>citimobileapp</string>
+		<!-- 은행 앱 -->
+		<string>kftc-bankpay</string>
+		<string>kakaobank</string>
+		<string>kbankauth</string>
+		<!-- 페이북/앱카드 -->
+		<string>ansimclickipcollect</string>
+		<string>ansimclickscard</string>
+		<string>vguardstart</string>
+		<!-- 기타 -->
+		<string>lpayapp</string>
+		<string>ssgpay</string>
+		<string>chai</string>
 	</array>
 </dict>
 </plist>

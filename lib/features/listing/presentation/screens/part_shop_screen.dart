@@ -32,13 +32,34 @@ class _PartShopScreenState
   final ScrollController _scrollController = ScrollController();
   bool _isLoadingMore = false;
 
+  // 이전 검색어를 저장하여 변경 여부 확인
+  String? _previousBasePartSearch;
+  String? _previousCategory;
+
   @override
   void initState() {
     super.initState();
+    _previousBasePartSearch = widget.initialBasePartSearch;
+    _previousCategory = widget.initialCategory;
     // URL 파라미터로 받은 카테고리 및 검색어 설정
     _initializeCategory();
     // 무한 스크롤 리스너 추가
     _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void didUpdateWidget(covariant PartShopScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // URL 파라미터가 변경되었는지 확인
+    final searchChanged = widget.initialBasePartSearch != _previousBasePartSearch;
+    final categoryChanged = widget.initialCategory != _previousCategory;
+
+    if (searchChanged || categoryChanged) {
+      _previousBasePartSearch = widget.initialBasePartSearch;
+      _previousCategory = widget.initialCategory;
+      // 검색어 또는 카테고리가 변경되면 다시 초기화
+      _initializeCategory();
+    }
   }
 
   @override

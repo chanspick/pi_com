@@ -538,6 +538,292 @@ app.post("/payment/cancel", async (req, res) => {
     }
 });
 
+// ============================================================================
+// 토스페이먼츠 API
+// ============================================================================
+
+const TOSS_PAYMENTS_API_URL = "https://api.tosspayments.com/v1/payments";
+
+// 토스페이먼츠 설정 가져오기
+// Firebase Console에서 설정: firebase functions:config:set tosspayments.secret_key="YOUR_SECRET_KEY"
+const getTossPaymentsConfig = () => {
+  const config = functions.config();
+  return {
+    // 테스트 시크릿 키 (실제 배포 시 환경변수로 교체)
+    secretKey: config.tosspayments?.secret_key || process.env.TOSS_SECRET_KEY || "test_sk_zXLkKEypNArWmo50nX3lmeaxYG5R",
+  };
+};
+
+// 토스페이먼츠 API 타입 정의
+interface TossPaymentConfirmRequest {
+  paymentKey: string;
+  orderId: string;
+  amount: number;
+}
+
+interface TossPaymentCancelRequest {
+  paymentKey: string;
+  cancelReason: string;
+  cancelAmount?: number;
+}
+
+interface TossPaymentResponse {
+  paymentKey: string;
+  orderId: string;
+  orderName: string;
+  status: string;
+  method: string;
+  totalAmount: number;
+  balanceAmount: number;
+  suppliedAmount: number;
+  vat: number;
+  requestedAt: string;
+  approvedAt?: string;
+  card?: {
+    issuerCode: string;
+    acquirerCode: string;
+    number: string;
+    installmentPlanMonths: number;
+    isInterestFree: boolean;
+    approveNo: string;
+    cardType: string;
+    ownerType: string;
+  };
+  easyPay?: {
+    provider: string;
+    amount: number;
+    discountAmount: number;
+  };
+  transfer?: {
+    bankCode: string;
+    settlementStatus: string;
+  };
+  virtualAccount?: {
+    accountNumber: string;
+    accountType: string;
+    bankCode: string;
+    customerName: string;
+    dueDate: string;
+    expired: boolean;
+    settlementStatus: string;
+  };
+  mobilePhone?: {
+    carrier: string;
+    customerMobilePhone: string;
+    settlementStatus: string;
+  };
+}
+
+/**
+ * 토스페이먼츠 결제 승인 API
+ * POST /toss-payment/confirm
+ */
+app.post("/toss-payment/confirm", async (req, res) => {
+  try {
+    const {paymentKey, orderId, amount} = req.body as TossPaymentConfirmRequest;
+
+    // 필수 파라미터 검증
+    if (!paymentKey || !orderId || !amount) {
+      res.status(400).json({
+        error: "Missing required parameters",
+        required: ["paymentKey", "orderId", "amount"],
+      });
+      return;
+    }
+
+    const tossConfig = getTossPaymentsConfig();
+
+    if (!tossConfig.secretKey) {
+      console.error("Toss Payments Secret Key not configured");
+      res.status(500).json({
+        error: "Payment service not configured",
+        message: "Toss Secret Key is missing. Please set it using: firebase functions:config:set tosspayments.secret_key=YOUR_KEY",
+      });
+      return;
+    }
+
+    // Base64 인코딩된 시크릿 키 생성
+    const encodedKey = Buffer.from(`${tossConfig.secretKey}:`).toString("base64");
+
+    // 토스페이먼츠 결제 승인 API 호출
+    const response = await axios.post<TossPaymentResponse>(
+      `${TOSS_PAYMENTS_API_URL}/confirm`,
+      {
+        paymentKey,
+        orderId,
+        amount,
+      },
+      {
+        headers: {
+          "Authorization": `Basic ${encodedKey}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("Toss Payment confirmed:", {
+      paymentKey: response.data.paymentKey,
+      orderId: response.data.orderId,
+      amount: response.data.totalAmount,
+      method: response.data.method,
+    });
+
+    // Firestore에 결제 정보 저장
+    await admin.firestore().collection("toss_payments").doc(paymentKey).set({
+      paymentKey: response.data.paymentKey,
+      orderId: response.data.orderId,
+      orderName: response.data.orderName,
+      status: response.data.status,
+      method: response.data.method,
+      totalAmount: response.data.totalAmount,
+      balanceAmount: response.data.balanceAmount,
+      suppliedAmount: response.data.suppliedAmount,
+      vat: response.data.vat,
+      requestedAt: response.data.requestedAt,
+      approvedAt: response.data.approvedAt || null,
+      card: response.data.card || null,
+      easyPay: response.data.easyPay || null,
+      transfer: response.data.transfer || null,
+      virtualAccount: response.data.virtualAccount || null,
+      mobilePhone: response.data.mobilePhone || null,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error("Toss Payment confirm error:", error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({
+      error: "Payment confirmation failed",
+      code: error.response?.data?.code || "UNKNOWN_ERROR",
+      message: error.response?.data?.message || error.message,
+    });
+  }
+});
+
+/**
+ * 토스페이먼츠 결제 취소 API
+ * POST /toss-payment/cancel
+ */
+app.post("/toss-payment/cancel", async (req, res) => {
+  try {
+    const {paymentKey, cancelReason, cancelAmount} = req.body as TossPaymentCancelRequest;
+
+    // 필수 파라미터 검증
+    if (!paymentKey || !cancelReason) {
+      res.status(400).json({
+        error: "Missing required parameters",
+        required: ["paymentKey", "cancelReason"],
+      });
+      return;
+    }
+
+    const tossConfig = getTossPaymentsConfig();
+
+    if (!tossConfig.secretKey) {
+      res.status(500).json({error: "Payment service not configured"});
+      return;
+    }
+
+    const encodedKey = Buffer.from(`${tossConfig.secretKey}:`).toString("base64");
+
+    // 취소 요청 데이터
+    const cancelData: {cancelReason: string; cancelAmount?: number} = {cancelReason};
+    if (cancelAmount) {
+      cancelData.cancelAmount = cancelAmount;
+    }
+
+    // 토스페이먼츠 결제 취소 API 호출
+    const response = await axios.post(
+      `${TOSS_PAYMENTS_API_URL}/${paymentKey}/cancel`,
+      cancelData,
+      {
+        headers: {
+          "Authorization": `Basic ${encodedKey}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    console.log("Toss Payment cancelled:", {
+      paymentKey,
+      cancelReason,
+      cancelAmount,
+    });
+
+    // Firestore에 취소 정보 업데이트
+    await admin.firestore().collection("toss_payments").doc(paymentKey).update({
+      status: "CANCELED",
+      cancelledAt: admin.firestore.FieldValue.serverTimestamp(),
+      cancelReason,
+      cancelAmount: cancelAmount || null,
+    });
+
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error("Toss Payment cancel error:", error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({
+      error: "Payment cancellation failed",
+      code: error.response?.data?.code || "UNKNOWN_ERROR",
+      message: error.response?.data?.message || error.message,
+    });
+  }
+});
+
+/**
+ * 토스페이먼츠 결제 조회 API
+ * GET /toss-payment/:paymentKey
+ */
+app.get("/toss-payment/:paymentKey", async (req, res) => {
+  try {
+    const {paymentKey} = req.params;
+
+    if (!paymentKey) {
+      res.status(400).json({error: "Missing paymentKey"});
+      return;
+    }
+
+    const tossConfig = getTossPaymentsConfig();
+    const encodedKey = Buffer.from(`${tossConfig.secretKey}:`).toString("base64");
+
+    const response = await axios.get<TossPaymentResponse>(
+      `${TOSS_PAYMENTS_API_URL}/${paymentKey}`,
+      {
+        headers: {
+          "Authorization": `Basic ${encodedKey}`,
+        },
+      }
+    );
+
+    res.status(200).json(response.data);
+  } catch (error: any) {
+    console.error("Toss Payment query error:", error.response?.data || error.message);
+    res.status(error.response?.status || 500).json({
+      error: "Payment query failed",
+      code: error.response?.data?.code || "UNKNOWN_ERROR",
+      message: error.response?.data?.message || error.message,
+    });
+  }
+});
+
+/**
+ * 토스페이먼츠 결제 리다이렉트 - 성공
+ * GET /toss-payment-redirect/success
+ */
+app.get("/toss-payment-redirect/success", (req, res) => {
+  const {paymentKey, orderId, amount} = req.query;
+  // 앱으로 리다이렉트
+  res.redirect(`picom://toss-payment/success?paymentKey=${paymentKey}&orderId=${orderId}&amount=${amount}`);
+});
+
+/**
+ * 토스페이먼츠 결제 리다이렉트 - 실패
+ * GET /toss-payment-redirect/fail
+ */
+app.get("/toss-payment-redirect/fail", (req, res) => {
+  const {code, message, orderId} = req.query;
+  res.redirect(`picom://toss-payment/fail?code=${code}&message=${encodeURIComponent(String(message || ""))}&orderId=${orderId}`);
+});
+
 // Express 앱을 Firebase Function으로 export
 export const api = functions.region("asia-northeast3").https.onRequest(app);
 
