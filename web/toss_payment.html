@@ -167,10 +167,40 @@
       };
     }
 
+    // 고객 정보 검증
+    function validateCustomerInfo(config) {
+      const errors = [];
+
+      // 이메일 형식 검증 (선택 사항이지만 제공시 형식 확인)
+      if (config.customerEmail && config.customerEmail.trim()) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(config.customerEmail)) {
+          console.warn('⚠️ 이메일 형식이 올바르지 않습니다:', config.customerEmail);
+          config.customerEmail = ''; // 잘못된 이메일은 제외
+        }
+      }
+
+      // 전화번호 검증 (10-11자리 숫자만 허용)
+      if (config.customerPhone) {
+        const cleanPhone = config.customerPhone.replace(/[^0-9]/g, '');
+        if (cleanPhone.length < 10 || cleanPhone.length > 11) {
+          console.warn('⚠️ 전화번호 형식이 올바르지 않습니다:', config.customerPhone);
+          config.customerPhone = ''; // 잘못된 번호는 제외
+        } else {
+          config.customerPhone = cleanPhone;
+        }
+      }
+
+      return errors;
+    }
+
     // 결제 위젯 초기화
     async function initPayment(config) {
       console.log('=== 결제 위젯 초기화 시작 ===');
       console.log('config:', JSON.stringify(config, null, 2));
+
+      // 고객 정보 검증
+      validateCustomerInfo(config);
 
       paymentConfig = config;
       const button = document.getElementById('payment-button');
@@ -197,8 +227,14 @@
         // 토스페이먼츠 SDK 초기화
         const tossPayments = TossPayments(config.clientKey);
 
-        // 위젯 생성 (회원 결제)
-        widgets = tossPayments.widgets({ customerKey: config.customerKey });
+        // 위젯 생성
+        // 회원 결제: customerKey 사용
+        // 비회원 결제: TossPayments.ANONYMOUS 사용
+        const isAnonymous = !config.customerKey || config.customerKey === 'ANONYMOUS';
+        widgets = tossPayments.widgets({
+          customerKey: isAnonymous ? TossPayments.ANONYMOUS : config.customerKey
+        });
+        console.log('결제 모드:', isAnonymous ? '비회원' : '회원');
 
         // 금액 설정
         await widgets.setAmount({ currency: 'KRW', value: config.amount });
@@ -246,8 +282,32 @@
           } catch (error) {
             console.error('결제 요청 에러:', error);
             const code = error.code || 'UNKNOWN_ERROR';
-            const message = error.message || '결제 처리 중 오류가 발생했습니다.';
+            let message = error.message || '결제 처리 중 오류가 발생했습니다.';
 
+            // 토스페이먼츠 에러 코드별 사용자 친화적 메시지
+            const errorMessages = {
+              'USER_CANCEL': '결제가 취소되었습니다.',
+              'PAY_PROCESS_CANCELED': '결제가 취소되었습니다.',
+              'PAY_PROCESS_ABORTED': '결제가 중단되었습니다.',
+              'EXCEED_MAX_CARD_INSTALLMENT_PLAN': '할부 개월 수가 초과되었습니다.',
+              'NOT_SUPPORTED_CARD_COMPANY': '지원하지 않는 카드사입니다.',
+              'INVALID_CARD_COMPANY': '유효하지 않은 카드사입니다.',
+              'RESTRICTED_CARD_COMPANY': '사용이 제한된 카드사입니다.',
+              'INVALID_CUSTOMER_KEY': '고객 정보가 올바르지 않습니다.',
+              'BELOW_MINIMUM_AMOUNT': '최소 결제 금액 미만입니다.',
+              'EXCEED_MAX_AMOUNT': '최대 결제 금액을 초과했습니다.',
+              'DUPLICATED_ORDER_ID': '이미 처리된 주문입니다.',
+              'INVALID_ORDER_ID': '주문 번호가 올바르지 않습니다.',
+              'INVALID_ORDER_NAME': '주문명이 올바르지 않습니다.',
+              'FAILED_PAYMENT_INTERNAL_SYSTEM_PROCESSING': '결제 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+              'FAILED_INTERNAL_SYSTEM_PROCESSING': '시스템 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+            };
+
+            if (errorMessages[code]) {
+              message = errorMessages[code];
+            }
+
+            // 취소 처리
             if (code === 'USER_CANCEL' || code === 'PAY_PROCESS_CANCELED') {
               window.parent.postMessage(JSON.stringify({ type: 'TOSS_PAYMENT_CANCEL' }), '*');
             } else {

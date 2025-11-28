@@ -226,8 +226,13 @@ class _TossPaymentWebViewScreenState
         console.log('Creating TossPayments instance...');
         const tossPayments = TossPayments(clientKey);
 
-        console.log('Creating widgets...');
-        widgets = tossPayments.widgets({ customerKey: customerKey });
+        // 회원/비회원 결제 처리
+        // 비회원 결제: TossPayments.ANONYMOUS 사용
+        const isAnonymous = !customerKey || customerKey === 'ANONYMOUS';
+        console.log('Creating widgets... (', isAnonymous ? '비회원' : '회원', '결제)');
+        widgets = tossPayments.widgets({
+          customerKey: isAnonymous ? TossPayments.ANONYMOUS : customerKey
+        });
 
         // 결제 금액 설정
         console.log('Setting amount...');
@@ -291,10 +296,15 @@ class _TossPaymentWebViewScreenState
       }
 
       try {
-        // 전화번호에서 특수문자 제거 (토스페이먼츠는 숫자만 허용)
+        // 전화번호에서 특수문자 제거 (토스페이먼츠는 10-11자리 숫자만 허용)
         const rawPhone = "${widget.customerPhone}";
         const cleanPhone = rawPhone.replace(/[^0-9]/g, '');
         console.log('Phone sanitized:', rawPhone, '->', cleanPhone);
+
+        // 이메일 형식 검증
+        const customerEmail = "${widget.customerEmail}";
+        const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+\$/;
+        const isValidEmail = customerEmail && emailRegex.test(customerEmail);
 
         // 결제 요청 파라미터
         const paymentParams = {
@@ -304,17 +314,16 @@ class _TossPaymentWebViewScreenState
           failUrl: "${widget.failUrl}"
         };
 
-        // 선택적 파라미터 추가 (빈 값이 아닌 경우만)
+        // 선택적 파라미터 추가 (유효한 값만)
         const customerName = "${widget.customerName}";
-        const customerEmail = "${widget.customerEmail}";
 
         if (customerName && customerName.trim()) {
           paymentParams.customerName = customerName;
         }
-        if (customerEmail && customerEmail.trim()) {
+        if (isValidEmail) {
           paymentParams.customerEmail = customerEmail;
         }
-        if (cleanPhone && cleanPhone.length >= 10) {
+        if (cleanPhone && cleanPhone.length >= 10 && cleanPhone.length <= 11) {
           paymentParams.customerMobilePhone = cleanPhone;
         }
 
@@ -327,16 +336,30 @@ class _TossPaymentWebViewScreenState
         console.error('Error code:', error.code);
         console.error('Error message:', error.message);
 
-        if (error.code === 'USER_CANCEL') {
-          // 사용자가 결제를 취소한 경우
+        // 토스페이먼츠 에러 코드별 사용자 친화적 메시지
+        const errorMessages = {
+          'USER_CANCEL': '사용자가 결제를 취소했습니다',
+          'PAY_PROCESS_CANCELED': '결제가 취소되었습니다',
+          'PAY_PROCESS_ABORTED': '결제가 중단되었습니다',
+          'EXCEED_MAX_CARD_INSTALLMENT_PLAN': '할부 개월 수가 초과되었습니다',
+          'NOT_SUPPORTED_CARD_COMPANY': '지원하지 않는 카드사입니다',
+          'INVALID_CARD_COMPANY': '유효하지 않은 카드사입니다',
+          'RESTRICTED_CARD_COMPANY': '사용이 제한된 카드사입니다',
+          'INVALID_CUSTOMER_KEY': '고객 정보가 올바르지 않습니다',
+          'BELOW_MINIMUM_AMOUNT': '최소 결제 금액 미만입니다',
+          'EXCEED_MAX_AMOUNT': '최대 결제 금액을 초과했습니다',
+          'DUPLICATED_ORDER_ID': '이미 처리된 주문입니다',
+          'INVALID_ORDER_ID': '주문 번호가 올바르지 않습니다',
+          'INVALID_ORDER_NAME': '주문명이 올바르지 않습니다',
+        };
+
+        const userMessage = errorMessages[error.code] || error.message || '알 수 없는 오류';
+
+        if (error.code === 'USER_CANCEL' || error.code === 'PAY_PROCESS_CANCELED') {
           console.log('User cancelled payment');
-          window.location.href = '${widget.failUrl}?code=USER_CANCEL&message=' + encodeURIComponent('사용자가 결제를 취소했습니다');
-        } else if (error.code === 'INVALID_CARD_COMPANY') {
-          showError('지원하지 않는 카드사입니다.');
-        } else if (error.code === 'INVALID_CUSTOMER_KEY') {
-          showError('고객 정보가 올바르지 않습니다.');
+          window.location.href = '${widget.failUrl}?code=USER_CANCEL&message=' + encodeURIComponent(userMessage);
         } else {
-          showError('결제 요청 중 오류가 발생했습니다: ' + (error.message || error.code || '알 수 없는 오류'));
+          showError(userMessage);
         }
         button.disabled = false;
         button.textContent = '${_formatPrice(widget.amount)}원 결제하기';
