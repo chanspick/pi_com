@@ -201,15 +201,14 @@
       // UI 업데이트
       showSuccess({ paymentKey: paymentKey, orderId: orderId, amount: amount });
 
-      // 부모 창에 성공 메시지 전송
-      // 쿼리 파라미터 값을 서버로 전달해 결제 요청할 때 보낸 데이터와 동일한지 반드시 확인 필요
-      window.parent.postMessage({
+      // 부모 창에 성공 메시지 전송 (JSON 문자열)
+      window.parent.postMessage(JSON.stringify({
         type: 'TOSS_PAYMENT_SUCCESS',
         paymentKey: paymentKey,
         orderId: orderId,
         amount: amount,
         paymentType: paymentType
-      }, '*');
+      }), '*');
 
     } else if (type === 'fail') {
       // 실패: code, message, orderId 쿼리 파라미터
@@ -225,18 +224,18 @@
       // UI 업데이트
       showFail(code, message);
 
-      // 사용자 취소인 경우
+      // 사용자 취소인 경우 (JSON 문자열로 전송)
       if (code === 'USER_CANCEL' || code === 'PAY_PROCESS_CANCELED') {
-        window.parent.postMessage({
+        window.parent.postMessage(JSON.stringify({
           type: 'TOSS_PAYMENT_CANCEL'
-        }, '*');
+        }), '*');
       } else {
-        window.parent.postMessage({
+        window.parent.postMessage(JSON.stringify({
           type: 'TOSS_PAYMENT_FAIL',
           code: code,
           message: message,
           orderId: orderId
-        }, '*');
+        }), '*');
       }
 
     } else {
@@ -244,11 +243,11 @@
       console.error('알 수 없는 콜백 타입:', type);
       showFail('INVALID_CALLBACK', '잘못된 콜백 요청입니다.');
 
-      window.parent.postMessage({
+      window.parent.postMessage(JSON.stringify({
         type: 'TOSS_PAYMENT_FAIL',
         code: 'INVALID_CALLBACK',
         message: '잘못된 콜백 요청입니다.'
-      }, '*');
+      }), '*');
     }
   </script>
 </body>

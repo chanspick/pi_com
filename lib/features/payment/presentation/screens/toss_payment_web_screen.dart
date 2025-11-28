@@ -136,6 +136,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
     if (_configSent || _iframe == null) return;
 
     final cleanPhone = widget.customerPhone.replaceAll(RegExp(r'[^0-9]'), '');
+    final baseUrl = Uri.base.origin;
 
     // JSON 문자열로 전송 (structured clone 에러 방지)
     final configJson = jsonEncode({
@@ -151,13 +152,14 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
         'customerName': widget.customerName,
         'customerEmail': widget.customerEmail,
         'customerPhone': cleanPhone,
+        'baseUrl': baseUrl, // 콜백 URL 생성용
       }
     });
 
     try {
       _iframe!.contentWindow?.postMessage(configJson, '*');
       _configSent = true;
-      print('📤 [TossPaymentWeb] Config sent to iframe');
+      print('📤 [TossPaymentWeb] Config sent to iframe (baseUrl: $baseUrl)');
     } catch (e) {
       print('❌ [TossPaymentWeb] Failed to send config: $e');
     }
@@ -168,7 +170,17 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
       if (_isNavigating || !mounted) return;
 
       final messageEvent = event as html.MessageEvent;
-      final data = messageEvent.data;
+      dynamic data = messageEvent.data;
+
+      // JSON 문자열인 경우 파싱
+      if (data is String) {
+        try {
+          data = jsonDecode(data);
+        } catch (e) {
+          print('📩 [TossPaymentWeb] Non-JSON message: $data');
+          return;
+        }
+      }
 
       if (data is! Map) return;
 

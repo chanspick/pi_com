@@ -143,7 +143,7 @@
       const errorContainer = document.getElementById('error-container');
       errorContainer.innerHTML = '<div class="error-box">' + message + '</div>';
       errorContainer.style.display = 'block';
-      window.parent.postMessage({ type: 'TOSS_PAYMENT_FAIL', code: 'INIT_ERROR', message: message }, '*');
+      window.parent.postMessage(JSON.stringify({ type: 'TOSS_PAYMENT_FAIL', code: 'INIT_ERROR', message: message }), '*');
     }
 
     // URL 파라미터 파싱 시도 (fallback)
@@ -184,6 +184,15 @@
         return;
       }
 
+      // baseUrl 설정 (Flutter에서 전달받은 값 우선 사용)
+      const baseUrl = config.baseUrl || window.location.origin || '';
+      console.log('baseUrl:', baseUrl);
+
+      if (!baseUrl) {
+        showError('baseUrl이 설정되지 않았습니다.');
+        return;
+      }
+
       try {
         // 토스페이먼츠 SDK 초기화
         const tossPayments = TossPayments(config.clientKey);
@@ -211,15 +220,17 @@
         button.disabled = false;
 
         console.log('결제 위젯 초기화 완료!');
+        console.log('successUrl:', baseUrl + '/toss_payment_callback.html?type=success');
+        console.log('failUrl:', baseUrl + '/toss_payment_callback.html?type=fail');
 
         // 결제 버튼 클릭 이벤트
         button.addEventListener('click', async function() {
+          console.log('=== 결제 버튼 클릭됨 ===');
           button.disabled = true;
           button.textContent = '결제 처리 중...';
 
           try {
-            const baseUrl = window.location.origin;
-            await widgets.requestPayment({
+            const paymentRequest = {
               orderId: config.orderId,
               orderName: config.orderName,
               successUrl: baseUrl + '/toss_payment_callback.html?type=success',
@@ -227,16 +238,20 @@
               customerName: config.customerName || undefined,
               customerEmail: config.customerEmail || undefined,
               customerMobilePhone: config.customerPhone || undefined,
-            });
+            };
+            console.log('결제 요청:', JSON.stringify(paymentRequest, null, 2));
+
+            await widgets.requestPayment(paymentRequest);
+
           } catch (error) {
             console.error('결제 요청 에러:', error);
             const code = error.code || 'UNKNOWN_ERROR';
             const message = error.message || '결제 처리 중 오류가 발생했습니다.';
 
             if (code === 'USER_CANCEL' || code === 'PAY_PROCESS_CANCELED') {
-              window.parent.postMessage({ type: 'TOSS_PAYMENT_CANCEL' }, '*');
+              window.parent.postMessage(JSON.stringify({ type: 'TOSS_PAYMENT_CANCEL' }), '*');
             } else {
-              window.parent.postMessage({ type: 'TOSS_PAYMENT_FAIL', code: code, message: message }, '*');
+              window.parent.postMessage(JSON.stringify({ type: 'TOSS_PAYMENT_FAIL', code: code, message: message }), '*');
             }
 
             button.disabled = false;
