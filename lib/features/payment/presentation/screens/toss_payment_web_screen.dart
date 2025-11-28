@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_web_libraries_in_flutter
 
+import 'dart:convert';
 import 'dart:html' as html;
-import 'dart:js' as js;
 import 'dart:ui_web' as ui_web;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -137,7 +137,8 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
 
     final cleanPhone = widget.customerPhone.replaceAll(RegExp(r'[^0-9]'), '');
 
-    final config = js.JsObject.jsify({
+    // JSON 문자열로 전송 (structured clone 에러 방지)
+    final configJson = jsonEncode({
       'type': 'TOSS_PAYMENT_CONFIG',
       'config': {
         'clientKey': _testClientKey,
@@ -154,7 +155,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
     });
 
     try {
-      _iframe!.contentWindow?.postMessage(config, '*');
+      _iframe!.contentWindow?.postMessage(configJson, '*');
       _configSent = true;
       print('📤 [TossPaymentWeb] Config sent to iframe');
     } catch (e) {

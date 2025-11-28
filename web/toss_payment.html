@@ -252,11 +252,23 @@
 
     // postMessage 리스너 (Flutter에서 설정 받기)
     window.addEventListener('message', function(event) {
-      console.log('📩 Message received:', event.data);
+      let data = event.data;
 
-      if (event.data && event.data.type === 'TOSS_PAYMENT_CONFIG') {
+      // JSON 문자열인 경우 파싱
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data);
+        } catch (e) {
+          console.log('Message is not JSON:', data);
+          return;
+        }
+      }
+
+      console.log('📩 Message received:', data);
+
+      if (data && data.type === 'TOSS_PAYMENT_CONFIG') {
         console.log('✅ Config received via postMessage');
-        initPayment(event.data.config);
+        initPayment(data.config);
       }
     });
 
