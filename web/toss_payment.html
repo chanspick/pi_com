@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>토스페이먼츠 결제</title>
+  <script src="https://js.tosspayments.com/v2/standard"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #F9FAFB;
+      min-height: 100vh;
+    }
+    .wrapper {
+      max-width: 540px;
+      margin: 0 auto;
+      padding: 20px 16px;
+    }
+    .box_section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    #payment-method { min-height: 200px; }
+    #agreement { margin-top: 16px; }
+    .amount-info {
+      background: #F3F4F6;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+    .amount-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #4B5563;
+    }
+    .amount-row:last-child {
+      margin-bottom: 0;
+      padding-top: 12px;
+      border-top: 1px solid #D1D5DB;
+      font-size: 18px;
+      font-weight: 700;
+      color: #111827;
+    }
+    .button {
+      width: 100%;
+      padding: 16px;
+      background: #0064FF;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .button:hover { background: #0052D9; }
+    .button:disabled { background: #D1D5DB; cursor: not-allowed; }
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+    }
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #E5E7EB;
+      border-top: 3px solid #0064FF;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .loading-text { margin-top: 16px; color: #6B7280; font-size: 14px; }
+    .error-box {
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      border-radius: 8px;
+      padding: 16px;
+      color: #DC2626;
+      font-size: 14px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div id="loading" class="loading">
+      <div class="spinner"></div>
+      <p class="loading-text">결제 정보를 불러오는 중...</p>
+    </div>
+
+    <div id="error-container" style="display: none;"></div>
+
+    <div id="payment-content" style="display: none;">
+      <div class="amount-info">
+        <div class="amount-row">
+          <span>상품 금액</span>
+          <span id="product-amount">0원</span>
+        </div>
+        <div class="amount-row">
+          <span>배송비</span>
+          <span id="shipping-fee">0원</span>
+        </div>
+        <div class="amount-row">
+          <span>총 결제 금액</span>
+          <span id="total-amount">0원</span>
+        </div>
+      </div>
+
+      <div class="box_section">
+        <div id="payment-method"></div>
+        <div id="agreement"></div>
+      </div>
+
+      <button class="button" id="payment-button" disabled>결제하기</button>
+    </div>
+  </div>
+
+  <script>
+    // 전역 변수
+    let paymentConfig = null;
+    let widgets = null;
+
+    // 금액 포맷팅
+    function formatPrice(price) {
+      return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    // 에러 표시
+    function showError(message) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('payment-content').style.display = 'none';
+      const errorContainer = document.getElementById('error-container');
+      errorContainer.innerHTML = '<div class="error-box">' + message + '</div>';
+      errorContainer.style.display = 'block';
+      window.parent.postMessage(JSON.stringify({ type: 'TOSS_PAYMENT_FAIL', code: 'INIT_ERROR', message: message }), '*');
+    }
+
+    // URL 파라미터 파싱 시도 (fallback)
+    function getConfigFromUrl() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const clientKey = urlParams.get('clientKey');
+
+      if (!clientKey) return null;
+
+      return {
+        clientKey: clientKey,
+        customerKey: urlParams.get('customerKey') || '',
+        orderId: urlParams.get('orderId') || '',
+        orderName: urlParams.get('orderName') || '',
+        amount: parseInt(urlParams.get('amount')) || 0,
+        productAmount: parseInt(urlParams.get('productAmount')) || 0,
+        shippingFee: parseInt(urlParams.get('shippingFee')) || 0,
+        customerName: urlParams.get('customerName') || '',
+        customerEmail: urlParams.get('customerEmail') || '',
+        customerPhone: urlParams.get('customerPhone') || ''
+      };
+    }
+
+    // 결제 위젯 초기화
+    async function initPayment(config) {
+      console.log('=== 결제 위젯 초기화 시작 ===');
+      console.log('config:', JSON.stringify(config, null, 2));
+
+      paymentConfig = config;
+      const button = document.getElementById('payment-button');
+
+      if (!config.orderId) {
+        showError('주문 ID가 누락되었습니다.');
+        return;
+      }
+      if (!config.amount || config.amount <= 0) {
+        showError('결제 금액이 올바르지 않습니다.');
+        return;
+      }
+
+      // baseUrl 설정 (Flutter에서 전달받은 값 우선 사용)
+      const baseUrl = config.baseUrl || window.location.origin || '';
+      console.log('baseUrl:', baseUrl);
+
+      if (!baseUrl) {
+        showError('baseUrl이 설정되지 않았습니다.');
+        return;
+      }
+
+      try {
+        // 토스페이먼츠 SDK 초기화
+        const tossPayments = TossPayments(config.clientKey);
+
+        // 위젯 생성 (회원 결제)
+        widgets = tossPayments.widgets({ customerKey: config.customerKey });
+
+        // 금액 설정
+        await widgets.setAmount({ currency: 'KRW', value: config.amount });
+
+        // 결제 UI 렌더링
+        await Promise.all([
+          widgets.renderPaymentMethods({ selector: '#payment-method', variantKey: 'DEFAULT' }),
+          widgets.renderAgreement({ selector: '#agreement', variantKey: 'AGREEMENT' }),
+        ]);
+
+        // UI 업데이트
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('payment-content').style.display = 'block';
+        document.getElementById('product-amount').textContent = formatPrice(config.productAmount) + '원';
+        document.getElementById('shipping-fee').textContent = config.shippingFee > 0 ? formatPrice(config.shippingFee) + '원' : '무료';
+        document.getElementById('total-amount').textContent = formatPrice(config.amount) + '원';
+
+        button.textContent = formatPrice(config.amount) + '원 결제하기';
+        button.disabled = false;
+
+        console.log('결제 위젯 초기화 완료!');
+        console.log('successUrl:', baseUrl + '/toss_payment_callback.html?type=success');
+        console.log('failUrl:', baseUrl + '/toss_payment_callback.html?type=fail');
+
+        // 결제 버튼 클릭 이벤트
+        button.addEventListener('click', async function() {
+          console.log('=== 결제 버튼 클릭됨 ===');
+          button.disabled = true;
+          button.textContent = '결제 처리 중...';
+
+          try {
+            const paymentRequest = {
+              orderId: config.orderId,
+              orderName: config.orderName,
+              successUrl: baseUrl + '/toss_payment_callback.html?type=success',
+              failUrl: baseUrl + '/toss_payment_callback.html?type=fail',
+              customerName: config.customerName || undefined,
+              customerEmail: config.customerEmail || undefined,
+              customerMobilePhone: config.customerPhone || undefined,
+            };
+            console.log('결제 요청:', JSON.stringify(paymentRequest, null, 2));
+
+            await widgets.requestPayment(paymentRequest);
+
+          } catch (error) {
+            console.error('결제 요청 에러:', error);
+            const code = error.code || 'UNKNOWN_ERROR';
+            const message = error.message || '결제 처리 중 오류가 발생했습니다.';
+
+            if (code === 'USER_CANCEL' || code === 'PAY_PROCESS_CANCELED') {
+              window.parent.postMessage(JSON.stringify({ type: 'TOSS_PAYMENT_CANCEL' }), '*');
+            } else {
+              window.parent.postMessage(JSON.stringify({ type: 'TOSS_PAYMENT_FAIL', code: code, message: message }), '*');
+            }
+
+            button.disabled = false;
+            button.textContent = formatPrice(config.amount) + '원 결제하기';
+          }
+        });
+
+      } catch (error) {
+        console.error('초기화 에러:', error);
+        showError('결제 수단을 불러오는 중 오류가 발생했습니다: ' + (error.message || '알 수 없는 오류'));
+      }
+    }
+
+    // postMessage 리스너 (Flutter에서 설정 받기)
+    window.addEventListener('message', function(event) {
+      let data = event.data;
+
+      // JSON 문자열인 경우 파싱
+      if (typeof data === 'string') {
+        try {
+          data = JSON.parse(data);
+        } catch (e) {
+          console.log('Message is not JSON:', data);
+          return;
+        }
+      }
+
+      console.log('📩 Message received:', data);
+
+      if (data && data.type === 'TOSS_PAYMENT_CONFIG') {
+        console.log('✅ Config received via postMessage');
+        initPayment(data.config);
+      }
+    });
+
+    // 페이지 로드 시 URL 파라미터 확인 (fallback)
+    window.addEventListener('DOMContentLoaded', function() {
+      console.log('=== toss_payment.html 로드됨 ===');
+      console.log('window.location.href:', window.location.href);
+      console.log('window.location.search:', window.location.search);
+
+      // URL 파라미터에서 설정 가져오기 시도
+      const urlConfig = getConfigFromUrl();
+
+      if (urlConfig && urlConfig.clientKey) {
+        console.log('✅ Config found in URL params');
+        initPayment(urlConfig);
+      } else {
+        console.log('⏳ Waiting for config via postMessage...');
+        // Flutter에 준비됨 알림
+        window.parent.postMessage({ type: 'TOSS_PAYMENT_READY' }, '*');
+      }
+    });
+  </script>
+</body>
+</html>

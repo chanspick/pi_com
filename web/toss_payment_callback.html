@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>결제 처리</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: #F9FAFB;
+      padding: 24px;
+    }
+    .result-box {
+      background: white;
+      border-radius: 16px;
+      padding: 40px 32px;
+      text-align: center;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      max-width: 420px;
+      width: 100%;
+    }
+    .icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+    }
+    .icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .icon.loading {
+      border: 4px solid #E5E7EB;
+      border-top-color: #0064FF;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    h2 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #111827;
+      margin-bottom: 8px;
+    }
+    .message {
+      font-size: 15px;
+      color: #6B7280;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+    .info-grid {
+      background: #F9FAFB;
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 24px;
+      text-align: left;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      font-size: 14px;
+      border-bottom: 1px solid #E5E7EB;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-label {
+      color: #6B7280;
+      font-weight: 500;
+    }
+    .info-value {
+      color: #111827;
+      font-weight: 600;
+      word-break: break-all;
+      max-width: 200px;
+      text-align: right;
+    }
+    .error-code {
+      background: #FEF2F2;
+      color: #DC2626;
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-top: 16px;
+      word-break: break-all;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <!-- 로딩 상태 -->
+  <div id="loading-view" class="result-box">
+    <div class="icon loading"></div>
+    <h2>처리 중</h2>
+    <p class="message">결제 결과를 확인하고 있습니다...</p>
+  </div>
+
+  <!-- 성공 상태 -->
+  <div id="success-view" class="result-box" style="display: none;">
+    <div class="icon">
+      <img src="https://static.toss.im/illusts/check-blue-spot-ending-frame.png" alt="성공" />
+    </div>
+    <h2>결제를 완료했어요</h2>
+    <p class="message">결제가 성공적으로 처리되었습니다.</p>
+    <div class="info-grid">
+      <div class="info-row">
+        <span class="info-label">주문번호</span>
+        <span class="info-value" id="success-orderId">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">결제금액</span>
+        <span class="info-value" id="success-amount">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">결제키</span>
+        <span class="info-value" id="success-paymentKey">-</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 실패 상태 -->
+  <div id="fail-view" class="result-box" style="display: none;">
+    <div class="icon">
+      <img src="https://static.toss.im/lotties/error-spot-apng.png" alt="실패" style="width: 80px; height: 80px;" />
+    </div>
+    <h2>결제를 실패했어요</h2>
+    <p class="message" id="fail-message">결제 처리 중 오류가 발생했습니다.</p>
+    <div class="error-code" id="fail-code"></div>
+  </div>
+
+  <script>
+    // URL 파라미터 파싱
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get('type');
+
+    console.log('=== 토스페이먼츠 결제 콜백 ===');
+    console.log('type:', type);
+    console.log('URL:', window.location.href);
+    console.log('params:', Object.fromEntries(urlParams));
+
+    // 금액 포맷팅
+    function formatPrice(price) {
+      return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
+    function showLoading() {
+      document.getElementById('loading-view').style.display = 'block';
+      document.getElementById('success-view').style.display = 'none';
+      document.getElementById('fail-view').style.display = 'none';
+    }
+
+    function showSuccess(data) {
+      document.getElementById('loading-view').style.display = 'none';
+      document.getElementById('success-view').style.display = 'block';
+      document.getElementById('fail-view').style.display = 'none';
+
+      document.getElementById('success-orderId').textContent = data.orderId || '-';
+      document.getElementById('success-amount').textContent = data.amount ? formatPrice(data.amount) + '원' : '-';
+
+      const paymentKeyEl = document.getElementById('success-paymentKey');
+      if (data.paymentKey && data.paymentKey.length > 20) {
+        paymentKeyEl.textContent = data.paymentKey.substring(0, 20) + '...';
+        paymentKeyEl.title = data.paymentKey;
+      } else {
+        paymentKeyEl.textContent = data.paymentKey || '-';
+      }
+    }
+
+    function showFail(code, message) {
+      document.getElementById('loading-view').style.display = 'none';
+      document.getElementById('success-view').style.display = 'none';
+      document.getElementById('fail-view').style.display = 'block';
+
+      document.getElementById('fail-message').textContent = message || '결제 처리 중 오류가 발생했습니다.';
+      document.getElementById('fail-code').textContent = '오류 코드: ' + (code || 'UNKNOWN');
+    }
+
+    // 결과 처리
+    if (type === 'success') {
+      // 성공: paymentType, orderId, paymentKey, amount 쿼리 파라미터
+      const paymentKey = urlParams.get('paymentKey');
+      const orderId = urlParams.get('orderId');
+      const amount = parseInt(urlParams.get('amount')) || 0;
+      const paymentType = urlParams.get('paymentType');
+
+      console.log('결제 성공!');
+      console.log('paymentKey:', paymentKey);
+      console.log('orderId:', orderId);
+      console.log('amount:', amount);
+      console.log('paymentType:', paymentType);
+
+      // UI 업데이트
+      showSuccess({ paymentKey: paymentKey, orderId: orderId, amount: amount });
+
+      // 부모 창에 성공 메시지 전송 (JSON 문자열)
+      window.parent.postMessage(JSON.stringify({
+        type: 'TOSS_PAYMENT_SUCCESS',
+        paymentKey: paymentKey,
+        orderId: orderId,
+        amount: amount,
+        paymentType: paymentType
+      }), '*');
+
+    } else if (type === 'fail') {
+      // 실패: code, message, orderId 쿼리 파라미터
+      const code = urlParams.get('code') || 'UNKNOWN_ERROR';
+      const message = urlParams.get('message') || '알 수 없는 오류가 발생했습니다.';
+      const orderId = urlParams.get('orderId');
+
+      console.log('결제 실패!');
+      console.log('code:', code);
+      console.log('message:', message);
+      console.log('orderId:', orderId);
+
+      // UI 업데이트
+      showFail(code, message);
+
+      // 사용자 취소인 경우 (JSON 문자열로 전송)
+      if (code === 'USER_CANCEL' || code === 'PAY_PROCESS_CANCELED') {
+        window.parent.postMessage(JSON.stringify({
+          type: 'TOSS_PAYMENT_CANCEL'
+        }), '*');
+      } else {
+        window.parent.postMessage(JSON.stringify({
+          type: 'TOSS_PAYMENT_FAIL',
+          code: code,
+          message: message,
+          orderId: orderId
+        }), '*');
+      }
+
+    } else {
+      // 알 수 없는 타입
+      console.error('알 수 없는 콜백 타입:', type);
+      showFail('INVALID_CALLBACK', '잘못된 콜백 요청입니다.');
+
+      window.parent.postMessage(JSON.stringify({
+        type: 'TOSS_PAYMENT_FAIL',
+        code: 'INVALID_CALLBACK',
+        message: '잘못된 콜백 요청입니다.'
+      }), '*');
+    }
+  </script>
+</body>
+</html>

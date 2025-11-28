@@ -1,5 +1,6 @@
 // ignore_for_file: avoid_web_libraries_in_flutter
 
+import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:ui_web' as ui_web;
 import 'package:flutter/material.dart';
@@ -7,14 +8,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pi_com/features/payment/presentation/providers/payment_provider.dart';
 
 /// 토스페이먼츠 웹 결제 화면 (Flutter Web 전용)
-/// iframe을 사용하여 결제 위젯을 로드
 class TossPaymentWebScreen extends ConsumerStatefulWidget {
   final String orderId;
   final String userId;
   final String orderName;
-  final int amount; // 총 결제 금액 (상품 + 배송비)
-  final int productAmount; // 상품 금액
-  final int shippingFee; // 배송비
+  final int amount;
+  final int productAmount;
+  final int shippingFee;
   final String customerName;
   final String customerEmail;
   final String customerPhone;
@@ -44,327 +44,195 @@ class TossPaymentWebScreen extends ConsumerStatefulWidget {
 class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
   late final String _viewId;
   bool _isLoading = true;
-  bool _isNavigating = false; // 중복 네비게이션 방지 플래그
+  bool _isNavigating = false;
+  bool _isViewRegistered = false;
+  bool _configSent = false;
+  html.EventListener? _messageListener;
+  html.IFrameElement? _iframe;
 
-  // 토스페이먼츠 결제위젯 연동 클라이언트 키
   static const String _testClientKey = 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm';
+  static final Set<String> _registeredViewIds = {};
 
   @override
   void initState() {
     super.initState();
-    // 디버깅: 전달받은 값 확인
-    print('🔍 [TossPaymentWeb] === Widget 값 확인 ===');
-    print('🔍 [TossPaymentWeb] orderId: ${widget.orderId}');
-    print('🔍 [TossPaymentWeb] userId: ${widget.userId}');
-    print('🔍 [TossPaymentWeb] orderName: ${widget.orderName}');
-    print('🔍 [TossPaymentWeb] amount (총액): ${widget.amount}');
-    print('🔍 [TossPaymentWeb] productAmount (상품금액): ${widget.productAmount}');
-    print('🔍 [TossPaymentWeb] shippingFee (배송비): ${widget.shippingFee}');
-    print('🔍 [TossPaymentWeb] customerName: ${widget.customerName}');
-    print('🔍 [TossPaymentWeb] customerEmail: ${widget.customerEmail}');
-    print('🔍 [TossPaymentWeb] customerPhone: ${widget.customerPhone}');
-
+    _logPaymentInfo();
     _viewId = 'toss-payment-${DateTime.now().millisecondsSinceEpoch}';
-    _registerWebView();
     _setupMessageListener();
+    _registerWebView();
+  }
+
+  void _logPaymentInfo() {
+    print('');
+    print('========================================');
+    print('🔵 [TossPaymentWeb] 결제 정보');
+    print('========================================');
+    print('  orderId: ${widget.orderId}');
+    print('  userId: ${widget.userId}');
+    print('  orderName: ${widget.orderName}');
+    print('  amount (총액): ${widget.amount}');
+    print('  productAmount (상품금액): ${widget.productAmount}');
+    print('  shippingFee (배송비): ${widget.shippingFee}');
+    print('========================================');
+  }
+
+  @override
+  void dispose() {
+    if (_messageListener != null) {
+      html.window.removeEventListener('message', _messageListener);
+      _messageListener = null;
+    }
+    super.dispose();
   }
 
   void _registerWebView() {
-    // ignore: undefined_prefixed_name
-    ui_web.platformViewRegistry.registerViewFactory(
-      _viewId,
-      (int viewId) {
-        final iframe = html.IFrameElement()
-          ..style.border = 'none'
-          ..style.width = '100%'
-          ..style.height = '100%'
-          ..srcdoc = _buildPaymentHtml();
+    if (_registeredViewIds.contains(_viewId)) {
+      if (mounted) setState(() => _isViewRegistered = true);
+      return;
+    }
 
-        iframe.onLoad.listen((_) {
-          if (mounted) {
-            setState(() => _isLoading = false);
-          }
-        });
+    final baseUrl = Uri.base.origin;
+    final paymentUrl = '$baseUrl/toss_payment.html';
+    print('🔗 [TossPaymentWeb] Payment URL: $paymentUrl');
 
-        return iframe;
-      },
-    );
+    try {
+      // ignore: undefined_prefixed_name
+      ui_web.platformViewRegistry.registerViewFactory(
+        _viewId,
+        (int viewId) {
+          print('🏗️ [TossPaymentWeb] Creating iframe');
+
+          _iframe = html.IFrameElement()
+            ..id = 'toss-payment-iframe-$viewId'
+            ..style.border = 'none'
+            ..style.width = '100%'
+            ..style.height = '100%'
+            ..allow = 'payment'
+            ..src = paymentUrl;
+
+          _iframe!.onLoad.listen((_) {
+            print('✅ [TossPaymentWeb] iframe loaded');
+            // iframe 로드 완료 후 config 전송
+            Future.delayed(const Duration(milliseconds: 100), () {
+              _sendConfigToIframe();
+            });
+          });
+
+          return _iframe!;
+        },
+      );
+
+      _registeredViewIds.add(_viewId);
+      print('✅ [TossPaymentWeb] ViewFactory registered');
+
+      if (mounted) setState(() => _isViewRegistered = true);
+    } catch (e) {
+      print('❌ [TossPaymentWeb] Register error: $e');
+      if (mounted) setState(() => _isViewRegistered = true);
+    }
+  }
+
+  void _sendConfigToIframe() {
+    if (_configSent || _iframe == null) return;
+
+    final cleanPhone = widget.customerPhone.replaceAll(RegExp(r'[^0-9]'), '');
+    final baseUrl = Uri.base.origin;
+
+    // JSON 문자열로 전송 (structured clone 에러 방지)
+    final configJson = jsonEncode({
+      'type': 'TOSS_PAYMENT_CONFIG',
+      'config': {
+        'clientKey': _testClientKey,
+        'customerKey': widget.userId,
+        'orderId': widget.orderId,
+        'orderName': widget.orderName,
+        'amount': widget.amount,
+        'productAmount': widget.productAmount,
+        'shippingFee': widget.shippingFee,
+        'customerName': widget.customerName,
+        'customerEmail': widget.customerEmail,
+        'customerPhone': cleanPhone,
+        'baseUrl': baseUrl, // 콜백 URL 생성용
+      }
+    });
+
+    try {
+      _iframe!.contentWindow?.postMessage(configJson, '*');
+      _configSent = true;
+      print('📤 [TossPaymentWeb] Config sent to iframe (baseUrl: $baseUrl)');
+    } catch (e) {
+      print('❌ [TossPaymentWeb] Failed to send config: $e');
+    }
   }
 
   void _setupMessageListener() {
-    html.window.onMessage.listen((event) {
-      // 이미 네비게이션 중이면 무시
+    _messageListener = (html.Event event) {
       if (_isNavigating || !mounted) return;
 
-      print('📩 [TossPaymentWeb] Message received: ${event.data}');
+      final messageEvent = event as html.MessageEvent;
+      dynamic data = messageEvent.data;
 
-      final data = event.data;
-      if (data is Map) {
-        final type = data['type'];
-        print('📩 [TossPaymentWeb] Message type: $type');
+      // JSON 문자열인 경우 파싱
+      if (data is String) {
+        try {
+          data = jsonDecode(data);
+        } catch (e) {
+          print('📩 [TossPaymentWeb] Non-JSON message: $data');
+          return;
+        }
+      }
 
-        if (type == 'TOSS_PAYMENT_SUCCESS') {
+      if (data is! Map) return;
+
+      final type = data['type'];
+      print('📩 [TossPaymentWeb] Message: $type');
+
+      switch (type) {
+        case 'TOSS_PAYMENT_READY':
+          print('🔔 [TossPaymentWeb] iframe ready, sending config...');
+          _sendConfigToIframe();
+          break;
+
+        case 'TOSS_PAYMENT_SUCCESS':
           _isNavigating = true;
-          print('✅ [TossPaymentWeb] Payment success - paymentKey: ${data['paymentKey']}');
-          _handleSuccess(
-            data['paymentKey'] as String? ?? '',
-            data['orderId'] as String? ?? widget.orderId,
-            data['amount'] as int? ?? widget.amount,
-          );
-        } else if (type == 'TOSS_PAYMENT_FAIL') {
+          final paymentKey = data['paymentKey'] as String? ?? '';
+          final orderId = data['orderId'] as String? ?? widget.orderId;
+          final amount = _parseAmount(data['amount']);
+          print('✅ [TossPaymentWeb] Payment SUCCESS');
+          _handleSuccess(paymentKey, orderId, amount);
+          break;
+
+        case 'TOSS_PAYMENT_FAIL':
           _isNavigating = true;
           final code = data['code'] as String? ?? 'UNKNOWN';
           final message = data['message'] as String? ?? '알 수 없는 오류';
-          print('❌ [TossPaymentWeb] Payment failed - code: $code, message: $message');
+          print('❌ [TossPaymentWeb] Payment FAIL: $code - $message');
           _handleFail(code, message);
-        } else if (type == 'TOSS_PAYMENT_CANCEL') {
+          break;
+
+        case 'TOSS_PAYMENT_CANCEL':
           _isNavigating = true;
-          print('🚫 [TossPaymentWeb] Payment cancelled');
+          print('🚫 [TossPaymentWeb] Payment CANCEL');
           _handleCancel();
-        }
+          break;
       }
-    });
+
+      // 로딩 완료
+      if (mounted && _isLoading) {
+        setState(() => _isLoading = false);
+      }
+    };
+
+    html.window.addEventListener('message', _messageListener);
+    print('👂 [TossPaymentWeb] Message listener attached');
   }
 
-  String _buildPaymentHtml() {
-    // 웹 전용 redirect URL (postMessage로 결과 전달)
-    const webSuccessUrl = 'https://asia-northeast3-picom-team.cloudfunctions.net/api/toss-payment-redirect/web-success';
-    const webFailUrl = 'https://asia-northeast3-picom-team.cloudfunctions.net/api/toss-payment-redirect/web-fail';
-
-    // 전화번호에서 특수문자 제거
-    final cleanPhone = widget.customerPhone.replaceAll(RegExp(r'[^0-9]'), '');
-
-    return '''
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>토스페이먼츠 결제</title>
-  <script src="https://js.tosspayments.com/v2/standard"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #FFFFFF;
-      min-height: 100vh;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 16px;
-    }
-    #payment-method, #agreement {
-      margin-bottom: 16px;
-    }
-    .pay-button {
-      width: 100%;
-      padding: 16px;
-      background: #000000;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      font-size: 16px;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 16px;
-    }
-    .pay-button:hover { background: #333333; }
-    .pay-button:disabled { background: #CCCCCC; cursor: not-allowed; }
-    .loading {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 60px 20px;
-    }
-    .spinner {
-      width: 32px;
-      height: 32px;
-      border: 3px solid #EEEEEE;
-      border-top: 3px solid #000000;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .error-message {
-      background: #FEF2F2;
-      border: 1px solid #FCA5A5;
-      border-radius: 8px;
-      padding: 16px;
-      color: #DC2626;
-      margin-bottom: 16px;
-      font-size: 14px;
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div id="loading" class="loading">
-      <div class="spinner"></div>
-      <p style="margin-top: 16px; color: #666; font-size: 14px;">결제 수단을 불러오는 중...</p>
-    </div>
-
-    <div id="error-container" style="display: none;"></div>
-    <div id="payment-method" style="display: none;"></div>
-    <div id="agreement" style="display: none;"></div>
-
-    <button id="pay-button" class="pay-button" style="display: none;" onclick="requestPayment()">
-      ${_formatPrice(widget.amount)}원 결제하기
-    </button>
-  </div>
-
-  <script>
-    const clientKey = "$_testClientKey";
-    const customerKey = "${widget.userId}";
-    let widgets = null;
-
-    // 결제 정보 (Dart에서 전달)
-    const orderId = "${widget.orderId}";
-    const productAmount = ${widget.productAmount};
-    const shippingFee = ${widget.shippingFee};
-    const orderName = "${widget.orderName}";
-    const amount = ${widget.amount};
-    const customerName = "${widget.customerName}";
-    const customerEmail = "${widget.customerEmail}";
-    const customerPhone = "$cleanPhone";
-    const successUrl = "$webSuccessUrl";
-    const failUrl = "$webFailUrl";
-
-    console.log('=== 결제 정보 초기화 ===');
-    console.log('orderId:', orderId);
-    console.log('orderName:', orderName);
-    console.log('productAmount (상품금액):', productAmount);
-    console.log('shippingFee (배송비):', shippingFee);
-    console.log('amount (총액):', amount);
-    console.log('customerPhone:', customerPhone);
-    console.log('successUrl:', successUrl);
-
-    async function initializePayment() {
-      try {
-        console.log('TossPayments 초기화 중...');
-        const tossPayments = TossPayments(clientKey);
-        widgets = tossPayments.widgets({ customerKey: customerKey });
-
-        // 금액 설정 (배송비 포함)
-        console.log('금액 설정 - 상품:', productAmount, '배송비:', shippingFee, '총액:', amount);
-        const amountConfig = {
-          currency: "KRW",
-          value: amount
-        };
-        // 배송비가 있으면 별도로 설정
-        if (shippingFee > 0) {
-          amountConfig.shipping = shippingFee;
-        }
-        await widgets.setAmount(amountConfig);
-
-        console.log('결제 수단 렌더링...');
-        await widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" });
-        await widgets.renderAgreement({ selector: "#agreement", variantKey: "AGREEMENT" });
-
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('payment-method').style.display = 'block';
-        document.getElementById('agreement').style.display = 'block';
-        document.getElementById('pay-button').style.display = 'block';
-        console.log('결제 위젯 초기화 완료!');
-      } catch (error) {
-        console.error('초기화 오류:', error);
-        showError('결제 수단을 불러오는 중 오류가 발생했습니다: ' + (error.message || '알 수 없는 오류'));
-      }
-    }
-
-    function showError(message) {
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('error-container').innerHTML = '<div class="error-message">' + message + '</div>';
-      document.getElementById('error-container').style.display = 'block';
-    }
-
-    async function requestPayment() {
-      const button = document.getElementById('pay-button');
-      button.disabled = true;
-      button.textContent = '결제 처리 중...';
-
-      console.log('=== requestPayment 시작 ===');
-      console.log('widgets:', widgets ? 'OK' : 'NULL');
-
-      if (!widgets) {
-        console.error('widgets 객체가 없습니다!');
-        window.parent.postMessage({
-          type: 'TOSS_PAYMENT_FAIL',
-          code: 'WIDGETS_NOT_INITIALIZED',
-          message: '결제 위젯이 초기화되지 않았습니다.'
-        }, '*');
-        return;
-      }
-
-      try {
-        // 결제 요청 파라미터
-        const paymentParams = {
-          orderId: orderId,
-          orderName: orderName,
-          // ✅ Redirect 방식: successUrl/failUrl 설정
-          // iframe 내에서 이 URL로 리다이렉트되고, 해당 페이지에서 postMessage 전송
-          successUrl: successUrl,
-          failUrl: failUrl
-        };
-
-        // 선택적 파라미터 추가
-        if (customerName && customerName.trim()) {
-          paymentParams.customerName = customerName;
-        }
-        if (customerEmail && customerEmail.trim()) {
-          paymentParams.customerEmail = customerEmail;
-        }
-        if (customerPhone && customerPhone.length >= 10) {
-          paymentParams.customerMobilePhone = customerPhone;
-        }
-
-        console.log('Payment params:', JSON.stringify(paymentParams, null, 2));
-        console.log('widgets.requestPayment 호출...');
-
-        // ✅ Redirect 방식으로 결제 요청
-        // 성공 시: successUrl로 리다이렉트 → 해당 페이지에서 postMessage 전송
-        // 실패/취소 시: catch 블록에서 처리
-        await widgets.requestPayment(paymentParams);
-
-        // 이 코드는 실행되지 않음 (성공 시 리다이렉트됨)
-        console.log('requestPayment 완료 (이 로그가 보이면 문제 있음)');
-
-      } catch (error) {
-        console.error('=== Payment error ===');
-        console.error('error:', error);
-        console.error('error.code:', error?.code);
-        console.error('error.message:', error?.message);
-
-        const errorCode = error?.code || 'UNKNOWN_ERROR';
-        const errorMessage = error?.message || String(error) || '결제 처리 중 오류가 발생했습니다.';
-
-        if (errorCode === 'USER_CANCEL' || errorCode === 'PAY_PROCESS_CANCELED') {
-          window.parent.postMessage({ type: 'TOSS_PAYMENT_CANCEL' }, '*');
-        } else {
-          window.parent.postMessage({
-            type: 'TOSS_PAYMENT_FAIL',
-            code: errorCode,
-            message: errorMessage
-          }, '*');
-        }
-        button.disabled = false;
-        button.textContent = '${_formatPrice(widget.amount)}원 결제하기';
-      }
-    }
-
-    initializePayment();
-  </script>
-</body>
-</html>
-''';
-  }
-
-  String _formatPrice(int price) {
-    return price.toString().replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
+  int _parseAmount(dynamic value) {
+    if (value == null) return widget.amount;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? widget.amount;
+    return widget.amount;
   }
 
   Future<void> _handleSuccess(String paymentKey, String orderId, int amount) async {
@@ -373,16 +241,11 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
 
       final approvedPayment = await ref
           .read(approveTossPaymentUseCaseProvider)
-          .call(
-            paymentKey: paymentKey,
-            orderId: orderId,
-            amount: amount,
-          );
+          .call(paymentKey: paymentKey, orderId: orderId, amount: amount);
 
       ref.read(isApprovingPaymentProvider.notifier).state = false;
 
       if (mounted) {
-        // 안전한 네비게이션: 현재 프레임 완료 후 실행
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) {
             Navigator.pop(context, {
@@ -397,6 +260,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
       }
     } catch (e) {
       ref.read(isApprovingPaymentProvider.notifier).state = false;
+      print('❌ [TossPaymentWeb] Approval error: $e');
       _showError('결제 승인 실패: $e');
     }
   }
@@ -444,6 +308,34 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
     }
   }
 
+  void _showCancelDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('결제 취소'),
+        content: const Text('결제를 취소하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('계속 진행'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              Navigator.pop(context, {
+                'success': false,
+                'errorCode': 'USER_CANCEL',
+                'errorMessage': '사용자가 결제를 취소했습니다',
+              });
+            },
+            child: const Text('취소'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isApproving = ref.watch(isApprovingPaymentProvider);
@@ -455,51 +347,38 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
         foregroundColor: Colors.white,
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('결제 취소'),
-                content: const Text('결제를 취소하시겠습니까?'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('계속 진행'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.pop(context, {
-                        'success': false,
-                        'errorCode': 'USER_CANCEL',
-                        'errorMessage': '사용자가 결제를 취소했습니다',
-                      });
-                    },
-                    child: const Text('취소'),
-                  ),
-                ],
-              ),
-            );
-          },
+          onPressed: _showCancelDialog,
         ),
       ),
       body: Stack(
         children: [
-          HtmlElementView(viewType: _viewId),
-          if (_isLoading || isApproving)
+          if (_isViewRegistered)
+            HtmlElementView(viewType: _viewId)
+          else
+            const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0064FF)),
+              ),
+            ),
+
+          if (isApproving)
             Container(
-              color: Colors.white.withOpacity(0.8),
-              child: Center(
+              color: Colors.white.withOpacity(0.9),
+              child: const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const CircularProgressIndicator(
+                    CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0064FF)),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Text(
-                      isApproving ? '결제 승인 중...' : '로딩 중...',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                      '결제 승인 중...',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFF374151),
+                      ),
                     ),
                   ],
                 ),
