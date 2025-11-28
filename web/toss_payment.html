@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>토스페이먼츠 결제</title>
   <!-- 토스페이먼츠 SDK v2 -->
   <script src="https://js.tosspayments.com/v2/standard"></script>
@@ -13,18 +14,42 @@
       background: #F9FAFB;
       min-height: 100vh;
     }
-    .container {
+    .wrapper {
       max-width: 540px;
       margin: 0 auto;
-      padding: 24px 16px;
+      padding: 20px 16px;
     }
-    #payment-method {
+    .box_section {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px 20px;
       margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
     }
-    #agreement {
-      margin-bottom: 24px;
+    #payment-method { min-height: 200px; }
+    #agreement { margin-top: 16px; }
+    .amount-info {
+      background: #F3F4F6;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
     }
-    .pay-button {
+    .amount-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #4B5563;
+    }
+    .amount-row:last-child {
+      margin-bottom: 0;
+      padding-top: 12px;
+      border-top: 1px solid #D1D5DB;
+      font-size: 18px;
+      font-weight: 700;
+      color: #111827;
+    }
+    .button {
       width: 100%;
       padding: 16px;
       background: #0064FF;
@@ -36,8 +61,8 @@
       cursor: pointer;
       transition: background 0.2s;
     }
-    .pay-button:hover { background: #0052D9; }
-    .pay-button:disabled {
+    .button:hover { background: #0052D9; }
+    .button:disabled {
       background: #D1D5DB;
       cursor: not-allowed;
     }
@@ -46,7 +71,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      padding: 80px 20px;
+      padding: 60px 20px;
     }
     .spinner {
       width: 40px;
@@ -73,33 +98,12 @@
       color: #DC2626;
       font-size: 14px;
       margin-bottom: 16px;
-    }
-    .amount-info {
-      background: #F3F4F6;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 24px;
-      display: none;
-    }
-    .amount-row {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-      font-size: 14px;
-      color: #4B5563;
-    }
-    .amount-row:last-child {
-      margin-bottom: 0;
-      padding-top: 8px;
-      border-top: 1px solid #D1D5DB;
-      font-size: 16px;
-      font-weight: 600;
-      color: #111827;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="wrapper">
     <!-- 로딩 상태 -->
     <div id="loading" class="loading">
       <div class="spinner"></div>
@@ -109,44 +113,43 @@
     <!-- 에러 표시 -->
     <div id="error-container" style="display: none;"></div>
 
-    <!-- 결제 금액 정보 -->
-    <div id="amount-info" class="amount-info">
-      <div class="amount-row">
-        <span>상품 금액</span>
-        <span id="product-amount">0원</span>
+    <!-- 결제 영역 -->
+    <div id="payment-content" style="display: none;">
+      <!-- 금액 정보 -->
+      <div class="amount-info">
+        <div class="amount-row">
+          <span>상품 금액</span>
+          <span id="product-amount">0원</span>
+        </div>
+        <div class="amount-row">
+          <span>배송비</span>
+          <span id="shipping-fee">0원</span>
+        </div>
+        <div class="amount-row">
+          <span>총 결제 금액</span>
+          <span id="total-amount">0원</span>
+        </div>
       </div>
-      <div class="amount-row">
-        <span>배송비</span>
-        <span id="shipping-fee">0원</span>
+
+      <div class="box_section">
+        <!-- 결제 UI -->
+        <div id="payment-method"></div>
+        <!-- 이용약관 UI -->
+        <div id="agreement"></div>
       </div>
-      <div class="amount-row">
-        <span>총 결제 금액</span>
-        <span id="total-amount">0원</span>
-      </div>
+
+      <!-- 결제하기 버튼 -->
+      <button class="button" id="payment-button" disabled>결제하기</button>
     </div>
-
-    <!-- 결제 수단 UI -->
-    <div id="payment-method" style="display: none;"></div>
-
-    <!-- 이용약관 UI -->
-    <div id="agreement" style="display: none;"></div>
-
-    <!-- 결제 버튼 -->
-    <button id="payment-button" class="pay-button" style="display: none;" disabled>
-      결제하기
-    </button>
   </div>
 
   <script>
-    // URL 파라미터에서 결제 정보 추출
+    // URL 파라미터 파싱
     const urlParams = new URLSearchParams(window.location.search);
 
-    // 클라이언트 키 (테스트 키)
+    // 결제 정보 추출
     const clientKey = urlParams.get('clientKey') || 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm';
-    // 고객 식별 키
     const customerKey = urlParams.get('customerKey') || generateRandomString();
-
-    // 결제 정보
     const orderId = urlParams.get('orderId') || '';
     const orderName = urlParams.get('orderName') || '';
     const productAmount = parseInt(urlParams.get('productAmount')) || 0;
@@ -156,23 +159,21 @@
     const customerEmail = urlParams.get('customerEmail') || '';
     const customerPhone = urlParams.get('customerPhone') || '';
 
-    // 콜백 URL (같은 origin 사용)
+    // 콜백 URL
     const baseUrl = window.location.origin;
-    const successUrl = `${baseUrl}/toss_payment_callback.html?type=success`;
-    const failUrl = `${baseUrl}/toss_payment_callback.html?type=fail`;
+    const successUrl = baseUrl + '/toss_payment_callback.html?type=success';
+    const failUrl = baseUrl + '/toss_payment_callback.html?type=fail';
 
-    // 결제 금액 객체
-    const amount = {
-      currency: "KRW",
-      value: totalAmount,
-    };
-
+    // 디버그 로깅
     console.log('=== 토스페이먼츠 v2 결제 초기화 ===');
+    console.log('URL:', window.location.href);
     console.log('clientKey:', clientKey);
     console.log('customerKey:', customerKey);
     console.log('orderId:', orderId);
     console.log('orderName:', orderName);
-    console.log('amount:', amount);
+    console.log('totalAmount:', totalAmount);
+    console.log('productAmount:', productAmount);
+    console.log('shippingFee:', shippingFee);
     console.log('successUrl:', successUrl);
     console.log('failUrl:', failUrl);
 
@@ -181,7 +182,7 @@
       return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     }
 
-    // 랜덤 문자열 생성 (공식 샘플 방식)
+    // 랜덤 문자열 생성
     function generateRandomString() {
       return window.btoa(Math.random()).slice(0, 20);
     }
@@ -189,8 +190,9 @@
     // 에러 표시
     function showError(message) {
       document.getElementById('loading').style.display = 'none';
+      document.getElementById('payment-content').style.display = 'none';
       const errorContainer = document.getElementById('error-container');
-      errorContainer.innerHTML = `<div class="error-box">${message}</div>`;
+      errorContainer.innerHTML = '<div class="error-box">' + message + '</div>';
       errorContainer.style.display = 'block';
 
       // 부모 창에 에러 전달
@@ -203,71 +205,73 @@
 
     // 메인 함수 (공식 샘플 구조)
     async function main() {
+      const button = document.getElementById('payment-button');
+
       // 파라미터 검증
-      if (!orderId || !totalAmount) {
-        showError('필수 결제 정보가 누락되었습니다.');
+      if (!orderId) {
+        showError('주문 ID가 누락되었습니다.');
+        return;
+      }
+      if (!totalAmount || totalAmount <= 0) {
+        showError('결제 금액이 올바르지 않습니다.');
         return;
       }
 
-      const button = document.getElementById('payment-button');
-
       try {
-        console.log('TossPayments SDK 초기화...');
+        console.log('TossPayments SDK 초기화 시작...');
 
-        // 1. SDK 초기화
+        // ------ 결제위젯 초기화 ------
         const tossPayments = TossPayments(clientKey);
 
-        // 2. 결제 위젯 인스턴스 생성
+        // 회원 결제
         const widgets = tossPayments.widgets({
           customerKey: customerKey,
         });
 
-        // 3. 결제 금액 설정
-        console.log('금액 설정:', amount);
+        // ------ 주문서의 결제 금액 설정 ------
+        const amount = {
+          currency: 'KRW',
+          value: totalAmount,
+        };
+        console.log('금액 설정:', JSON.stringify(amount));
         await widgets.setAmount(amount);
 
-        // 4. 결제 UI 렌더링 (동시 실행)
-        console.log('결제 UI 렌더링...');
+        // ------ 결제 UI 렌더링 ------
+        console.log('결제 UI 렌더링 시작...');
         await Promise.all([
           widgets.renderPaymentMethods({
-            selector: "#payment-method",
-            variantKey: "DEFAULT",
+            selector: '#payment-method',
+            variantKey: 'DEFAULT',
           }),
           widgets.renderAgreement({
-            selector: "#agreement",
-            variantKey: "AGREEMENT",
+            selector: '#agreement',
+            variantKey: 'AGREEMENT',
           }),
         ]);
 
-        // 5. 로딩 숨기고 UI 표시
+        // 로딩 숨기고 결제 영역 표시
         document.getElementById('loading').style.display = 'none';
+        document.getElementById('payment-content').style.display = 'block';
 
         // 금액 정보 표시
-        if (productAmount > 0) {
-          document.getElementById('product-amount').textContent = formatPrice(productAmount) + '원';
-          document.getElementById('shipping-fee').textContent = shippingFee > 0 ? formatPrice(shippingFee) + '원' : '무료';
-          document.getElementById('total-amount').textContent = formatPrice(totalAmount) + '원';
-          document.getElementById('amount-info').style.display = 'block';
-        }
+        document.getElementById('product-amount').textContent = formatPrice(productAmount) + '원';
+        document.getElementById('shipping-fee').textContent = shippingFee > 0 ? formatPrice(shippingFee) + '원' : '무료';
+        document.getElementById('total-amount').textContent = formatPrice(totalAmount) + '원';
 
-        document.getElementById('payment-method').style.display = 'block';
-        document.getElementById('agreement').style.display = 'block';
-
+        // 버튼 활성화
         button.textContent = formatPrice(totalAmount) + '원 결제하기';
-        button.style.display = 'block';
         button.disabled = false;
 
         console.log('결제 위젯 초기화 완료!');
 
-        // 6. 결제 버튼 클릭 이벤트
-        button.addEventListener('click', async function() {
+        // ------ '결제하기' 버튼 클릭 이벤트 ------
+        button.addEventListener('click', async function () {
           button.disabled = true;
           button.textContent = '결제 처리 중...';
 
           console.log('=== 결제 요청 시작 ===');
 
           try {
-            // 결제 요청 파라미터 (공식 샘플 구조)
             const paymentParams = {
               orderId: orderId,
               orderName: orderName,
@@ -275,7 +279,7 @@
               failUrl: failUrl,
             };
 
-            // 선택적 파라미터 추가
+            // 선택적 파라미터
             if (customerName && customerName.trim()) {
               paymentParams.customerName = customerName;
             }
@@ -286,22 +290,20 @@
               paymentParams.customerMobilePhone = customerPhone;
             }
 
-            console.log('Payment params:', JSON.stringify(paymentParams, null, 2));
+            console.log('결제 요청 파라미터:', JSON.stringify(paymentParams, null, 2));
 
             // 결제 요청 (성공 시 successUrl로 리다이렉트)
             await widgets.requestPayment(paymentParams);
 
-            // 이 코드는 실행되지 않음 (리다이렉트됨)
-            console.log('requestPayment 완료');
-
           } catch (error) {
             console.error('결제 요청 에러:', error);
 
-            const errorCode = error?.code || 'UNKNOWN_ERROR';
-            const errorMessage = error?.message || '결제 처리 중 오류가 발생했습니다.';
+            const errorCode = error.code || 'UNKNOWN_ERROR';
+            const errorMessage = error.message || '결제 처리 중 오류가 발생했습니다.';
 
             // 사용자 취소
             if (errorCode === 'USER_CANCEL' || errorCode === 'PAY_PROCESS_CANCELED') {
+              console.log('사용자가 결제를 취소했습니다.');
               window.parent.postMessage({ type: 'TOSS_PAYMENT_CANCEL' }, '*');
             } else {
               window.parent.postMessage({
@@ -311,6 +313,7 @@
               }, '*');
             }
 
+            // 버튼 복구
             button.disabled = false;
             button.textContent = formatPrice(totalAmount) + '원 결제하기';
           }
