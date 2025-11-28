@@ -246,17 +246,13 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
         const tossPayments = TossPayments(clientKey);
         widgets = tossPayments.widgets({ customerKey: customerKey });
 
-        // 금액 설정 (배송비 포함)
+        // 금액 설정 (배송비는 총액에 이미 포함되어 있음)
+        // 참고: 토스페이먼츠 SDK v2의 setAmount는 currency, value만 지원
         console.log('금액 설정 - 상품:', productAmount, '배송비:', shippingFee, '총액:', amount);
-        const amountConfig = {
+        await widgets.setAmount({
           currency: "KRW",
           value: amount
-        };
-        // 배송비가 있으면 별도로 설정
-        if (shippingFee > 0) {
-          amountConfig.shipping = shippingFee;
-        }
-        await widgets.setAmount(amountConfig);
+        });
 
         console.log('결제 수단 렌더링...');
         await widgets.renderPaymentMethods({ selector: "#payment-method", variantKey: "DEFAULT" });

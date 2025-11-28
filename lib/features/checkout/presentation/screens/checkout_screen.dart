@@ -261,7 +261,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               // 결제 금액 요약
               _PaymentSummary(
                 cartItems: cartItems,
-                shippingFee: _selectedShippingMethod == ShippingMethod.immediate ? 10000 : 0,
+                shippingFee: _selectedShippingMethod == ShippingMethod.immediate ? 4500 : 0,
               ),
               const SizedBox(height: 24),
 
