@@ -78,6 +78,11 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
           ..style.border = 'none'
           ..style.width = '100%'
           ..style.height = '100%'
+          // iframe에서 결제 리다이렉트 허용
+          ..setAttribute('sandbox',
+              'allow-scripts allow-same-origin allow-forms allow-popups '
+              'allow-top-navigation allow-top-navigation-by-user-activation')
+          ..setAttribute('allow', 'payment')
           ..srcdoc = _buildPaymentHtml();
 
         iframe.onLoad.listen((_) {
