@@ -80,6 +80,8 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
       'orderId': widget.orderId,
       'orderName': widget.orderName,
       'amount': widget.amount.toString(),
+      'productAmount': widget.productAmount.toString(),
+      'shippingFee': widget.shippingFee.toString(),
       'customerName': widget.customerName,
       'customerEmail': widget.customerEmail,
       'customerPhone': cleanPhone,
