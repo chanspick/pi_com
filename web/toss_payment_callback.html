@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>결제 처리 중</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background: #f5f5f5;
+    }
+    .icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-size: 40px;
+      color: white;
+    }
+    .icon.success { background: #0064FF; }
+    .icon.fail { background: #DC2626; }
+    h1 { color: #333; margin-bottom: 10px; font-size: 24px; }
+    p { color: #666; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div id="success-view" style="display: none; text-align: center;">
+    <div class="icon success">✓</div>
+    <h1>결제 완료</h1>
+    <p>잠시만 기다려주세요...</p>
+  </div>
+
+  <div id="fail-view" style="display: none; text-align: center;">
+    <div class="icon fail">✕</div>
+    <h1>결제 실패</h1>
+    <p id="fail-message">잠시만 기다려주세요...</p>
+  </div>
+
+  <div id="loading-view" style="text-align: center;">
+    <div style="width: 40px; height: 40px; border: 3px solid #eee; border-top-color: #0064FF; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 20px;"></div>
+    <p>처리 중...</p>
+  </div>
+
+  <style>
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  </style>
+
+  <script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const type = urlParams.get('type');
+
+    console.log('=== 결제 콜백 ===');
+    console.log('type:', type);
+    console.log('URL:', window.location.href);
+
+    if (type === 'success') {
+      // 성공: paymentType, orderId, paymentKey, amount
+      const paymentKey = urlParams.get('paymentKey');
+      const orderId = urlParams.get('orderId');
+      const amount = parseInt(urlParams.get('amount')) || 0;
+      const paymentType = urlParams.get('paymentType');
+
+      console.log('결제 성공!');
+      console.log('paymentKey:', paymentKey);
+      console.log('orderId:', orderId);
+      console.log('amount:', amount);
+
+      document.getElementById('loading-view').style.display = 'none';
+      document.getElementById('success-view').style.display = 'block';
+
+      // 부모 창에 성공 메시지 전송
+      window.parent.postMessage({
+        type: 'TOSS_PAYMENT_SUCCESS',
+        paymentKey: paymentKey,
+        orderId: orderId,
+        amount: amount,
+        paymentType: paymentType
+      }, '*');
+
+    } else if (type === 'fail') {
+      // 실패: code, message, orderId
+      const code = urlParams.get('code') || 'UNKNOWN_ERROR';
+      const message = urlParams.get('message') || '알 수 없는 오류가 발생했습니다.';
+      const orderId = urlParams.get('orderId');
+
+      console.log('결제 실패!');
+      console.log('code:', code);
+      console.log('message:', message);
+
+      document.getElementById('loading-view').style.display = 'none';
+      document.getElementById('fail-view').style.display = 'block';
+      document.getElementById('fail-message').textContent = message;
+
+      // 사용자 취소인 경우
+      if (code === 'USER_CANCEL' || code === 'PAY_PROCESS_CANCELED') {
+        window.parent.postMessage({
+          type: 'TOSS_PAYMENT_CANCEL'
+        }, '*');
+      } else {
+        window.parent.postMessage({
+          type: 'TOSS_PAYMENT_FAIL',
+          code: code,
+          message: message,
+          orderId: orderId
+        }, '*');
+      }
+    } else {
+      console.error('알 수 없는 콜백 타입:', type);
+      document.getElementById('loading-view').style.display = 'none';
+      document.getElementById('fail-view').style.display = 'block';
+      document.getElementById('fail-message').textContent = '잘못된 요청입니다.';
+
+      window.parent.postMessage({
+        type: 'TOSS_PAYMENT_FAIL',
+        code: 'INVALID_CALLBACK',
+        message: '잘못된 콜백 요청입니다.'
+      }, '*');
+    }
+  </script>
+</body>
+</html>
