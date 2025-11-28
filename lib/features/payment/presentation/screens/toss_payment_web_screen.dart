@@ -1,20 +1,20 @@
 // ignore_for_file: avoid_web_libraries_in_flutter
 
 import 'dart:html' as html;
+import 'dart:js' as js;
 import 'dart:ui_web' as ui_web;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pi_com/features/payment/presentation/providers/payment_provider.dart';
 
 /// 토스페이먼츠 웹 결제 화면 (Flutter Web 전용)
-/// iframe을 사용하여 결제 위젯을 로드
 class TossPaymentWebScreen extends ConsumerStatefulWidget {
   final String orderId;
   final String userId;
   final String orderName;
-  final int amount; // 총 결제 금액 (상품 + 배송비)
-  final int productAmount; // 상품 금액
-  final int shippingFee; // 배송비
+  final int amount;
+  final int productAmount;
+  final int shippingFee;
   final String customerName;
   final String customerEmail;
   final String customerPhone;
@@ -46,12 +46,11 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
   bool _isLoading = true;
   bool _isNavigating = false;
   bool _isViewRegistered = false;
+  bool _configSent = false;
   html.EventListener? _messageListener;
+  html.IFrameElement? _iframe;
 
-  // 토스페이먼츠 결제위젯 연동 클라이언트 키 (테스트)
   static const String _testClientKey = 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm';
-
-  // 이미 등록된 viewId 추적
   static final Set<String> _registeredViewIds = {};
 
   @override
@@ -59,8 +58,8 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
     super.initState();
     _logPaymentInfo();
     _viewId = 'toss-payment-${DateTime.now().millisecondsSinceEpoch}';
-    _registerWebView();
     _setupMessageListener();
+    _registerWebView();
   }
 
   void _logPaymentInfo() {
@@ -74,11 +73,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
     print('  amount (총액): ${widget.amount}');
     print('  productAmount (상품금액): ${widget.productAmount}');
     print('  shippingFee (배송비): ${widget.shippingFee}');
-    print('  customerName: ${widget.customerName}');
-    print('  customerEmail: ${widget.customerEmail}');
-    print('  customerPhone: ${widget.customerPhone}');
     print('========================================');
-    print('');
   }
 
   @override
@@ -90,87 +85,80 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
     super.dispose();
   }
 
-  /// 결제 페이지 URL 생성
-  String _buildPaymentUrl() {
-    final cleanPhone = widget.customerPhone.replaceAll(RegExp(r'[^0-9]'), '');
-    final baseUrl = Uri.base.origin;
-
-    // URL 파라미터 구성
-    final uri = Uri.parse('$baseUrl/toss_payment.html').replace(
-      queryParameters: {
-        'clientKey': _testClientKey,
-        'customerKey': widget.userId,
-        'orderId': widget.orderId,
-        'orderName': widget.orderName,
-        'amount': widget.amount.toString(),
-        'productAmount': widget.productAmount.toString(),
-        'shippingFee': widget.shippingFee.toString(),
-        'customerName': widget.customerName,
-        'customerEmail': widget.customerEmail,
-        'customerPhone': cleanPhone,
-      },
-    );
-
-    final urlString = uri.toString();
-    print('🔗 [TossPaymentWeb] Payment URL: $urlString');
-    return urlString;
-  }
-
   void _registerWebView() {
     if (_registeredViewIds.contains(_viewId)) {
-      print('⚠️ [TossPaymentWeb] ViewId already registered: $_viewId');
-      if (mounted) {
-        setState(() => _isViewRegistered = true);
-      }
+      if (mounted) setState(() => _isViewRegistered = true);
       return;
     }
 
-    final paymentUrl = _buildPaymentUrl();
+    final baseUrl = Uri.base.origin;
+    final paymentUrl = '$baseUrl/toss_payment.html';
+    print('🔗 [TossPaymentWeb] Payment URL: $paymentUrl');
 
     try {
       // ignore: undefined_prefixed_name
       ui_web.platformViewRegistry.registerViewFactory(
         _viewId,
         (int viewId) {
-          print('🏗️ [TossPaymentWeb] Creating iframe for viewId: $viewId');
+          print('🏗️ [TossPaymentWeb] Creating iframe');
 
-          final iframe = html.IFrameElement()
+          _iframe = html.IFrameElement()
             ..id = 'toss-payment-iframe-$viewId'
             ..style.border = 'none'
             ..style.width = '100%'
             ..style.height = '100%'
             ..allow = 'payment'
-            ..setAttribute('allowfullscreen', 'true')
             ..src = paymentUrl;
 
-          // iframe 로드 완료 이벤트
-          iframe.onLoad.listen((_) {
-            print('✅ [TossPaymentWeb] iframe loaded successfully');
-            if (mounted) {
-              setState(() => _isLoading = false);
-            }
+          _iframe!.onLoad.listen((_) {
+            print('✅ [TossPaymentWeb] iframe loaded');
+            // iframe 로드 완료 후 config 전송
+            Future.delayed(const Duration(milliseconds: 100), () {
+              _sendConfigToIframe();
+            });
           });
 
-          // iframe 에러 이벤트
-          iframe.onError.listen((event) {
-            print('❌ [TossPaymentWeb] iframe error: $event');
-          });
-
-          return iframe;
+          return _iframe!;
         },
       );
 
       _registeredViewIds.add(_viewId);
-      print('✅ [TossPaymentWeb] ViewFactory registered: $_viewId');
+      print('✅ [TossPaymentWeb] ViewFactory registered');
 
-      if (mounted) {
-        setState(() => _isViewRegistered = true);
-      }
+      if (mounted) setState(() => _isViewRegistered = true);
     } catch (e) {
-      print('❌ [TossPaymentWeb] Failed to register viewFactory: $e');
-      if (mounted) {
-        setState(() => _isViewRegistered = true);
+      print('❌ [TossPaymentWeb] Register error: $e');
+      if (mounted) setState(() => _isViewRegistered = true);
+    }
+  }
+
+  void _sendConfigToIframe() {
+    if (_configSent || _iframe == null) return;
+
+    final cleanPhone = widget.customerPhone.replaceAll(RegExp(r'[^0-9]'), '');
+
+    final config = js.JsObject.jsify({
+      'type': 'TOSS_PAYMENT_CONFIG',
+      'config': {
+        'clientKey': _testClientKey,
+        'customerKey': widget.userId,
+        'orderId': widget.orderId,
+        'orderName': widget.orderName,
+        'amount': widget.amount,
+        'productAmount': widget.productAmount,
+        'shippingFee': widget.shippingFee,
+        'customerName': widget.customerName,
+        'customerEmail': widget.customerEmail,
+        'customerPhone': cleanPhone,
       }
+    });
+
+    try {
+      _iframe!.contentWindow?.postMessage(config, '*');
+      _configSent = true;
+      print('📤 [TossPaymentWeb] Config sent to iframe');
+    } catch (e) {
+      print('❌ [TossPaymentWeb] Failed to send config: $e');
     }
   }
 
@@ -184,18 +172,20 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
       if (data is! Map) return;
 
       final type = data['type'];
-      print('📩 [TossPaymentWeb] Message received - type: $type');
+      print('📩 [TossPaymentWeb] Message: $type');
 
       switch (type) {
+        case 'TOSS_PAYMENT_READY':
+          print('🔔 [TossPaymentWeb] iframe ready, sending config...');
+          _sendConfigToIframe();
+          break;
+
         case 'TOSS_PAYMENT_SUCCESS':
           _isNavigating = true;
           final paymentKey = data['paymentKey'] as String? ?? '';
           final orderId = data['orderId'] as String? ?? widget.orderId;
           final amount = _parseAmount(data['amount']);
           print('✅ [TossPaymentWeb] Payment SUCCESS');
-          print('   paymentKey: $paymentKey');
-          print('   orderId: $orderId');
-          print('   amount: $amount');
           _handleSuccess(paymentKey, orderId, amount);
           break;
 
@@ -203,9 +193,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
           _isNavigating = true;
           final code = data['code'] as String? ?? 'UNKNOWN';
           final message = data['message'] as String? ?? '알 수 없는 오류';
-          print('❌ [TossPaymentWeb] Payment FAIL');
-          print('   code: $code');
-          print('   message: $message');
+          print('❌ [TossPaymentWeb] Payment FAIL: $code - $message');
           _handleFail(code, message);
           break;
 
@@ -215,13 +203,17 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
           _handleCancel();
           break;
       }
+
+      // 로딩 완료
+      if (mounted && _isLoading) {
+        setState(() => _isLoading = false);
+      }
     };
 
     html.window.addEventListener('message', _messageListener);
     print('👂 [TossPaymentWeb] Message listener attached');
   }
 
-  /// amount 값을 안전하게 int로 변환
   int _parseAmount(dynamic value) {
     if (value == null) return widget.amount;
     if (value is int) return value;
@@ -236,11 +228,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
 
       final approvedPayment = await ref
           .read(approveTossPaymentUseCaseProvider)
-          .call(
-            paymentKey: paymentKey,
-            orderId: orderId,
-            amount: amount,
-          );
+          .call(paymentKey: paymentKey, orderId: orderId, amount: amount);
 
       ref.read(isApprovingPaymentProvider.notifier).state = false;
 
@@ -351,7 +339,6 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
       ),
       body: Stack(
         children: [
-          // iframe 표시 (viewFactory 등록 후에만)
           if (_isViewRegistered)
             HtmlElementView(viewType: _viewId)
           else
@@ -361,21 +348,20 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
               ),
             ),
 
-          // 로딩 오버레이
-          if (_isLoading || isApproving)
+          if (isApproving)
             Container(
               color: Colors.white.withOpacity(0.9),
-              child: Center(
+              child: const Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const CircularProgressIndicator(
+                    CircularProgressIndicator(
                       valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0064FF)),
                     ),
-                    const SizedBox(height: 16),
+                    SizedBox(height: 16),
                     Text(
-                      isApproving ? '결제 승인 중...' : '결제 위젯 로딩 중...',
-                      style: const TextStyle(
+                      '결제 승인 중...',
+                      style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w500,
                         color: Color(0xFF374151),
