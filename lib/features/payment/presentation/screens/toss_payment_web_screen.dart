@@ -454,18 +454,19 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
           onPressed: () {
             showDialog(
               context: context,
-              builder: (context) => AlertDialog(
+              barrierDismissible: false,
+              builder: (dialogContext) => AlertDialog(
                 title: const Text('결제 취소'),
                 content: const Text('결제를 취소하시겠습니까?'),
                 actions: [
                   TextButton(
-                    onPressed: () => Navigator.pop(context),
+                    onPressed: () => Navigator.pop(dialogContext),
                     child: const Text('계속 진행'),
                   ),
                   TextButton(
                     onPressed: () {
-                      Navigator.pop(context);
-                      Navigator.pop(context, {
+                      Navigator.pop(dialogContext); // 다이얼로그 닫기
+                      Navigator.pop(context, {      // 결제 화면 닫기
                         'success': false,
                         'errorCode': 'USER_CANCEL',
                         'errorMessage': '사용자가 결제를 취소했습니다',
