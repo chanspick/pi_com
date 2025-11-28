@@ -198,13 +198,25 @@ service cloud.firestore {
     }
 
     // ============================================
-    // Payments 컬렉션 (결제 정보)
+    // Payments 컬렉션 (카카오페이 결제 정보)
     // ============================================
     match /payments/{paymentId} {
       allow read: if isAuthenticated() &&
                      (resource.data.partner_user_id == request.auth.uid || isAdmin());
       allow create: if isAuthenticated();
       allow update: if isAdmin(); // 결제 정보는 관리자/시스템만 수정 가능
+      allow delete: if false; // 결제 정보는 삭제 불가 (감사 로그)
+    }
+
+    // ============================================
+    // Toss Payments 컬렉션 (토스페이먼츠 결제 정보)
+    // ============================================
+    match /toss_payments/{paymentKey} {
+      // 본인 주문건 또는 관리자만 읽기 가능
+      // orderId로 조회하므로 인증된 사용자에게 허용
+      allow read: if isAuthenticated();
+      allow create: if false; // 서버(Firebase Functions)에서만 생성
+      allow update: if false; // 서버(Firebase Functions)에서만 수정
       allow delete: if false; // 결제 정보는 삭제 불가 (감사 로그)
     }
 

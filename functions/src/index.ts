@@ -539,20 +539,27 @@ app.post("/payment/cancel", async (req, res) => {
 });
 
 // ============================================================================
-// 토스페이먼츠 API
+// 토스페이먼츠 v2 API
 // ============================================================================
 
 const TOSS_PAYMENTS_API_URL = "https://api.tosspayments.com/v1/payments";
 
-// 토스페이먼츠 설정 가져오기
-// Firebase Console에서 설정: firebase functions:config:set tosspayments.secret_key="YOUR_SECRET_KEY"
+/**
+ * 토스페이먼츠 v2 설정 가져오기
+ * Firebase Console에서 설정: firebase functions:config:set tosspayments.secret_key="YOUR_SECRET_KEY"
+ *
+ * v2 결제위젯 연동 키 종류:
+ * - 클라이언트 키: 클라이언트(Flutter Web)에서 SDK 초기화 시 사용
+ * - 시크릿 키: 서버(Firebase Functions)에서 API 호출 시 사용
+ *
+ * ⚠️ 중요: 결제위젯 연동에는 '결제위젯 연동 시크릿 키'를 사용해야 함 (API 개별 연동 키와 다름)
+ */
 const getTossPaymentsConfig = () => {
   const config = functions.config();
   return {
-    // ⚠️ 중요: 결제위젯 연동에는 '결제위젯 연동 시크릿 키'를 사용해야 함 (API 개별 연동 키 아님)
-    // 테스트 키: test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6
+    // 테스트 시크릿 키: test_gsk_AQ92ymxN34LGgD1yDA5j3ajRKXvd
     // 실제 키는 토스페이먼츠 개발자센터 > 내 개발정보 > 결제위젯 연동 키에서 확인
-    secretKey: config.tosspayments?.secret_key || process.env.TOSS_SECRET_KEY || "test_gsk_docs_OaPz8L5KdmQXkzRz3y47BMw6",
+    secretKey: config.tosspayments?.secret_key || process.env.TOSS_SECRET_KEY || "test_gsk_AQ92ymxN34LGgD1yDA5j3ajRKXvd",
   };
 };
 
@@ -617,8 +624,15 @@ interface TossPaymentResponse {
 }
 
 /**
- * 토스페이먼츠 결제 승인 API
+ * 토스페이먼츠 v2 결제 승인 API
  * POST /toss-payment/confirm
+ *
+ * v2 결제 흐름:
+ * 1. 클라이언트에서 widgets.requestPayment() 호출
+ * 2. 사용자 인증 완료 후 successUrl로 리다이렉트
+ * 3. toss_payment_callback.html에서 이 엔드포인트 호출
+ * 4. 서버가 토스페이먼츠 API로 최종 승인 요청
+ * 5. 승인 결과를 Firestore에 저장 후 응답
  */
 app.post("/toss-payment/confirm", async (req, res) => {
   try {
@@ -703,8 +717,11 @@ app.post("/toss-payment/confirm", async (req, res) => {
 });
 
 /**
- * 토스페이먼츠 결제 취소 API
+ * 토스페이먼츠 v2 결제 취소 API
  * POST /toss-payment/cancel
+ *
+ * 전체 취소 또는 부분 취소 지원
+ * cancelAmount 미지정 시 전체 취소
  */
 app.post("/toss-payment/cancel", async (req, res) => {
   try {
@@ -772,8 +789,10 @@ app.post("/toss-payment/cancel", async (req, res) => {
 });
 
 /**
- * 토스페이먼츠 결제 조회 API
+ * 토스페이먼츠 v2 결제 조회 API
  * GET /toss-payment/:paymentKey
+ *
+ * paymentKey로 결제 정보 조회
  */
 app.get("/toss-payment/:paymentKey", async (req, res) => {
   try {

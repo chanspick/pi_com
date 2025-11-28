@@ -1,13 +1,18 @@
 // ignore_for_file: avoid_web_libraries_in_flutter
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:html' as html;
-import 'dart:ui_web' as ui_web;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pi_com/features/payment/presentation/providers/payment_provider.dart';
 
-/// 토스페이먼츠 웹 결제 화면 (Flutter Web 전용)
+/// 토스페이먼츠 v2 웹 결제 화면 (Flutter Web 전용)
+///
+/// 새 창(popup) 방식으로 결제 진행
+/// iframe에서 cross-origin navigation 제한 문제를 우회
+/// 결제 흐름: 새 창 열기 → 결제 완료 → Firestore 리스닝으로 결과 감지
 class TossPaymentWebScreen extends ConsumerStatefulWidget {
   final String orderId;
   final String userId;
@@ -42,30 +47,27 @@ class TossPaymentWebScreen extends ConsumerStatefulWidget {
 }
 
 class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
-  late final String _viewId;
-  bool _isLoading = true;
+  bool _isWaitingForPayment = false;
   bool _isNavigating = false;
-  bool _isViewRegistered = false;
-  bool _configSent = false;
+  html.WindowBase? _paymentWindow;
   html.EventListener? _messageListener;
-  html.IFrameElement? _iframe;
+  StreamSubscription<QuerySnapshot>? _paymentListener;
+  Timer? _windowCheckTimer;
 
-  static const String _testClientKey = 'test_gck_docs_Ovk5rk1EwkEbP0W43n07xlzm';
-  static final Set<String> _registeredViewIds = {};
+  static const String _testClientKey = 'test_gck_yL0qZ4G1VO54GNy9Wnjo8oWb2MQY';
 
   @override
   void initState() {
     super.initState();
     _logPaymentInfo();
-    _viewId = 'toss-payment-${DateTime.now().millisecondsSinceEpoch}';
     _setupMessageListener();
-    _registerWebView();
+    _setupFirestoreListener();
   }
 
   void _logPaymentInfo() {
     print('');
     print('========================================');
-    print('🔵 [TossPaymentWeb] 결제 정보');
+    print('🔵 [TossPaymentWeb] 결제 정보 (새 창 방식)');
     print('========================================');
     print('  orderId: ${widget.orderId}');
     print('  userId: ${widget.userId}');
@@ -78,91 +80,73 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
 
   @override
   void dispose() {
+    _windowCheckTimer?.cancel();
+    _paymentListener?.cancel();
+    _paymentListener = null;
     if (_messageListener != null) {
       html.window.removeEventListener('message', _messageListener);
       _messageListener = null;
     }
+    // 결제 창이 열려있으면 닫기
+    try {
+      _paymentWindow?.close();
+    } catch (_) {}
     super.dispose();
   }
 
-  void _registerWebView() {
-    if (_registeredViewIds.contains(_viewId)) {
-      if (mounted) setState(() => _isViewRegistered = true);
-      return;
-    }
+  /// Firestore에서 결제 상태를 실시간으로 감시
+  /// 서버에서 결제 승인 완료 시 toss_payments 컬렉션에 저장됨
+  void _setupFirestoreListener() {
+    print('🔔 [TossPaymentWeb] Setting up Firestore listener for orderId: ${widget.orderId}');
 
-    final baseUrl = Uri.base.origin;
-    final paymentUrl = '$baseUrl/toss_payment.html';
-    print('🔗 [TossPaymentWeb] Payment URL: $paymentUrl');
+    _paymentListener = FirebaseFirestore.instance
+        .collection('toss_payments')
+        .where('orderId', isEqualTo: widget.orderId)
+        .snapshots()
+        .listen(
+      (snapshot) {
+        if (_isNavigating || !mounted) return;
 
-    try {
-      // ignore: undefined_prefixed_name
-      ui_web.platformViewRegistry.registerViewFactory(
-        _viewId,
-        (int viewId) {
-          print('🏗️ [TossPaymentWeb] Creating iframe');
+        for (final change in snapshot.docChanges) {
+          if (change.type == DocumentChangeType.added ||
+              change.type == DocumentChangeType.modified) {
+            final data = change.doc.data();
+            if (data == null) continue;
 
-          _iframe = html.IFrameElement()
-            ..id = 'toss-payment-iframe-$viewId'
-            ..style.border = 'none'
-            ..style.width = '100%'
-            ..style.height = '100%'
-            ..allow = 'payment'
-            ..src = paymentUrl;
+            final status = data['status'] as String?;
+            print('📋 [TossPaymentWeb] Payment status from Firestore: $status');
 
-          _iframe!.onLoad.listen((_) {
-            print('✅ [TossPaymentWeb] iframe loaded');
-            // iframe 로드 완료 후 config 전송
-            Future.delayed(const Duration(milliseconds: 100), () {
-              _sendConfigToIframe();
-            });
-          });
+            if (status == 'DONE' || status == 'approved' || status == 'COMPLETED') {
+              _isNavigating = true;
+              final paymentKey = data['paymentKey'] as String? ?? '';
+              final amount = data['totalAmount'] as int? ?? widget.amount;
 
-          return _iframe!;
-        },
-      );
+              print('✅ [TossPaymentWeb] Payment DONE via Firestore');
 
-      _registeredViewIds.add(_viewId);
-      print('✅ [TossPaymentWeb] ViewFactory registered');
+              // 결제 창 닫기
+              _closePaymentWindow();
+              _handleSuccessFromFirestore(paymentKey, widget.orderId, amount, data);
+            } else if (status == 'FAILED' || status == 'failed' || status == 'ABORTED') {
+              _isNavigating = true;
+              final code = data['errorCode'] as String? ?? 'PAYMENT_FAILED';
+              final message = data['errorMessage'] as String? ?? '결제가 실패했습니다';
 
-      if (mounted) setState(() => _isViewRegistered = true);
-    } catch (e) {
-      print('❌ [TossPaymentWeb] Register error: $e');
-      if (mounted) setState(() => _isViewRegistered = true);
-    }
-  }
-
-  void _sendConfigToIframe() {
-    if (_configSent || _iframe == null) return;
-
-    final cleanPhone = widget.customerPhone.replaceAll(RegExp(r'[^0-9]'), '');
-    final baseUrl = Uri.base.origin;
-
-    // JSON 문자열로 전송 (structured clone 에러 방지)
-    final configJson = jsonEncode({
-      'type': 'TOSS_PAYMENT_CONFIG',
-      'config': {
-        'clientKey': _testClientKey,
-        'customerKey': widget.userId,
-        'orderId': widget.orderId,
-        'orderName': widget.orderName,
-        'amount': widget.amount,
-        'productAmount': widget.productAmount,
-        'shippingFee': widget.shippingFee,
-        'customerName': widget.customerName,
-        'customerEmail': widget.customerEmail,
-        'customerPhone': cleanPhone,
-        'baseUrl': baseUrl, // 콜백 URL 생성용
-      }
-    });
-
-    try {
-      _iframe!.contentWindow?.postMessage(configJson, '*');
-      _configSent = true;
-      print('📤 [TossPaymentWeb] Config sent to iframe (baseUrl: $baseUrl)');
-    } catch (e) {
-      print('❌ [TossPaymentWeb] Failed to send config: $e');
-    }
+              print('❌ [TossPaymentWeb] Payment FAILED via Firestore');
+              _closePaymentWindow();
+              _handleFail(code, message);
+            } else if (status == 'CANCELED' || status == 'canceled') {
+              _isNavigating = true;
+              print('🚫 [TossPaymentWeb] Payment CANCELED via Firestore');
+              _closePaymentWindow();
+              _handleCancel();
+            }
+          }
+        }
+      },
+      onError: (error) {
+        print('❌ [TossPaymentWeb] Firestore listener error: $error');
+      },
+    );
   }
 
   void _setupMessageListener() {
@@ -170,35 +154,47 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
       if (_isNavigating || !mounted) return;
 
       final messageEvent = event as html.MessageEvent;
-      dynamic data = messageEvent.data;
+      dynamic rawData = messageEvent.data;
 
-      // JSON 문자열인 경우 파싱
-      if (data is String) {
-        try {
-          data = jsonDecode(data);
-        } catch (e) {
-          print('📩 [TossPaymentWeb] Non-JSON message: $data');
+      Map<String, dynamic> data;
+
+      try {
+        if (rawData is String) {
+          try {
+            final decoded = jsonDecode(rawData);
+            if (decoded is Map) {
+              data = Map<String, dynamic>.from(decoded);
+            } else {
+              return;
+            }
+          } catch (e) {
+            return;
+          }
+        } else if (rawData is Map) {
+          try {
+            final jsonStr = jsonEncode(rawData);
+            data = Map<String, dynamic>.from(jsonDecode(jsonStr));
+          } catch (e) {
+            return;
+          }
+        } else {
           return;
         }
+      } catch (e) {
+        return;
       }
 
-      if (data is! Map) return;
-
       final type = data['type'];
-      print('📩 [TossPaymentWeb] Message: $type');
+      print('📩 [TossPaymentWeb] Message Type: $type');
 
       switch (type) {
-        case 'TOSS_PAYMENT_READY':
-          print('🔔 [TossPaymentWeb] iframe ready, sending config...');
-          _sendConfigToIframe();
-          break;
-
         case 'TOSS_PAYMENT_SUCCESS':
           _isNavigating = true;
           final paymentKey = data['paymentKey'] as String? ?? '';
           final orderId = data['orderId'] as String? ?? widget.orderId;
           final amount = _parseAmount(data['amount']);
-          print('✅ [TossPaymentWeb] Payment SUCCESS');
+          print('✅ [TossPaymentWeb] Payment SUCCESS via postMessage');
+          _closePaymentWindow();
           _handleSuccess(paymentKey, orderId, amount);
           break;
 
@@ -207,24 +203,84 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
           final code = data['code'] as String? ?? 'UNKNOWN';
           final message = data['message'] as String? ?? '알 수 없는 오류';
           print('❌ [TossPaymentWeb] Payment FAIL: $code - $message');
+          _closePaymentWindow();
           _handleFail(code, message);
           break;
 
         case 'TOSS_PAYMENT_CANCEL':
           _isNavigating = true;
           print('🚫 [TossPaymentWeb] Payment CANCEL');
+          _closePaymentWindow();
           _handleCancel();
           break;
-      }
-
-      // 로딩 완료
-      if (mounted && _isLoading) {
-        setState(() => _isLoading = false);
       }
     };
 
     html.window.addEventListener('message', _messageListener);
     print('👂 [TossPaymentWeb] Message listener attached');
+  }
+
+  /// 새 창에서 결제 페이지 열기
+  void _openPaymentWindow() {
+    if (_isWaitingForPayment) return;
+
+    final baseUrl = Uri.base.origin;
+    final cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
+    final cleanPhone = widget.customerPhone.replaceAll(RegExp(r'[^0-9]'), '');
+
+    final paymentUrl = Uri.parse('$cleanBaseUrl/toss_payment.html').replace(
+      queryParameters: {
+        'clientKey': _testClientKey,
+        'customerKey': widget.userId,
+        'orderId': widget.orderId,
+        'orderName': widget.orderName,
+        'amount': widget.amount.toString(),
+        'productAmount': widget.productAmount.toString(),
+        'shippingFee': widget.shippingFee.toString(),
+        'customerEmail': widget.customerEmail,
+        'customerName': widget.customerName,
+        'customerPhone': cleanPhone,
+      },
+    ).toString();
+
+    print('🌐 [TossPaymentWeb] Opening payment window: $paymentUrl');
+
+    // 새 창 열기 (popup)
+    _paymentWindow = html.window.open(
+      paymentUrl,
+      'toss_payment_popup',
+      'width=500,height=700,scrollbars=yes,resizable=yes',
+    );
+
+    if (_paymentWindow != null) {
+      setState(() => _isWaitingForPayment = true);
+
+      // 창이 닫혔는지 주기적으로 확인
+      _windowCheckTimer = Timer.periodic(const Duration(milliseconds: 500), (timer) {
+        if (_paymentWindow?.closed == true) {
+          timer.cancel();
+          if (!_isNavigating && mounted) {
+            // 창이 닫혔는데 결과가 없으면 사용자가 수동으로 닫은 것
+            print('⚠️ [TossPaymentWeb] Payment window closed by user');
+            setState(() => _isWaitingForPayment = false);
+          }
+        }
+      });
+    } else {
+      // 팝업 차단됨
+      _showError('팝업이 차단되었습니다. 팝업 차단을 해제해주세요.');
+    }
+  }
+
+  void _closePaymentWindow() {
+    _windowCheckTimer?.cancel();
+    try {
+      _paymentWindow?.close();
+    } catch (_) {}
+    _paymentWindow = null;
+    if (mounted) {
+      setState(() => _isWaitingForPayment = false);
+    }
   }
 
   int _parseAmount(dynamic value) {
@@ -233,6 +289,29 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
     if (value is double) return value.toInt();
     if (value is String) return int.tryParse(value) ?? widget.amount;
     return widget.amount;
+  }
+
+  void _handleSuccessFromFirestore(
+    String paymentKey,
+    String orderId,
+    int amount,
+    Map<String, dynamic> paymentData,
+  ) {
+    print('🎉 [TossPaymentWeb] Payment already approved, returning result');
+
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          Navigator.pop(context, {
+            'success': true,
+            'paymentKey': paymentKey,
+            'orderId': orderId,
+            'amount': amount,
+            'payment': paymentData,
+          });
+        }
+      });
+    }
   }
 
   Future<void> _handleSuccess(String paymentKey, String orderId, int amount) async {
@@ -309,6 +388,11 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
   }
 
   void _showCancelDialog() {
+    if (_isWaitingForPayment) {
+      // 결제 진행 중이면 창 닫기
+      _closePaymentWindow();
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -336,6 +420,13 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
     );
   }
 
+  String _formatPrice(int price) {
+    return price.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isApproving = ref.watch(isApprovingPaymentProvider);
@@ -350,40 +441,158 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
           onPressed: _showCancelDialog,
         ),
       ),
-      body: Stack(
-        children: [
-          if (_isViewRegistered)
-            HtmlElementView(viewType: _viewId)
-          else
-            const Center(
-              child: CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0064FF)),
-              ),
-            ),
+      body: Container(
+        color: const Color(0xFFF9FAFB),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // 주문 정보 카드
+                Container(
+                  width: double.infinity,
+                  constraints: const BoxConstraints(maxWidth: 400),
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.08),
+                        blurRadius: 16,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '주문 정보',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF111827),
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      _buildInfoRow('상품명', widget.orderName),
+                      _buildInfoRow('상품 금액', '${_formatPrice(widget.productAmount)}원'),
+                      _buildInfoRow(
+                        '배송비',
+                        widget.shippingFee > 0
+                            ? '${_formatPrice(widget.shippingFee)}원'
+                            : '무료',
+                      ),
+                      const Divider(height: 32),
+                      _buildInfoRow(
+                        '총 결제 금액',
+                        '${_formatPrice(widget.amount)}원',
+                        isTotal: true,
+                      ),
+                    ],
+                  ),
+                ),
 
-          if (isApproving)
-            Container(
-              color: Colors.white.withOpacity(0.9),
-              child: const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0064FF)),
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      '결제 승인 중...',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFF374151),
+                const SizedBox(height: 32),
+
+                // 결제 버튼 또는 상태 표시
+                if (isApproving)
+                  const Column(
+                    children: [
+                      CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0064FF)),
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        '결제 승인 중...',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF374151),
+                        ),
+                      ),
+                    ],
+                  )
+                else if (_isWaitingForPayment)
+                  Column(
+                    children: [
+                      const CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF0064FF)),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        '결제 창에서 결제를 진행해주세요',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF374151),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      TextButton(
+                        onPressed: _openPaymentWindow,
+                        child: const Text('결제 창 다시 열기'),
+                      ),
+                    ],
+                  )
+                else
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: _openPaymentWindow,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0064FF),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 18),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          '${_formatPrice(widget.amount)}원 결제하기',
+                          style: const TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
                     ),
-                  ],
-                ),
-              ),
+                  ),
+              ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: isTotal ? 16 : 14,
+              fontWeight: isTotal ? FontWeight.w600 : FontWeight.w400,
+              color: isTotal ? const Color(0xFF111827) : const Color(0xFF6B7280),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: isTotal ? 20 : 14,
+              fontWeight: isTotal ? FontWeight.w700 : FontWeight.w500,
+              color: isTotal ? const Color(0xFF0064FF) : const Color(0xFF111827),
+            ),
+          ),
         ],
       ),
     );
