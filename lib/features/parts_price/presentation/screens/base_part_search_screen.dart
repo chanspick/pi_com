@@ -8,7 +8,12 @@ import '../../../listing/presentation/screens/listings_by_base_part_screen.dart'
 
 /// 홈 화면 검색바용 - base_part 검색 화면
 class BasePartSearchScreen extends ConsumerStatefulWidget {
-  const BasePartSearchScreen({super.key});
+  final String? initialQuery; // 웹에서 URL 파라미터로 전달받을 검색어
+
+  const BasePartSearchScreen({
+    super.key,
+    this.initialQuery,
+  });
 
   @override
   ConsumerState<BasePartSearchScreen> createState() => _BasePartSearchScreenState();
@@ -19,6 +24,34 @@ class _BasePartSearchScreenState extends ConsumerState<BasePartSearchScreen> {
   List<BasePartEntity> _searchResults = [];
   bool _isSearching = false;
   bool _hasSearched = false;
+  String? _previousQuery;
+
+  @override
+  void initState() {
+    super.initState();
+    _previousQuery = widget.initialQuery;
+    // 웹에서 URL 파라미터로 검색어가 전달된 경우 자동 검색
+    if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+      _searchController.text = widget.initialQuery!;
+      // 화면이 빌드된 후에 검색 실행
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _performSearch();
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant BasePartSearchScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // URL 파라미터가 변경되었는지 확인
+    if (widget.initialQuery != _previousQuery) {
+      _previousQuery = widget.initialQuery;
+      if (widget.initialQuery != null && widget.initialQuery!.isNotEmpty) {
+        _searchController.text = widget.initialQuery!;
+        _performSearch();
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -224,10 +257,16 @@ class _BasePartSearchScreenState extends ConsumerState<BasePartSearchScreen> {
           ),
         ),
 
-        // 결과 리스트
+        // 결과 리스트 (그리드 형식으로 표시)
         Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: GridView.builder(
+            padding: const EdgeInsets.all(16),
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2, // 2열 그리드
+              childAspectRatio: 0.75, // 카드 비율 (listing card와 유사)
+              crossAxisSpacing: 12,
+              mainAxisSpacing: 12,
+            ),
             itemCount: _searchResults.length,
             itemBuilder: (context, index) {
               final basePart = _searchResults[index];
@@ -240,98 +279,96 @@ class _BasePartSearchScreenState extends ConsumerState<BasePartSearchScreen> {
   }
 
   Widget _buildBasePartCard(BasePartEntity basePart) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        onTap: () => _navigateToListings(basePart),
+    // Listing card와 동일한 규격의 세로형 카드
+    return Container(
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              // 카테고리 아이콘
-              Container(
-                width: 60,
-                height: 60,
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 2,
+            blurRadius: 6,
+          ),
+        ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: () => _navigateToListings(basePart),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // 상단: 카테고리 아이콘 영역 (Listing card의 이미지 영역과 동일 비율)
+            Expanded(
+              flex: 3,
+              child: Container(
                 decoration: BoxDecoration(
                   color: Theme.of(context).primaryColor.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                 ),
-                child: Icon(
-                  _getCategoryIcon(basePart.category),
-                  size: 32,
-                  color: Theme.of(context).primaryColor,
+                child: Center(
+                  child: Icon(
+                    _getCategoryIcon(basePart.category),
+                    size: 48,
+                    color: Theme.of(context).primaryColor,
+                  ),
                 ),
               ),
-              const SizedBox(width: 16),
+            ),
 
-              // 부품 정보
-              Expanded(
+            // 하단: 부품 정보 영역 (Listing card의 정보 영역과 동일 비율)
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // 카테고리
-                    Text(
-                      basePart.category.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: Theme.of(context).primaryColor,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-
-                    // 모델명
-                    Text(
-                      basePart.modelName,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-
-                    // 가격 및 매물 정보
-                    Row(
-                      children: [
-                        if (basePart.hasPriceInfo) ...[
-                          Icon(Icons.attach_money, size: 14, color: Colors.grey[600]),
-                          const SizedBox(width: 4),
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // 카테고리
                           Text(
-                            basePart.priceRangeText,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.grey[700],
-                              fontWeight: FontWeight.w500,
+                            basePart.category.toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.grey,
                             ),
                           ),
-                          const SizedBox(width: 12),
-                        ],
-                        Icon(Icons.inventory_2_outlined, size: 14, color: Colors.grey[600]),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${basePart.listingCount}개 매물',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey[600],
+                          // 모델명
+                          Text(
+                            basePart.modelName,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                    ),
+                    // 매물 개수 (가격 위치에 표시)
+                    Text(
+                      '${basePart.listingCount}개 매물',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
               ),
-
-              // 화살표 아이콘
-              Icon(
-                Icons.arrow_forward_ios,
-                size: 16,
-                color: Colors.grey[400],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

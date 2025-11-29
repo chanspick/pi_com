@@ -152,10 +152,10 @@ class _WebNavBarV2State extends ConsumerState<WebNavBarV2> {
                 ),
                 onSubmitted: (value) {
                   if (value.trim().isNotEmpty) {
-                    // GoRouter가 자동으로 인코딩 처리
-                    context.go('${Routes.partShop}?basePartSearch=${value.trim()}');
+                    // 웹에서도 모바일과 동일하게 BasePart 검색 화면으로 이동
+                    context.go('${Routes.basePartSearch}?query=${value.trim()}');
                   } else {
-                    context.go(Routes.partShop);
+                    context.go(Routes.basePartSearch);
                   }
                 },
               ),
@@ -176,10 +176,10 @@ class _WebNavBarV2State extends ConsumerState<WebNavBarV2> {
               onPressed: () {
                 final query = _searchController.text.trim();
                 if (query.isNotEmpty) {
-                  // GoRouter가 자동으로 인코딩 처리
-                  context.go('${Routes.partShop}?basePartSearch=$query');
+                  // 웹에서도 모바일과 동일하게 BasePart 검색 화면으로 이동
+                  context.go('${Routes.basePartSearch}?query=$query');
                 } else {
-                  context.go(Routes.partShop);
+                  context.go(Routes.basePartSearch);
                 }
               },
             ),
