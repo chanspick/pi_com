@@ -26,6 +26,7 @@ import 'features/cart/presentation/screens/cart_screen.dart';
 import 'features/checkout/presentation/screens/checkout_screen.dart';
 import 'features/parts_price/presentation/screens/part_category_screen.dart'; // PartsCategoryScreen
 import 'features/parts_price/presentation/screens/price_history_screen.dart';
+import 'features/parts_price/presentation/screens/base_part_search_screen.dart';
 import 'features/parts_price/domain/entities/base_part_entity.dart';
 import 'features/recommendation/presentation/screens/my_estimate_screen.dart';
 import 'features/my_page/presentation/screens/my_page_screen.dart';
@@ -148,6 +149,14 @@ class MyApp extends ConsumerWidget {
       GoRoute(
         path: '/parts-category',
         builder: (context, state) => const PartsCategoryScreen(),
+      ),
+      GoRoute(
+        path: '/base-part-search',
+        builder: (context, state) {
+          // URL 파라미터에서 검색어 추출
+          final query = state.uri.queryParameters['query'];
+          return BasePartSearchScreen(initialQuery: query);
+        },
       ),
       GoRoute(
         path: '/price-history/:basePartId',
