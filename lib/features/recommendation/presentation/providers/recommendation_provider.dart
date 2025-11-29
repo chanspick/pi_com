@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pi_com/core/constants/fixed_price_parts.dart';
+import 'package:pi_com/core/models/base_part_model.dart';
 import 'package:pi_com/core/repositories/base_part_repository.dart';
 import 'package:pi_com/features/recommendation/data/datasources/compatibility_remote_datasource.dart';
 import 'package:pi_com/features/recommendation/data/datasources/compatibility_remote_datasource_impl.dart';
@@ -111,3 +113,33 @@ final isDynamicLoadingProvider = StateProvider<bool>((ref) => false);
 
 /// 동적 추천 에러 메시지 Provider
 final dynamicErrorProvider = StateProvider<String?>((ref) => null);
+
+// ============================================================================
+// Phase 2 - Fixed Price Parts Selection Providers (정가제 부품 선택)
+// ============================================================================
+
+/// PSU 목록 Provider (Firestore에서 조회)
+final availablePsuListProvider = FutureProvider<List<BasePart>>((ref) async {
+  final dataSource = ref.watch(compatibilityRemoteDataSourceProvider);
+  return await dataSource.getAvailableBaseParts('psu');
+});
+
+/// 선택된 쿨러 타입 Provider
+final selectedCoolerTypeProvider = StateProvider<CoolerType>((ref) => CoolerType.budget);
+
+/// 선택된 PSU Provider
+final selectedPsuProvider = StateProvider<BasePart?>((ref) => null);
+
+/// 정가제 부품 선택 완료 여부
+final fixedPartsConfirmedProvider = StateProvider<bool>((ref) => false);
+
+/// 정가제 부품 총액 계산 Provider
+final fixedPartsTotalProvider = Provider<int>((ref) {
+  final coolerType = ref.watch(selectedCoolerTypeProvider);
+  final psu = ref.watch(selectedPsuProvider);
+
+  final coolerPrice = getCoolerInfo(coolerType).price;
+  final psuPrice = psu?.lowestPrice ?? 0;
+
+  return kFixedCasePrice + coolerPrice + psuPrice;
+});

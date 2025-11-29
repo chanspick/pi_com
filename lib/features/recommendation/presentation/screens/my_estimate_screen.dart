@@ -3,10 +3,12 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:pi_com/core/constants/fixed_price_parts.dart';
 import 'package:pi_com/features/recommendation/data/models/spec_profile_model.dart';
 import 'package:pi_com/features/recommendation/domain/entities/recommendation_entity.dart';
 import 'package:pi_com/features/recommendation/presentation/providers/recommendation_provider.dart';
 import 'package:pi_com/features/recommendation/presentation/screens/pc_assembly_screen.dart';
+import 'package:pi_com/features/recommendation/presentation/widgets/fixed_parts_selection_widget.dart';
 import '../../../../core/utils/responsive_helper.dart';
 import '../../../web_public/presentation/widgets/web_navbar_v2.dart';
 
@@ -27,6 +29,7 @@ class _MyEstimateScreenState extends ConsumerState<MyEstimateScreen> {
   String? _error;
   String get _currentQCode => _history.last;
   bool get _isFinished => _currentQCode == 'Q_FINISH';
+  bool get _isFixedPartsPhase => _currentQCode == 'Q_FIXED_PARTS';
 
   @override
   void dispose() {
@@ -41,12 +44,16 @@ class _MyEstimateScreenState extends ConsumerState<MyEstimateScreen> {
       case 'Q4G': return 'Q5G';
       case 'Q5G': return 'Q6G';
       case 'Q6G': return 'Q7G';
+      case 'Q7G': return 'Q_FIXED_PARTS'; // Phase 2: 정가제 부품 선택
       case 'Q4C': return 'Q5C';
       case 'Q5C': return 'Q6C';
       case 'Q6C': return 'Q7C';
+      case 'Q7C': return 'Q_FIXED_PARTS'; // Phase 2: 정가제 부품 선택
       case 'Q4O': return 'Q5O';
       case 'Q5O': return 'Q6O';
       case 'Q6O': return 'Q7O';
+      case 'Q7O': return 'Q_FIXED_PARTS'; // Phase 2: 정가제 부품 선택
+      case 'Q_FIXED_PARTS': return 'Q_FINISH';
       default: return 'Q_FINISH';
     }
   }
@@ -117,6 +124,11 @@ class _MyEstimateScreenState extends ConsumerState<MyEstimateScreen> {
   }
 
   void _onRestart() {
+    // Provider 상태 초기화
+    ref.read(selectedCoolerTypeProvider.notifier).state = CoolerType.budget;
+    ref.read(selectedPsuProvider.notifier).state = null;
+    ref.read(fixedPartsConfirmedProvider.notifier).state = false;
+
     setState(() {
       _history.clear();
       _history.add('Q1');
@@ -131,8 +143,25 @@ class _MyEstimateScreenState extends ConsumerState<MyEstimateScreen> {
   Future<void> _processResults() async {
     setState(() { _isLoading = true; _error = null; _specProfile = null; });
     try {
+      // 정가제 부품 정보 추가
+      final coolerType = ref.read(selectedCoolerTypeProvider);
+      final selectedPsu = ref.read(selectedPsuProvider);
+      final fixedTotal = ref.read(fixedPartsTotalProvider);
+
+      final answersWithFixedParts = {
+        ..._answers,
+        'fixedParts': FixedPartsSelection(
+          coolerType: coolerType,
+          coolerPrice: getCoolerInfo(coolerType).price,
+          psuPrice: selectedPsu?.lowestPrice ?? 0,
+          psuModelName: selectedPsu?.modelName,
+          psuWattage: selectedPsu?.wattage,
+        ),
+        'fixedPartsTotal': fixedTotal,
+      };
+
       final useCase = ref.read(getRecommendationUseCaseProvider);
-      final result = await useCase(userAnswers: _answers);
+      final result = await useCase(userAnswers: answersWithFixedParts);
 
       setState(() {
         _specProfile = SpecProfileModel(
@@ -182,14 +211,52 @@ class _MyEstimateScreenState extends ConsumerState<MyEstimateScreen> {
         context: context,
         child: Column(
           children: [
-            if (!_isFinished) _buildProgressBar(),
+            if (!_isFinished && !_isFixedPartsPhase) _buildProgressBar(),
             Expanded(
-              child: _isFinished ? _buildResultView() : _buildQuestionView(),
+              child: _isFinished
+                  ? _buildResultView()
+                  : _isFixedPartsPhase
+                      ? _buildFixedPartsPhase()
+                      : _buildQuestionView(),
             ),
           ],
         ),
       ),
-      bottomNavigationBar: _isFinished ? null : _buildNextButton(),
+      bottomNavigationBar: (_isFinished || _isFixedPartsPhase) ? null : _buildNextButton(),
+    );
+  }
+
+  /// 예산 문자열에서 최대값 추출 (만원 단위 → 원 단위)
+  int _parseBudgetMax() {
+    final budgetStr = _answers['Q2']?.toString() ?? '0';
+    final parts = budgetStr.split(' ~ ');
+    if (parts.length == 2) {
+      return (int.tryParse(parts[1]) ?? 0) * 10000;
+    }
+    return (int.tryParse(budgetStr) ?? 0) * 10000;
+  }
+
+  /// Phase 2: 정가제 부품 선택 화면
+  Widget _buildFixedPartsPhase() {
+    final usage = _answers['Q1']?.toString() ?? 'O';
+    final graphicsQuality = _answers['Q7G']?.toString();
+    final resolution = _answers['Q5C']?.toString() ?? _answers['Q5G']?.toString();
+    final totalBudget = _parseBudgetMax();
+
+    return FixedPartsSelectionWidget(
+      usage: usage,
+      graphicsQuality: graphicsQuality,
+      resolution: resolution,
+      totalBudget: totalBudget,
+      onConfirm: () {
+        // 정가제 부품 선택 완료 → Phase 3로 이동
+        ref.read(fixedPartsConfirmedProvider.notifier).state = true;
+        setState(() {
+          _history.add('Q_FINISH');
+          _processResults();
+        });
+      },
+      onBack: _onBack,
     );
   }
 
@@ -697,91 +764,321 @@ class _MyEstimateScreenState extends ConsumerState<MyEstimateScreen> {
   }
 
   Widget _buildRecommendationCard(RecommendationEntity rec) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(16),
-                topRight: Radius.circular(16),
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.computer,
-                  color: Theme.of(context).primaryColor,
-                  size: 24,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '추천 PC 사양',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
+    // 정가제 부품 정보
+    final coolerType = ref.read(selectedCoolerTypeProvider);
+    final selectedPsu = ref.read(selectedPsuProvider);
+    final fixedTotal = ref.read(fixedPartsTotalProvider);
+    final coolerInfo = getCoolerInfo(coolerType);
+
+    // 견적 부품 총합 (정가제 제외)
+    final estimateTotal = rec.totalPrice ?? 0;
+    // 전체 총합 (정가제 + 견적)
+    final grandTotal = fixedTotal + estimateTotal;
+
+    return Column(
+      children: [
+        // 1. 정가제 부품 섹션
+        Card(
+          elevation: 3,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
                   ),
                 ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(4.0),
-            child: Column(
-              children: [
-                _buildSpecRow(Symbols.developer_board, 'CPU', rec.cpu, rec.cpuPrice),
-                _buildSpecRow(Symbols.ac_unit, 'CPU 쿨러', rec.cpuCooler, rec.cpuCoolerPrice),
-                _buildSpecRow(Symbols.view_in_ar, '메인보드', rec.mainboard, rec.mainboardPrice),
-                _buildSpecRow(Symbols.memory, '메모리', rec.memory, rec.memoryPrice),
-                _buildSpecRow(Symbols.screenshot_monitor, '그래픽카드', rec.gpu, rec.gpuPrice),
-                _buildSpecRow(Symbols.storage, 'SSD', rec.ssd, rec.ssdPrice),
-                _buildSpecRow(Symbols.desktop_windows, '케이스', rec.pcCase, rec.pcCasePrice),
-                _buildSpecRow(Symbols.power, '파워', rec.psu, rec.psuPrice),
-              ],
-            ),
-          ),
-          // 총 가격 표시
-          if (rec.totalPrice != null)
-            Container(
-              margin: const EdgeInsets.all(8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: Theme.of(context).primaryColor,
-                  width: 2,
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.inventory_2,
+                      color: Colors.orange[700],
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '기본 구성 (정가제)',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange[700],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: Column(
+                  children: [
+                    _buildFixedPartRow(
+                      Icons.desktop_windows,
+                      '케이스',
+                      kFixedCaseModelName,
+                      kFixedCasePrice,
+                    ),
+                    _buildFixedPartRow(
+                      Icons.ac_unit,
+                      '쿨러',
+                      coolerInfo.modelName,
+                      coolerInfo.price,
+                    ),
+                    _buildFixedPartRow(
+                      Icons.power,
+                      '파워',
+                      selectedPsu != null
+                          ? '${selectedPsu.modelName} (${selectedPsu.wattage}W)'
+                          : '선택됨',
+                      selectedPsu?.lowestPrice ?? 0,
+                    ),
+                  ],
+                ),
+              ),
+              // 정가제 소계
+              Container(
+                margin: const EdgeInsets.all(8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.orange[50],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '기본 구성 소계',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.orange[800],
+                      ),
+                    ),
+                    Text(
+                      '${(fixedTotal / 10000).toStringAsFixed(1)}만원',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.orange[800],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // 2. 추천 견적 섹션
+        Card(
+          elevation: 3,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.computer,
+                      color: Theme.of(context).primaryColor,
+                      size: 24,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      '추천 견적 (중고 매물)',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: Column(
+                  children: [
+                    _buildSpecRow(Symbols.developer_board, 'CPU', rec.cpu, rec.cpuPrice),
+                    _buildSpecRow(Symbols.view_in_ar, '메인보드', rec.mainboard, rec.mainboardPrice),
+                    _buildSpecRow(Symbols.memory, '메모리', rec.memory, rec.memoryPrice),
+                    _buildSpecRow(Symbols.screenshot_monitor, '그래픽카드', rec.gpu, rec.gpuPrice),
+                    _buildSpecRow(Symbols.storage, 'SSD', rec.ssd, rec.ssdPrice),
+                  ],
+                ),
+              ),
+              // 견적 소계
+              Container(
+                margin: const EdgeInsets.all(8),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '추천 견적 소계',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                    Text(
+                      '${(estimateTotal / 10000).toStringAsFixed(1)}만원',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // 3. 총합
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Theme.of(context).primaryColor,
+                Theme.of(context).primaryColor.withValues(alpha: 0.8),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     '총 예상 가격',
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white70,
                     ),
                   ),
+                  SizedBox(height: 4),
                   Text(
-                    '${(rec.totalPrice! / 10000).toStringAsFixed(0)}만원',
+                    '기본 구성 + 추천 견적',
                     style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
+                      fontSize: 12,
+                      color: Colors.white54,
                     ),
                   ),
                 ],
               ),
+              Text(
+                '${(grandTotal / 10000).toStringAsFixed(0)}만원',
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFixedPartRow(IconData icon, String title, String value, int price) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.orange[100]!),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.orange[50],
+              borderRadius: BorderRadius.circular(8),
             ),
+            child: Icon(
+              icon,
+              color: Colors.orange[700],
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black87,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.orange[50],
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              '${(price / 10000).toStringAsFixed(1)}만',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                color: Colors.orange[700],
+              ),
+            ),
+          ),
         ],
       ),
     );

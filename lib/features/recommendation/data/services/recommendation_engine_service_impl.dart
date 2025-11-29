@@ -24,14 +24,21 @@ class RecommendationEngineServiceImpl implements RecommendationEngineService {
   }) async {
     final List<PcBuildEntity> candidates = [];
 
-    // 케이스/쿨러/파워/SSD 가상 상품 추가 (고정 상품)
-    // PSU는 실제 base_parts에서 가져오기 (listingCount 무관)
-    if (availableParts['psu'] == null || availableParts['psu']!.isEmpty) {
-      availableParts['psu'] = await _dataSource.getAvailableBaseParts('psu');
+    // 정가제 부품 (케이스, 쿨러, PSU)은 Phase 2에서 이미 선택됨
+    // 여기서는 5개 부품 (CPU, GPU, MB, RAM, SSD)만 추천
+    // SSD는 실제 매물에서 조회 (가상 상품 제거)
+
+    // SSD가 없거나 비어있으면 Firestore에서 조회
+    if (availableParts['ssd'] == null || availableParts['ssd']!.isEmpty) {
+      availableParts['ssd'] = await _dataSource.getAvailableBaseParts('ssd');
     }
+
+    // 정가제 부품은 가상으로 처리 (가격은 Phase 2에서 이미 차감됨)
     availableParts['cooler'] = [_createVirtualCoolerPart()];
     availableParts['case'] = [_createVirtualCasePart()];
-    availableParts['ssd'] = [_createVirtualSsdPart()];
+
+    // PSU도 정가제이므로 가상으로 처리 (가격 0으로 설정)
+    availableParts['psu'] = [_createFixedPsuPart()];
 
     // 예산을 3단계로 나누기 (저가형, 중급형, 고급형)
     final budgetRanges = _getBudgetRanges(criteria.minBudget, criteria.maxBudget);
@@ -701,36 +708,36 @@ class RecommendationEngineServiceImpl implements RecommendationEngineService {
     }).toList();
   }
 
-  /// 가상 쿨러 BasePart 생성
+  /// 정가제 쿨러 BasePart 생성 (가격 0 - 이미 예산에서 차감됨)
   BasePart _createVirtualCoolerPart() {
     return BasePart(
-      basePartId: 'virtual_cooler_intel',
-      modelName: '임의 매집 쿨러',
+      basePartId: 'fixed_cooler',
+      modelName: '정가제 쿨러',
       category: 'COOLER',
-      brand: '기본',
-      lowestPrice: 20000,
-      averagePrice: 20000.0,
+      brand: '정가제',
+      lowestPrice: 0, // 정가제이므로 0 (이미 예산에서 차감됨)
+      averagePrice: 0.0,
       listingCount: 999,
       socket: 'LGA1700', // 범용
-      tdp: 65,
+      tdp: 150, // 대장공냉 기준
     );
   }
 
-  /// 가상 케이스 BasePart 생성
+  /// 정가제 케이스 BasePart 생성 (가격 0 - 이미 예산에서 차감됨)
   BasePart _createVirtualCasePart() {
     return BasePart(
-      basePartId: 'virtual_case_standard',
-      modelName: '임의 매집 케이스',
+      basePartId: 'fixed_case',
+      modelName: '아이구주 hatch 6',
       category: 'CASE',
-      brand: '기본',
-      lowestPrice: 20000,
-      averagePrice: 20000.0,
+      brand: '아이구주',
+      lowestPrice: 0, // 정가제이므로 0 (이미 예산에서 차감됨)
+      averagePrice: 0.0,
       listingCount: 999,
       formFactor: 'ATX', // 범용
     );
   }
 
-  /// 가상 SSD BasePart 생성 (고정 500GB)
+  /// 가상 SSD BasePart 생성 (고정 500GB) - 레거시, 이제 실제 매물 사용
   BasePart _createVirtualSsdPart() {
     return BasePart(
       basePartId: 'virtual_ssd_500gb',
@@ -742,6 +749,20 @@ class RecommendationEngineServiceImpl implements RecommendationEngineService {
       listingCount: 999,
       capacity: 500,
       interface: 'SATA',
+    );
+  }
+
+  /// 정가제 PSU BasePart 생성 (가격 0 - 이미 예산에서 차감됨)
+  BasePart _createFixedPsuPart() {
+    return BasePart(
+      basePartId: 'fixed_psu',
+      modelName: '정가제 파워서플라이',
+      category: 'PSU',
+      brand: '정가제',
+      lowestPrice: 0, // 정가제이므로 0 (이미 예산에서 차감됨)
+      averagePrice: 0.0,
+      listingCount: 999,
+      wattage: 600, // 기본 600W로 설정
     );
   }
 
