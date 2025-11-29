@@ -1,9 +1,10 @@
 /// 추천 기준 엔티티 (사용자 요구사항)
 class RecommendationCriteriaEntity {
   final String usage;            // 용도: G(게임), C(창작), O(사무/개발)
-  final int minBudget;           // 최소 예산 (만원)
-  final int maxBudget;           // 최대 예산 (만원)
+  final int minBudget;           // 최소 예산 (원) - 정가제 비용 차감 후
+  final int maxBudget;           // 최대 예산 (원) - 정가제 비용 차감 후
   final int ssdCapacity;         // SSD 용량 (GB)
+  final int fixedPartsTotal;     // 정가제 부품 총액 (원)
 
   // 게임용
   final List<String>? gameIds;   // 게임 번호 목록
@@ -27,6 +28,7 @@ class RecommendationCriteriaEntity {
     required this.minBudget,
     required this.maxBudget,
     required this.ssdCapacity,
+    this.fixedPartsTotal = 0,
     this.gameIds,
     this.resolution,
     this.targetFps,
@@ -42,8 +44,16 @@ class RecommendationCriteriaEntity {
 
   factory RecommendationCriteriaEntity.fromUserAnswers(Map<String, dynamic> answers) {
     final budgetParts = (answers['Q2'] as String).split(' ~ ');
-    final minBudget = int.tryParse(budgetParts[0]) ?? 0;
-    final maxBudget = int.tryParse(budgetParts[1]) ?? 0;
+    // 예산은 만원 단위로 입력됨 → 원 단위로 변환
+    final minBudgetWon = (int.tryParse(budgetParts[0]) ?? 0) * 10000;
+    final maxBudgetWon = (int.tryParse(budgetParts[1]) ?? 0) * 10000;
+
+    // 정가제 부품 총액 (원 단위)
+    final fixedPartsTotal = answers['fixedPartsTotal'] as int? ?? 0;
+
+    // 정가제 비용을 차감한 실제 부품 예산
+    final adjustedMinBudget = minBudgetWon - fixedPartsTotal;
+    final adjustedMaxBudget = maxBudgetWon - fixedPartsTotal;
 
     // Q4G: 게임 카테고리를 그래픽 품질로 변환 (간소화된 설문지)
     // 'light', 'medium', 'heavy', 'ultra' -> 실제 요구사항으로 변환
@@ -68,9 +78,10 @@ class RecommendationCriteriaEntity {
 
     return RecommendationCriteriaEntity(
       usage: answers['Q1'] as String,
-      minBudget: minBudget,
-      maxBudget: maxBudget,
-      ssdCapacity: 500, // 고정 500GB
+      minBudget: adjustedMinBudget,  // 정가제 비용 차감된 예산 (원)
+      maxBudget: adjustedMaxBudget,  // 정가제 비용 차감된 예산 (원)
+      ssdCapacity: 500, // 기본 500GB (SSD는 실제 매물에서 추천)
+      fixedPartsTotal: fixedPartsTotal,
       // 게임용
       gameIds: null,  // 더 이상 게임 번호를 직접 입력받지 않음
       resolution: answers['Q5G'] as String?,
