@@ -1180,9 +1180,9 @@ class _DragonBallTermsAgreement extends StatelessWidget {
               onChanged: (type) => onStorageTypeChanged(type!),
               title: const Text('일반 보관'),
               subtitle: const Text(
-                '• 7일 무료, 이후 하루 0.5% 보관료 (최대 30%)\n'
-                '• 최대 59일 보관 가능\n'
-                '• 60일 초과 시 위탁판매 전환',
+                '• 7일 무료, 이후 하루 0.5% 보관료 (최대 15%)\n'
+                '• 최대 30일 보관 가능\n'
+                '• 37일 초과 시 위탁판매 전환',
                 style: TextStyle(fontSize: 12),
               ),
               contentPadding: EdgeInsets.zero,
@@ -1228,8 +1228,8 @@ class _DragonBallTermsAgreement extends StatelessWidget {
                   Text(
                     '• 7일 무료 보관 후 일일 보관료 부과 (일반 보관)\n'
                     '• 임대 보관 선택 시 무료이나 렌탈 활용 동의 필요\n'
-                    '• 59일 최대 보관 기간 (카카오페이 제약)\n'
-                    '• 60일 초과 시 자동 위탁판매 전환',
+                    '• 30일 최대 보관 기간\n'
+                    '• 37일 초과 시 자동 위탁판매 전환',
                     style: TextStyle(fontSize: 12, height: 1.5),
                   ),
                 ],

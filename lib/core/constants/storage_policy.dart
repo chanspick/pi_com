@@ -39,14 +39,14 @@ class StoragePolicy {
   /// 하루당 보관료율 (구매가 대비 %) - 보관서비스 약관 제5조
   static const double DAILY_FEE_RATE = 0.005; // 0.5%
 
-  /// 최대 보관 기간 (일) - 카카오페이 시스템 제약
-  static const int MAX_STORAGE_DAYS = 59;
+  /// 최대 보관 기간 (일) - 이용약관 제11조 기준
+  static const int MAX_STORAGE_DAYS = 30;
 
   /// 위탁판매 전환 경고 기준일 (일)
-  static const int CONSIGNMENT_WARNING_DAY = 50;
+  static const int CONSIGNMENT_WARNING_DAY = 23;
 
-  /// 60일 경과 시 최대 보관료 누적율 (%)
-  static const double MAX_STORAGE_FEE_PERCENTAGE = 30.0; // 30%
+  /// 37일 경과 시 최대 보관료 누적율 (%)
+  static const double MAX_STORAGE_FEE_PERCENTAGE = 15.0; // 15% (0.5% × 30일)
 
   /// 위탁판매 시 매각비용 비율 - 보관서비스 약관 제8조
   static const double CONSIGNMENT_SALE_COST_RATE = 0.10; // 10%
@@ -185,10 +185,10 @@ class StoragePolicy {
     return days >= CONSIGNMENT_WARNING_DAY;
   }
 
-  /// 위탁판매 전환까지 남은 일수 (60일 기준)
+  /// 위탁판매 전환까지 남은 일수 (37일 기준)
   static int getDaysUntilConsignment(DateTime storedAt) {
     final days = calculateStorageDays(storedAt);
-    final remainingDays = 60 - days;
+    final remainingDays = 37 - days;
     return remainingDays > 0 ? remainingDays : 0;
   }
 }

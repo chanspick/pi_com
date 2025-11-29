@@ -184,7 +184,7 @@ class DragonBallCard extends StatelessWidget {
                     if (StoragePolicy.shouldShowConsignmentWarning(dragonBall.storedAt))
                       const SizedBox(height: 4),
 
-                    // 59일 초과 경고
+                    // 30일 초과 경고
                     if (StoragePolicy.hasExceededMaxStorageDays(dragonBall.storedAt))
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
