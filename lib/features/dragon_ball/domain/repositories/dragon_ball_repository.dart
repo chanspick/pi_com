@@ -54,7 +54,7 @@ abstract class DragonBallRepository {
   /// 드래곤볼 삭제
   Future<void> deleteDragonBall(String userId, String dragonBallId);
 
-  /// 위탁판매로 전환 (60일 경과 시)
+  /// 위탁판매로 전환 (37일 경과 시)
   Future<void> convertToConsignment(String userId, String dragonBallId);
 
   /// 위탁판매 완료 처리 (매각 완료)

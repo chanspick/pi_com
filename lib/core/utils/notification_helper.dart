@@ -294,7 +294,7 @@ class NotificationHelper {
       message: '$partName 부품이 검수에서 불합격되었습니다.\n\n'
           '불합격 사유: $failReason\n\n'
           '⚠️ 위약금: ${_formatPrice(penaltyAmount)}원\n'
-          '60일 이내 반송 주소를 등록하지 않으면 보관 서비스로 자동 전환됩니다.',
+          '37일 이내 반송 주소를 등록하지 않으면 보관 서비스로 자동 전환됩니다.',
       relatedSellRequestId: sellRequestId,
     );
   }
@@ -361,7 +361,7 @@ class NotificationHelper {
       message: '$partName 부품이 보관 서비스에 등록되었습니다.\n\n'
           '보관 유형: $storageTypeText\n'
           '$feeInfo\n\n'
-          '최대 59일 보관 가능하며, 60일 초과 시 위탁판매로 전환됩니다.',
+          '최대 30일 보관 가능하며, 37일 초과 시 위탁판매로 전환됩니다.',
       relatedDragonBallId: dragonBallId,
     );
   }
@@ -381,7 +381,7 @@ class NotificationHelper {
       title: '보관료가 발생하기 시작했습니다 💰',
       message: '$partName 부품의 7일 무료 보관 기간이 종료되었습니다.\n\n'
           '오늘부터 일일 ${_formatPrice(dailyFee)}원(구매가의 0.5%)의 보관료가 부과됩니다.\n'
-          '최대 보관료는 구매가의 30%(${_formatPrice((purchasePrice * 0.3).round())}원)입니다.\n\n'
+          '최대 보관료는 구매가의 15%(${_formatPrice((purchasePrice * 0.15).round())}원)입니다.\n\n'
           '출고를 원하시면 배송 신청을 해주세요.',
       relatedDragonBallId: dragonBallId,
     );
@@ -398,8 +398,8 @@ class NotificationHelper {
       userId: userId,
       type: NotificationType.storageExpiring,
       title: '⚠️ 보관 기간 만료 임박 ($daysRemaining일 남음)',
-      message: '$partName 부품의 최대 보관 기간(59일)이 $daysRemaining일 남았습니다.\n\n'
-          '60일 경과 시 위탁판매로 자동 전환됩니다.\n'
+      message: '$partName 부품의 최대 보관 기간(30일)이 $daysRemaining일 남았습니다.\n\n'
+          '37일 경과 시 위탁판매로 자동 전환됩니다.\n'
           '출고를 원하시면 지금 배송 신청을 해주세요!',
       relatedDragonBallId: dragonBallId,
     );
@@ -419,7 +419,7 @@ class NotificationHelper {
       message: '$partName 부품이 $daysUntilConsignment일 후 위탁판매로 전환됩니다.\n\n'
           '위탁판매 전환 시:\n'
           '• 회사가 임의로 판매 가격을 결정합니다\n'
-          '• 판매 대금에서 보관료(최대 30%)와 판매 수수료(10%)가 차감됩니다\n\n'
+          '• 판매 대금에서 보관료(최대 15%)와 판매 수수료(10%)가 차감됩니다\n\n'
           '전환을 원하지 않으시면 지금 배송 신청을 해주세요!',
       relatedDragonBallId: dragonBallId,
     );
@@ -435,7 +435,7 @@ class NotificationHelper {
       userId: userId,
       type: NotificationType.consignmentConverted,
       title: '위탁판매로 전환되었습니다',
-      message: '$partName 부품이 최대 보관 기간(59일)을 초과하여\n'
+      message: '$partName 부품이 최대 보관 기간(30일)을 초과하여\n'
           '위탁판매로 전환되었습니다.\n\n'
           '회사에서 적정 가격에 판매를 진행하며,\n'
           '판매 완료 시 보관료 및 수수료를 제외한 금액이 정산됩니다.',

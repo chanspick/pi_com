@@ -26,7 +26,7 @@ enum NotificationType {
   storageFeeStart,        // 보관료 발생 시작 (7일 무료 기간 종료)
   storageExpiring,        // 보관 기간 만료 임박 (50일, 55일, 58일)
   consignmentWarning,     // 위탁판매 전환 경고 (50일+)
-  consignmentConverted,   // 위탁판매 전환 완료 (60일)
+  consignmentConverted,   // 위탁판매 전환 완료 (37일)
   consignmentSold,        // 위탁판매 매각 완료
 
   // ===== 환불 Flow =====

@@ -50,7 +50,7 @@ class DragonBallModel {
 
   // 위탁판매 관련 (약관 제8조)
   final int? salePrice;           // 위탁판매 매각 가격
-  final DateTime? consignmentConvertedAt;  // 위탁판매 전환일 (60일 경과 시)
+  final DateTime? consignmentConvertedAt;  // 위탁판매 전환일 (37일 경과 시)
   final int? revenueReturned;     // 고객에게 반환된 수익금
 
   DragonBallModel({
