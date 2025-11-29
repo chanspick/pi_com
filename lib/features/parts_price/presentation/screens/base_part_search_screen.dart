@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/part_provider.dart';
 import '../../domain/entities/base_part_entity.dart';
-import '../../../listing/presentation/screens/listings_by_base_part_screen.dart';
+import '../screens/price_history_screen.dart';
+import '../../../../core/utils/responsive_helper.dart';
 
 /// 홈 화면 검색바용 - base_part 검색 화면
 class BasePartSearchScreen extends ConsumerStatefulWidget {
@@ -105,14 +106,11 @@ class _BasePartSearchScreenState extends ConsumerState<BasePartSearchScreen> {
     });
   }
 
-  void _navigateToListings(BasePartEntity basePart) async {
-    // 검색 키워드를 유지한 채 상세 페이지로 이동
+  void _navigateToPriceHistory(BasePartEntity basePart) async {
+    // 시세 화면으로 이동 (시세 화면에서 "매물 보기" 버튼으로 매물 목록으로 이동 가능)
     await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => ListingsByBasePartScreen(
-          basePartId: basePart.basePartId,
-          partName: basePart.modelName,
-        ),
+        builder: (_) => PriceHistoryScreen(basePart: basePart),
       ),
     );
     // 돌아왔을 때 검색 결과가 그대로 유지됨 (상태 보존)
@@ -257,15 +255,18 @@ class _BasePartSearchScreenState extends ConsumerState<BasePartSearchScreen> {
           ),
         ),
 
-        // 결과 리스트 (그리드 형식으로 표시)
+        // 결과 리스트 (부품 구매와 동일한 그리드 형식)
         Expanded(
           child: GridView.builder(
-            padding: const EdgeInsets.all(16),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2, // 2열 그리드
-              childAspectRatio: 0.75, // 카드 비율 (listing card와 유사)
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+            padding: ResponsiveHelper.getHorizontalPadding(context).copyWith(
+              top: 16,
+              bottom: 16,
+            ),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: ResponsiveHelper.getGridCrossAxisCount(context),
+              childAspectRatio: 0.7,
+              crossAxisSpacing: ResponsiveHelper.isDesktop(context) ? 24 : 12,
+              mainAxisSpacing: ResponsiveHelper.isDesktop(context) ? 24 : 12,
             ),
             itemCount: _searchResults.length,
             itemBuilder: (context, index) {
@@ -294,7 +295,7 @@ class _BasePartSearchScreenState extends ConsumerState<BasePartSearchScreen> {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => _navigateToListings(basePart),
+        onTap: () => _navigateToPriceHistory(basePart),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
