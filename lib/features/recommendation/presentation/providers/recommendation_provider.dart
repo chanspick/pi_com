@@ -118,17 +118,16 @@ final dynamicErrorProvider = StateProvider<String?>((ref) => null);
 // Phase 2 - Fixed Price Parts Selection Providers (정가제 부품 선택)
 // ============================================================================
 
-/// PSU 목록 Provider (Firestore에서 조회)
-final availablePsuListProvider = FutureProvider<List<BasePart>>((ref) async {
-  final dataSource = ref.watch(compatibilityRemoteDataSourceProvider);
-  return await dataSource.getAvailableBaseParts('psu');
+/// PSU 목록 Provider (하드코딩된 정가제 PSU 목록)
+final availablePsuListProvider = Provider<List<FixedPsuInfo>>((ref) {
+  return kPsuOptions;
 });
 
 /// 선택된 쿨러 타입 Provider
 final selectedCoolerTypeProvider = StateProvider<CoolerType>((ref) => CoolerType.budget);
 
-/// 선택된 PSU Provider
-final selectedPsuProvider = StateProvider<BasePart?>((ref) => null);
+/// 선택된 PSU Provider (기본값: 500W)
+final selectedPsuProvider = StateProvider<FixedPsuInfo>((ref) => kPsu500W);
 
 /// 정가제 부품 선택 완료 여부
 final fixedPartsConfirmedProvider = StateProvider<bool>((ref) => false);
@@ -139,7 +138,7 @@ final fixedPartsTotalProvider = Provider<int>((ref) {
   final psu = ref.watch(selectedPsuProvider);
 
   final coolerPrice = getCoolerInfo(coolerType).price;
-  final psuPrice = psu?.lowestPrice ?? 0;
+  final psuPrice = psu.price;
 
   return kFixedCasePrice + coolerPrice + psuPrice;
 });

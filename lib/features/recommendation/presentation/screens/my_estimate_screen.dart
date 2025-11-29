@@ -126,7 +126,7 @@ class _MyEstimateScreenState extends ConsumerState<MyEstimateScreen> {
   void _onRestart() {
     // Provider 상태 초기화
     ref.read(selectedCoolerTypeProvider.notifier).state = CoolerType.budget;
-    ref.read(selectedPsuProvider.notifier).state = null;
+    ref.read(selectedPsuProvider.notifier).state = kPsu500W;
     ref.read(fixedPartsConfirmedProvider.notifier).state = false;
 
     setState(() {
@@ -153,9 +153,7 @@ class _MyEstimateScreenState extends ConsumerState<MyEstimateScreen> {
         'fixedParts': FixedPartsSelection(
           coolerType: coolerType,
           coolerPrice: getCoolerInfo(coolerType).price,
-          psuPrice: selectedPsu?.lowestPrice ?? 0,
-          psuModelName: selectedPsu?.modelName,
-          psuWattage: selectedPsu?.wattage,
+          psu: selectedPsu,
         ),
         'fixedPartsTotal': fixedTotal,
       };
@@ -832,10 +830,8 @@ class _MyEstimateScreenState extends ConsumerState<MyEstimateScreen> {
                     _buildFixedPartRow(
                       Icons.power,
                       '파워',
-                      selectedPsu != null
-                          ? '${selectedPsu.modelName} (${selectedPsu.wattage}W)'
-                          : '선택됨',
-                      selectedPsu?.lowestPrice ?? 0,
+                      '${selectedPsu.wattage}W (${selectedPsu.brand})',
+                      selectedPsu.price,
                     ),
                   ],
                 ),
