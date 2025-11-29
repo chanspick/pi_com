@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/listing_provider.dart';
 import '../widgets/listing_card.dart';
+import '../../../../core/utils/responsive_helper.dart';
 
 /// basePartId로 필터링된 매물 목록 화면
 class ListingsByBasePartScreen extends ConsumerWidget {
@@ -47,15 +48,18 @@ class ListingsByBasePartScreen extends ConsumerWidget {
                 ),
               ),
 
-              // 매물 목록
+              // 매물 목록 (부품 구매와 동일한 그리드 형식)
               Expanded(
                 child: GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
+                  padding: ResponsiveHelper.getHorizontalPadding(context).copyWith(
+                    top: 16,
+                    bottom: 16,
+                  ),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: ResponsiveHelper.getGridCrossAxisCount(context),
                     childAspectRatio: 0.7,
+                    crossAxisSpacing: ResponsiveHelper.isDesktop(context) ? 24 : 12,
+                    mainAxisSpacing: ResponsiveHelper.isDesktop(context) ? 24 : 12,
                   ),
                   itemCount: listings.length,
                   itemBuilder: (context, index) {
