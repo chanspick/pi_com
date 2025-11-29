@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pi_com/core/constants/fixed_price_parts.dart';
-import 'package:pi_com/core/models/base_part_model.dart';
 import 'package:pi_com/features/recommendation/presentation/providers/recommendation_provider.dart';
 
 /// Phase 2: 정가제 부품 선택 위젯
@@ -32,20 +31,6 @@ class FixedPartsSelectionWidget extends ConsumerStatefulWidget {
 
 class _FixedPartsSelectionWidgetState
     extends ConsumerState<FixedPartsSelectionWidget> {
-  @override
-  void initState() {
-    super.initState();
-    // 용도 기반 쿨러 추천 설정
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final recommendedCooler = getRecommendedCoolerType(
-        usage: widget.usage,
-        graphicsQuality: widget.graphicsQuality,
-        resolution: widget.resolution,
-      );
-      ref.read(selectedCoolerTypeProvider.notifier).state = recommendedCooler;
-    });
-  }
-
   /// 용도 기반 예상 시스템 TDP 계산
   int _getEstimatedSystemTdp() {
     // 기본 시스템 전력 (메인보드, RAM, SSD, 팬 등)
@@ -83,50 +68,38 @@ class _FixedPartsSelectionWidgetState
     return ((recommended + 49) ~/ 50) * 50; // 50W 단위로 올림
   }
 
-  /// PSU 목록에서 권장 wattage 이상인 가장 저렴한 것 선택
-  BasePart? _findRecommendedPsu(List<BasePart> psuList) {
+  /// 권장 PSU 가져오기 (constants의 getRecommendedPsu 사용)
+  FixedPsuInfo _getRecommendedPsuForSystem() {
     final recommendedWattage = _getRecommendedPsuWattage();
+    return getRecommendedPsu(recommendedWattage);
+  }
 
-    // wattage가 권장 이상인 것들 필터링
-    final suitable = psuList
-        .where((psu) => (psu.wattage ?? 0) >= recommendedWattage)
-        .toList();
+  @override
+  void initState() {
+    super.initState();
+    // 용도 기반 쿨러 추천 설정 및 PSU 자동 선택
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final recommendedCooler = getRecommendedCoolerType(
+        usage: widget.usage,
+        graphicsQuality: widget.graphicsQuality,
+        resolution: widget.resolution,
+      );
+      ref.read(selectedCoolerTypeProvider.notifier).state = recommendedCooler;
 
-    if (suitable.isEmpty) {
-      // 권장 wattage를 만족하는 게 없으면 가장 높은 wattage 선택
-      final sorted = [...psuList]
-        ..sort((a, b) => (b.wattage ?? 0).compareTo(a.wattage ?? 0));
-      return sorted.isNotEmpty ? sorted.first : null;
-    }
-
-    // 가장 저렴한 것 선택
-    suitable.sort((a, b) => a.lowestPrice.compareTo(b.lowestPrice));
-    return suitable.first;
+      // PSU 자동 선택 (권장 wattage 기준)
+      final recommendedPsu = _getRecommendedPsuForSystem();
+      ref.read(selectedPsuProvider.notifier).state = recommendedPsu;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final psuListAsync = ref.watch(availablePsuListProvider);
+    final psuList = ref.watch(availablePsuListProvider);
     final selectedCooler = ref.watch(selectedCoolerTypeProvider);
     final selectedPsu = ref.watch(selectedPsuProvider);
     final fixedTotal = ref.watch(fixedPartsTotalProvider);
 
     final remainingBudget = widget.totalBudget - fixedTotal;
-
-    // PSU 자동 선택 (한 번만 실행)
-    ref.listen<AsyncValue<List<BasePart>>>(
-      availablePsuListProvider,
-      (previous, next) {
-        next.whenData((psuList) {
-          if (ref.read(selectedPsuProvider) == null && psuList.isNotEmpty) {
-            final recommended = _findRecommendedPsu(psuList);
-            if (recommended != null) {
-              ref.read(selectedPsuProvider.notifier).state = recommended;
-            }
-          }
-        });
-      },
-    );
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -146,11 +119,7 @@ class _FixedPartsSelectionWidgetState
           const SizedBox(height: 16),
 
           // PSU 선택
-          psuListAsync.when(
-            data: (psuList) => _buildPsuCard(psuList, selectedPsu),
-            loading: () => _buildLoadingCard('PSU 목록 로딩 중...'),
-            error: (e, _) => _buildErrorCard('PSU 목록을 불러올 수 없습니다'),
-          ),
+          _buildPsuCard(psuList, selectedPsu),
           const SizedBox(height: 24),
 
           // 가격 요약
@@ -158,7 +127,7 @@ class _FixedPartsSelectionWidgetState
           const SizedBox(height: 24),
 
           // 버튼
-          _buildButtons(selectedPsu != null),
+          _buildButtons(),
         ],
       ),
     );
@@ -461,14 +430,10 @@ class _FixedPartsSelectionWidgetState
     );
   }
 
-  Widget _buildPsuCard(List<BasePart> psuList, BasePart? selectedPsu) {
-    // PSU를 wattage 기준으로 정렬
-    final sortedPsuList = [...psuList]
-      ..sort((a, b) => (a.wattage ?? 0).compareTo(b.wattage ?? 0));
-
+  Widget _buildPsuCard(List<FixedPsuInfo> psuList, FixedPsuInfo selectedPsu) {
     final recommendedWattage = _getRecommendedPsuWattage();
     final estimatedTdp = _getEstimatedSystemTdp();
-    final recommendedPsu = _findRecommendedPsu(psuList);
+    final recommendedPsu = _getRecommendedPsuForSystem();
 
     return Card(
       elevation: 2,
@@ -518,62 +483,79 @@ class _FixedPartsSelectionWidgetState
               ],
             ),
             const SizedBox(height: 16),
-            if (sortedPsuList.isEmpty)
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.orange[50],
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.warning_amber, color: Colors.orange[700]),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Text('현재 구매 가능한 PSU가 없습니다'),
-                    ),
-                  ],
-                ),
-              )
-            else
-              // PSU 드롭다운
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey[300]!),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: DropdownButtonHideUnderline(
-                  child: DropdownButton<BasePart>(
-                    isExpanded: true,
-                    value: selectedPsu,
-                    hint: const Text('PSU를 선택해주세요'),
-                    items: sortedPsuList.map((psu) {
-                      final isRecommended = recommendedPsu?.basePartId == psu.basePartId;
-                      final meetsRequirement = (psu.wattage ?? 0) >= recommendedWattage;
+            // PSU 옵션들 (라디오 버튼 스타일)
+            ...psuList.map((psu) {
+              final isSelected = selectedPsu.id == psu.id;
+              final isRecommended = recommendedPsu.id == psu.id;
+              final meetsRequirement = psu.wattage >= recommendedWattage;
 
-                      return DropdownMenuItem<BasePart>(
-                        value: psu,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Row(
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: InkWell(
+                  onTap: () {
+                    ref.read(selectedPsuProvider.notifier).state = psu;
+                  },
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Theme.of(context).primaryColor.withValues(alpha: 0.1)
+                          : Colors.grey[50],
+                      border: Border.all(
+                        color: isSelected
+                            ? Theme.of(context).primaryColor
+                            : Colors.grey[300]!,
+                        width: isSelected ? 2 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        // 라디오 버튼
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isSelected
+                                  ? Theme.of(context).primaryColor
+                                  : Colors.grey[400]!,
+                              width: 2,
+                            ),
+                            color: isSelected
+                                ? Theme.of(context).primaryColor
+                                : Colors.transparent,
+                          ),
+                          child: isSelected
+                              ? const Icon(Icons.check,
+                                  size: 16, color: Colors.white)
+                              : null,
+                        ),
+                        const SizedBox(width: 12),
+                        // PSU 정보
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
                                 children: [
-                                  Flexible(
-                                    child: Text(
-                                      '${psu.modelName} (${psu.wattage ?? 0}W)',
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: meetsRequirement ? Colors.black87 : Colors.grey,
-                                      ),
+                                  Text(
+                                    '${psu.wattage}W',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: isSelected
+                                          ? Theme.of(context).primaryColor
+                                          : (meetsRequirement ? Colors.black87 : Colors.grey),
                                     ),
                                   ),
                                   if (isRecommended) ...[
                                     const SizedBox(width: 8),
                                     Container(
                                       padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
+                                        horizontal: 8,
                                         vertical: 2,
                                       ),
                                       decoration: BoxDecoration(
@@ -583,7 +565,7 @@ class _FixedPartsSelectionWidgetState
                                       child: Text(
                                         '추천',
                                         style: TextStyle(
-                                          fontSize: 10,
+                                          fontSize: 11,
                                           fontWeight: FontWeight.bold,
                                           color: Colors.orange[800],
                                         ),
@@ -592,64 +574,34 @@ class _FixedPartsSelectionWidgetState
                                   ],
                                 ],
                               ),
-                            ),
-                            Text(
-                              '${(psu.lowestPrice / 10000).toStringAsFixed(1)}만원',
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                color: Theme.of(context).primaryColor,
+                              const SizedBox(height: 4),
+                              Text(
+                                psu.brand,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: Colors.grey[600],
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (psu) {
-                      ref.read(selectedPsuProvider.notifier).state = psu;
-                    },
+                        // 가격
+                        Text(
+                          '${(psu.price / 10000).toStringAsFixed(1)}만원',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: isSelected
+                                ? Theme.of(context).primaryColor
+                                : Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLoadingCard(String message) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            ),
-            const SizedBox(width: 16),
-            Text(message),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildErrorCard(String message) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: Colors.red[50],
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            Icon(Icons.error_outline, color: Colors.red[700]),
-            const SizedBox(width: 12),
-            Text(message, style: TextStyle(color: Colors.red[700])),
+              );
+            }),
           ],
         ),
       ),
@@ -754,10 +706,10 @@ class _FixedPartsSelectionWidgetState
     );
   }
 
-  Widget _buildButtons(bool canConfirm) {
+  Widget _buildButtons() {
     final fixedTotal = ref.watch(fixedPartsTotalProvider);
     final remainingBudget = widget.totalBudget - fixedTotal;
-    final isValid = canConfirm && remainingBudget > 0;
+    final isValid = remainingBudget > 0;
 
     return Column(
       children: [
@@ -779,7 +731,7 @@ class _FixedPartsSelectionWidgetState
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  isValid ? '이 구성으로 견적 받기' : 'PSU를 선택해주세요',
+                  isValid ? '이 구성으로 견적 받기' : '예산이 부족합니다',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,

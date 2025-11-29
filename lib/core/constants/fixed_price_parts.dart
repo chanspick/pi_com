@@ -1,7 +1,7 @@
 /// 정가제 부품 상수
 ///
-/// 케이스, 쿨러는 우리 재고로 정가 판매
-/// PSU는 Firestore에서 조회하되 TDP 기반 자동 추천
+/// 케이스, 쿨러, PSU는 우리 재고로 정가 판매
+/// TDP 기반 자동 추천 배지 표시
 
 // ==========================================
 // 케이스 (고정)
@@ -118,6 +118,72 @@ CoolerType getRecommendedCoolerType({
 }
 
 // ==========================================
+// PSU 옵션 (에너지옵티머스 EXCEL II 시리즈)
+// ==========================================
+
+/// PSU 정보 클래스
+class FixedPsuInfo {
+  final String id;
+  final String modelName;
+  final int wattage;
+  final int price;
+  final String brand;
+
+  const FixedPsuInfo({
+    required this.id,
+    required this.modelName,
+    required this.wattage,
+    required this.price,
+    required this.brand,
+  });
+}
+
+/// 500W PSU
+const FixedPsuInfo kPsu500W = FixedPsuInfo(
+  id: 'fixed_psu_500w',
+  modelName: '에너지옵티머스 EXCEL II 500W 80PLUS STANDARD 230V EU',
+  wattage: 500,
+  price: 37000,
+  brand: '에너지옵티머스',
+);
+
+/// 600W PSU
+const FixedPsuInfo kPsu600W = FixedPsuInfo(
+  id: 'fixed_psu_600w',
+  modelName: '에너지옵티머스 EXCEL II 600W 80PLUS STANDARD 230V EU',
+  wattage: 600,
+  price: 42000,
+  brand: '에너지옵티머스',
+);
+
+/// 700W PSU
+const FixedPsuInfo kPsu700W = FixedPsuInfo(
+  id: 'fixed_psu_700w',
+  modelName: '에너지옵티머스 EXCEL II 700W 80PLUS STANDARD 230V EU',
+  wattage: 700,
+  price: 50000,
+  brand: '에너지옵티머스',
+);
+
+/// PSU 옵션 리스트 (wattage 오름차순)
+const List<FixedPsuInfo> kPsuOptions = [
+  kPsu500W,
+  kPsu600W,
+  kPsu700W,
+];
+
+/// 권장 wattage 이상인 가장 저렴한 PSU 찾기
+FixedPsuInfo getRecommendedPsu(int recommendedWattage) {
+  for (final psu in kPsuOptions) {
+    if (psu.wattage >= recommendedWattage) {
+      return psu;
+    }
+  }
+  // 권장 wattage를 만족하는 게 없으면 가장 높은 wattage 선택
+  return kPsu700W;
+}
+
+// ==========================================
 // 정가제 부품 총합 계산
 // ==========================================
 
@@ -132,45 +198,42 @@ class FixedPartsSelection {
   /// 쿨러 가격
   final int coolerPrice;
 
-  /// PSU 가격 (Firestore에서 조회된 값)
-  final int psuPrice;
-
-  /// PSU 모델명
-  final String? psuModelName;
-
-  /// PSU wattage
-  final int? psuWattage;
+  /// 선택된 PSU
+  final FixedPsuInfo psu;
 
   const FixedPartsSelection({
     this.casePrice = kFixedCasePrice,
     required this.coolerType,
     required this.coolerPrice,
-    required this.psuPrice,
-    this.psuModelName,
-    this.psuWattage,
+    required this.psu,
   });
 
   /// 정가제 부품 총합
-  int get totalFixedPrice => casePrice + coolerPrice + psuPrice;
+  int get totalFixedPrice => casePrice + coolerPrice + psu.price;
 
   /// 쿨러 정보
   FixedCoolerInfo get coolerInfo => getCoolerInfo(coolerType);
+
+  /// PSU 가격 (편의용)
+  int get psuPrice => psu.price;
+
+  /// PSU 모델명 (편의용)
+  String get psuModelName => psu.modelName;
+
+  /// PSU wattage (편의용)
+  int get psuWattage => psu.wattage;
 
   FixedPartsSelection copyWith({
     int? casePrice,
     CoolerType? coolerType,
     int? coolerPrice,
-    int? psuPrice,
-    String? psuModelName,
-    int? psuWattage,
+    FixedPsuInfo? psu,
   }) {
     return FixedPartsSelection(
       casePrice: casePrice ?? this.casePrice,
       coolerType: coolerType ?? this.coolerType,
       coolerPrice: coolerPrice ?? this.coolerPrice,
-      psuPrice: psuPrice ?? this.psuPrice,
-      psuModelName: psuModelName ?? this.psuModelName,
-      psuWattage: psuWattage ?? this.psuWattage,
+      psu: psu ?? this.psu,
     );
   }
 }
