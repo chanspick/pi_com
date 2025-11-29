@@ -3,109 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>개인정보 처리방침</title>
+    <title>(주)파이컴퓨터 개인정보 처리방침</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
             line-height: 1.8;
+            color: #333;
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
             max-width: 900px;
             margin: 0 auto;
-            padding: 20px;
-            color: #333;
-            background-color: #f9f9f9;
-        }
-        .container {
             background-color: white;
             padding: 40px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
-        h1 {
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #10b981;
+        }
+
+        .header h1 {
             font-size: 28px;
-            color: #1a1a1a;
-            border-bottom: 3px solid #007bff;
-            padding-bottom: 15px;
-            margin-bottom: 30px;
+            color: #059669;
+            margin-bottom: 10px;
         }
-        h2 {
-            font-size: 20px;
-            color: #2c3e50;
-            margin-top: 35px;
-            margin-bottom: 15px;
-            padding-left: 10px;
-            border-left: 4px solid #007bff;
+
+        .header .subtitle {
+            color: #6b7280;
+            font-size: 14px;
         }
-        h3 {
-            font-size: 17px;
-            color: #34495e;
-            margin-top: 25px;
-            margin-bottom: 12px;
-        }
-        p, li {
-            font-size: 15px;
-            margin-bottom: 12px;
-        }
+
         .intro {
-            background-color: #f0f7ff;
+            background-color: #f0fdf4;
             padding: 20px;
-            border-radius: 5px;
+            border-radius: 6px;
             margin-bottom: 30px;
-            border-left: 4px solid #007bff;
+            border-left: 4px solid #10b981;
         }
+
+        .intro p {
+            margin-bottom: 10px;
+        }
+
+        .toc {
+            background-color: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 40px;
+        }
+
+        .toc h2 {
+            font-size: 18px;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+
+        .toc ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 8px;
+        }
+
+        .toc li {
+            padding: 5px 0;
+        }
+
+        .toc a {
+            color: #059669;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .toc a:hover {
+            color: #047857;
+            text-decoration: underline;
+        }
+
+        .article {
+            margin-bottom: 40px;
+            scroll-margin-top: 20px;
+        }
+
+        .article h2 {
+            font-size: 20px;
+            color: #059669;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .article h3 {
+            font-size: 16px;
+            color: #374151;
+            margin: 20px 0 10px 0;
+            font-weight: 600;
+        }
+
+        .article p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+
+        .article ol, .article ul {
+            margin-left: 25px;
+            margin-bottom: 15px;
+        }
+
+        .article li {
+            margin-bottom: 8px;
+        }
+
+        .article ul li::marker {
+            color: #10b981;
+        }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
             font-size: 14px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
+
         th, td {
-            border: 1px solid #ddd;
+            border: 1px solid #e5e7eb;
             padding: 12px;
             text-align: left;
         }
+
         th {
-            background-color: #007bff;
+            background-color: #059669;
             color: white;
             font-weight: 600;
         }
+
         tr:nth-child(even) {
-            background-color: #f8f9fa;
+            background-color: #f9fafb;
         }
+
         .highlight {
-            background-color: #fff3cd;
-            padding: 2px 6px;
+            background-color: #fef3c7;
+            padding: 2px 4px;
             border-radius: 3px;
             font-weight: 600;
         }
-        .contact-box {
-            background-color: #e8f4f8;
-            padding: 20px;
-            border-radius: 5px;
-            margin-top: 20px;
-        }
-        .footer {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 2px solid #eee;
-            text-align: center;
-            color: #666;
-            font-size: 14px;
-        }
-        ul {
-            padding-left: 20px;
-        }
-        .note {
-            background-color: #f8f9fa;
+
+        .important {
+            background-color: #fee2e2;
+            border-left: 4px solid #dc2626;
             padding: 15px;
-            border-left: 4px solid #6c757d;
             margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .important strong {
+            color: #dc2626;
+        }
+
+        .info-box {
+            background-color: #dbeafe;
+            border-left: 4px solid #2563eb;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .note-box {
+            background-color: #f0fdf4;
+            border-left: 4px solid #10b981;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .contact-box {
+            background-color: #f0fdf4;
+            border: 1px solid #d1fae5;
+            padding: 20px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+
+        .contact-box h3 {
+            color: #059669;
+            margin-bottom: 10px;
+        }
+
+        .footer {
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e5e7eb;
+            text-align: center;
+        }
+
+        .company-info {
+            background-color: #f9fafb;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .company-info h3 {
+            font-size: 16px;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+
+        .company-info p {
             font-size: 14px;
+            color: #4b5563;
+            margin-bottom: 5px;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background-color: #10b981;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            transition: opacity 0.3s;
+            text-decoration: none;
+            font-size: 24px;
+        }
+
+        .back-to-top.visible {
+            opacity: 1;
+        }
+
+        .back-to-top:hover {
+            background-color: #059669;
+        }
+
+        @media print {
+            body {
+                background-color: white;
+                padding: 0;
+            }
+
+            .container {
+                box-shadow: none;
+            }
+
+            .back-to-top {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>개인정보 처리방침</h1>
+        <div class="header">
+            <h1>(주)파이컴퓨터 개인정보 처리방침</h1>
+            <p class="subtitle">PiCom 플랫폼 이용자를 위한 개인정보보호 안내</p>
+        </div>
         
         <div class="intro">
             <p><strong>(주)파이컴퓨터</strong>(이하 "회사"라 함)는 이용자의 개인정보를 중요시하며, 「개인정보 보호법」, 「정보통신망 이용촉진 및 정보보호 등에 관한 법률」 등 관련 법령을 준수하고 있습니다.</p>
@@ -113,352 +289,474 @@
             <p><strong>시행일자:</strong> 2025년 12월 1일</p>
         </div>
 
-        <h2>제1조 (개인정보의 처리 목적)</h2>
-        <p>회사는 다음의 목적을 위하여 개인정보를 처리합니다. 처리하고 있는 개인정보는 다음의 목적 이외의 용도로는 이용되지 않으며, 이용 목적이 변경되는 경우에는 「개인정보 보호법」 제18조에 따라 별도의 동의를 받는 등 필요한 조치를 이행할 예정입니다.</p>
-        
-        <h3>1. 회원 가입 및 관리</h3>
-        <ul>
-            <li>회원 가입의사 확인</li>
-            <li>회원자격 유지 및 관리</li>
-            <li>본인확인 및 본인인증</li>
-            <li>부정이용 방지 및 비인가 사용 방지</li>
-            <li>만 14세 미만 아동의 개인정보 처리 시 법정대리인의 동의 여부 확인</li>
-            <li>각종 고지 및 통지</li>
-        </ul>
-
-        <h3>2. 서비스 제공</h3>
-        <ul>
-            <li>컴퓨터 부품 시세 조회 서비스 제공</li>
-            <li>부품 판매·구매 중개 서비스 제공</li>
-            <li>완성PC 판매 요청 및 매칭 서비스 제공</li>
-            <li>드래곤볼 스토리지 (부품 보관 및 배송) 서비스 제공</li>
-            <li>가격 알림 및 맞춤형 서비스 제공</li>
-            <li>본인인증 및 연령확인</li>
-        </ul>
-
-        <h3>3. 대금 결제, 배송 및 환불</h3>
-        <ul>
-            <li>상품 구매에 대한 요금 결제 및 정산</li>
-            <li>상품 및 부품 배송</li>
-            <li>환불 처리 및 본인 확인</li>
-            <li>결제 및 환불 관련 분쟁 해결</li>
-        </ul>
-
-        <h3>4. 거래 안전성 확보</h3>
-        <ul>
-            <li>부정거래 방지 및 거래 분쟁 조정</li>
-            <li>판매자/구매자 평가 및 신뢰도 관리</li>
-            <li>서비스 부정이용 방지</li>
-        </ul>
-
-        <h3>5. 고충처리 및 민원처리</h3>
-        <ul>
-            <li>민원인의 신원 확인</li>
-            <li>민원사항 확인 및 사실조사</li>
-            <li>처리결과 통보</li>
-        </ul>
-
-        <h2>제2조 (처리하는 개인정보 항목)</h2>
-        <p>회사는 다음의 개인정보 항목을 처리하고 있습니다.</p>
-        
-        <h3>1. 회원가입 및 서비스 이용</h3>
-        <table>
-            <tr>
-                <th>구분</th>
-                <th>수집항목</th>
-                <th>수집목적</th>
-                <th>보유기간</th>
-            </tr>
-            <tr>
-                <td><span class="highlight">필수항목<br>(이메일 가입)</span></td>
-                <td>이메일, 비밀번호, 닉네임</td>
-                <td>회원 가입 및 본인확인, 서비스 제공, 고지사항 전달</td>
-                <td>회원 탈퇴 시까지<br>(단, 관계 법령에 따라 보존 필요시 해당 기간까지)</td>
-            </tr>
-            <tr>
-                <td><span class="highlight">필수항목<br>(Google 가입)</span></td>
-                <td>이메일, 이름, 프로필 사진</td>
-                <td>간편 로그인, 회원 가입 및 본인확인, 서비스 제공</td>
-                <td>회원 탈퇴 시까지<br>(단, 관계 법령에 따라 보존 필요시 해당 기간까지)</td>
-            </tr>
-            <tr>
-                <td><span class="highlight">선택항목</span></td>
-                <td>배송지 주소, 수령인 이름, 전화번호</td>
-                <td>상품 배송, 배송 관련 연락</td>
-                <td>회원 탈퇴 시 또는 삭제 요청 시까지</td>
-            </tr>
-            <tr>
-                <td><span class="highlight">거래 시</span></td>
-                <td>상품 이미지, 판매/구매 내역, 거래 정보</td>
-                <td>중개 서비스 제공, 거래 안전성 확보</td>
-                <td>거래 완료 후 <strong>5년</strong><br>(전자상거래법)</td>
-            </tr>
-            <tr>
-                <td><span class="highlight">환불 시</span></td>
-                <td>환불 계좌번호, 예금주명</td>
-                <td>환불 처리</td>
-                <td>환불 완료 후 <strong>5년</strong><br>(전자상거래법)</td>
-            </tr>
-        </table>
-
-        <h3>2. 자동 수집 정보</h3>
-        <p>서비스 이용 과정에서 다음의 정보가 자동으로 생성되어 수집될 수 있습니다:</p>
-        <ul>
-            <li><strong>서비스 이용 기록:</strong> 접속 로그, 접속 IP 정보, 쿠키, 서비스 이용 기록, 방문 기록</li>
-            <li><strong>기기 정보:</strong> 기기 식별번호, OS 버전, 앱 버전</li>
-            <li><strong>목적:</strong> 서비스 개선, 부정 이용 방지, 통계 분석</li>
-            <li><strong>보유기간:</strong> 수집일로부터 <strong>3년</strong></li>
-        </ul>
-
-        <div class="note">
-            <strong>※ 선택항목 미동의 시:</strong> 선택항목의 수집 및 이용에 동의하지 않으실 수 있으며, 이 경우 해당 정보를 활용한 서비스 이용이 제한될 수 있습니다.
-        </div>
-
-        <h2>제3조 (개인정보의 처리 및 보유기간)</h2>
-        <p>회사는 법령에 따른 개인정보 보유·이용기간 또는 정보주체로부터 개인정보를 수집 시에 동의받은 개인정보 보유·이용기간 내에서 개인정보를 처리·보유합니다.</p>
-        
-        <h3>1. 회원 정보</h3>
-        <ul>
-            <li><strong>보유기간:</strong> 회원 탈퇴 시까지</li>
-            <li><strong>예외:</strong> 관계 법령 위반에 따른 수사·조사 등이 진행 중인 경우에는 해당 수사·조사 종료 시까지</li>
-        </ul>
-
-        <h3>2. 관계 법령에 따른 정보보유</h3>
-        <p>상법, 전자상거래법 등 관계법령의 규정에 의하여 보존할 필요가 있는 경우 회사는 관계법령에서 정한 일정한 기간 동안 정보를 보관합니다.</p>
-        
-        <table>
-            <tr>
-                <th>보존항목</th>
-                <th>근거법령</th>
-                <th>보존기간</th>
-            </tr>
-            <tr>
-                <td>계약 또는 청약철회 등에 관한 기록</td>
-                <td>전자상거래법</td>
-                <td>5년</td>
-            </tr>
-            <tr>
-                <td>대금결제 및 재화 등의 공급에 관한 기록</td>
-                <td>전자상거래법</td>
-                <td>5년</td>
-            </tr>
-            <tr>
-                <td>소비자 불만 또는 분쟁처리에 관한 기록</td>
-                <td>전자상거래법</td>
-                <td>3년</td>
-            </tr>
-            <tr>
-                <td>표시·광고에 관한 기록</td>
-                <td>전자상거래법</td>
-                <td>6개월</td>
-            </tr>
-            <tr>
-                <td>서비스 방문 기록</td>
-                <td>통신비밀보호법</td>
-                <td>3개월</td>
-            </tr>
-        </table>
-
-        <h2>제4조 (개인정보의 제3자 제공)</h2>
-        <p>회사는 원칙적으로 이용자의 개인정보를 제1조(개인정보의 처리 목적)에서 명시한 범위 내에서만 처리하며, 이용자의 사전 동의 없이는 본래의 범위를 초과하여 처리하거나 제3자에게 제공하지 않습니다.</p>
-        
-        <p>다만, 다음의 경우에는 예외로 합니다:</p>
-        <ul>
-            <li>이용자가 사전에 동의한 경우</li>
-            <li>법령의 규정에 의거하거나, 수사 목적으로 법령에 정해진 절차와 방법에 따라 수사기관의 요구가 있는 경우</li>
-            <li>통계작성, 학술연구나 시장조사를 위하여 특정 개인을 식별할 수 없는 형태로 가공하여 제공하는 경우</li>
-        </ul>
-
-        <h3>제3자 제공 현황</h3>
-        <table>
-            <tr>
-                <th>제공받는 자</th>
-                <th>제공 목적</th>
-                <th>제공 항목</th>
-                <th>보유 및 이용기간</th>
-            </tr>
-            <tr>
-                <td>카카오페이</td>
-                <td>결제 처리</td>
-                <td>결제 정보 (상품명, 금액 등)</td>
-                <td>거래 완료 후 5년</td>
-            </tr>
-        </table>
-
-        <div class="note">
-            <strong>※ 참고:</strong> 위 제3자 제공 외에 추가적인 제공이 필요한 경우 사전에 고지하고 동의를 받겠습니다.
-        </div>
-
-        <h2>제5조 (개인정보처리의 위탁)</h2>
-        <p>회사는 서비스 향상을 위해 개인정보 처리 업무를 외부 전문업체에 위탁할 수 있습니다.</p>
-        
-        <h3>개인정보 처리 위탁 현황</h3>
-        <table>
-            <tr>
-                <th>수탁업체</th>
-                <th>위탁업무 내용</th>
-                <th>개인정보의 보유 및 이용기간</th>
-            </tr>
-            <tr>
-                <td>Google LLC (Firebase)</td>
-                <td>회원 인증 (Firebase Auth), 데이터베이스 관리 (Firestore), 파일 저장 (Firebase Storage), 서버 인프라 제공</td>
-                <td>위탁계약 종료 시 또는 회원 탈퇴 시까지</td>
-            </tr>
-            <tr>
-                <td>카카오페이</td>
-                <td>결제 처리 및 정산</td>
-                <td>거래 완료 후 5년</td>
-            </tr>
-        </table>
-
-        <div class="note">
-            <strong>※ 위탁 관리:</strong> 회사는 위탁계약 체결 시 개인정보 보호법 제26조에 따라 위탁업무 수행목적 외 개인정보 처리금지, 기술적·관리적 보호조치, 재위탁 제한, 수탁자에 대한 관리·감독, 손해배상 등 책임에 관한 사항을 계약서 등 문서에 명시하고, 수탁자가 개인정보를 안전하게 처리하는지를 감독하고 있습니다.
-        </div>
-
-        <h2>제6조 (이용자 및 법정대리인의 권리와 그 행사방법)</h2>
-        <p>이용자는 언제든지 다음과 같은 권리를 행사할 수 있습니다:</p>
-        
-        <h3>1. 권리의 종류</h3>
-        <ul>
-            <li>개인정보 열람 요구</li>
-            <li>개인정보 정정·삭제 요구</li>
-            <li>개인정보 처리정지 요구</li>
-            <li>개인정보 전송 요구</li>
-        </ul>
-
-        <h3>2. 권리 행사 방법</h3>
-        <ul>
-            <li><strong>서면 요청:</strong> 개인정보보호법 시행규칙 별지 제8호 서식에 따라 작성 후 제출</li>
-            <li><strong>이메일:</strong> wlsrb00s@naver.com</li>
-            <li><strong>전화:</strong> 010-7675-3689</li>
-            <li><strong>앱 내:</strong> 마이페이지 > 설정 메뉴 이용</li>
-        </ul>
-
-        <h3>3. 만 14세 미만 아동의 권리</h3>
-        <p>회사는 만 14세 미만 아동의 개인정보를 보호하기 위하여 만 14세 이상의 이용자에 한하여 회원가입을 허용합니다.</p>
-
-        <h3>4. 권리 행사 시 유의사항</h3>
-        <ul>
-            <li>대리인을 통한 권리 행사 시 위임장 및 본인·대리인 신분 확인이 필요합니다.</li>
-            <li>개인정보의 정정·삭제 요구 시 다른 법령에서 해당 개인정보가 수집 대상으로 규정되어 있는 경우 삭제를 요구할 수 없습니다.</li>
-            <li>정정·삭제 요구 시 해당 정보의 정정·삭제가 완료될 때까지 해당 개인정보를 이용하거나 제공하지 않습니다.</li>
-        </ul>
-
-        <h2>제7조 (개인정보의 파기)</h2>
-        <p>회사는 개인정보 보유기간의 경과, 처리목적 달성 등 개인정보가 불필요하게 되었을 때에는 지체없이 해당 개인정보를 파기합니다.</p>
-        
-        <h3>1. 파기 절차</h3>
-        <ul>
-            <li>이용자가 입력한 정보는 목적 달성 후 별도의 DB에 옮겨져 내부 방침 및 관련 법령에 따라 일정기간 저장된 후 파기됩니다.</li>
-            <li>별도 DB로 옮겨진 개인정보는 법률에 의한 경우가 아니고는 다른 목적으로 이용되지 않습니다.</li>
-        </ul>
-
-        <h3>2. 파기 기한</h3>
-        <ul>
-            <li>개인정보 보유기간이 경과된 경우: 보유기간 종료일로부터 <strong>5일 이내</strong></li>
-            <li>개인정보 처리 목적 달성, 서비스 폐지, 사업 종료 등: 개인정보가 불필요하게 된 날로부터 <strong>5일 이내</strong></li>
-        </ul>
-
-        <h3>3. 파기 방법</h3>
-        <ul>
-            <li><strong>전자적 파일:</strong> 복구 및 재생이 불가능한 기술적 방법으로 완전 삭제</li>
-            <li><strong>종이 문서:</strong> 분쇄기로 분쇄하거나 소각</li>
-        </ul>
-
-        <h2>제8조 (개인정보의 안전성 확보 조치)</h2>
-        <p>회사는 개인정보의 안전성 확보를 위해 다음과 같은 조치를 취하고 있습니다:</p>
-        
-        <h3>1. 관리적 조치</h3>
-        <ul>
-            <li>내부관리계획 수립·시행</li>
-            <li>개인정보 취급 직원의 최소화 및 교육</li>
-            <li>정기적인 자체 감사 실시</li>
-        </ul>
-
-        <h3>2. 기술적 조치</h3>
-        <ul>
-            <li>개인정보처리시스템 접근권한 관리</li>
-            <li>접근통제시스템 설치 및 운영</li>
-            <li>개인정보의 암호화</li>
-            <li>보안프로그램 설치 및 주기적 업데이트</li>
-        </ul>
-
-        <h3>3. 물리적 조치</h3>
-        <ul>
-            <li>개인정보 보관 장소에 대한 접근 통제</li>
-            <li>문서 보관 장소의 잠금장치 설치</li>
-        </ul>
-
-        <h2>제9조 (개인정보 자동 수집 장치의 설치·운영 및 거부)</h2>
-        
-        <h3>1. 쿠키의 사용 목적</h3>
-        <p>회사는 다음의 목적을 위해 쿠키를 사용합니다:</p>
-        <ul>
-            <li>회원과 비회원의 접속 빈도나 방문 시간 등을 분석</li>
-            <li>이용자의 취향과 관심분야를 파악</li>
-            <li>서비스 개선 및 맞춤형 서비스 제공</li>
-        </ul>
-
-        <h3>2. 쿠키의 설치·운영 및 거부</h3>
-        <p>이용자는 쿠키 설치에 대한 선택권을 가지고 있습니다:</p>
-        <ul>
-            <li><strong>웹브라우저 설정:</strong> 도구 > 인터넷 옵션 > 개인정보 메뉴에서 쿠키 저장 거부 또는 경고 설정</li>
-            <li><strong>모바일 앱:</strong> 설정 > 개인정보 > 광고 추적 제한</li>
-        </ul>
-
-        <div class="note">
-            <strong>※ 쿠키 저장 거부 시:</strong> 로그인이 필요한 일부 서비스 이용에 어려움이 있을 수 있습니다.
-        </div>
-
-        <h2>제10조 (개인정보 보호책임자)</h2>
-        <p>회사는 개인정보 처리에 관한 업무를 총괄해서 책임지고, 개인정보 처리와 관련한 정보주체의 불만처리 및 피해구제 등을 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다.</p>
-        
-        <div class="contact-box">
-            <h3>▶ 개인정보 보호책임자</h3>
+        <!-- 목차 -->
+        <div class="toc">
+            <h2>📑 목차</h2>
             <ul>
-                <li><strong>성명:</strong> 최진규</li>
-                <li><strong>직책:</strong> 대표이사</li>
-                <li><strong>연락처:</strong> 010-7675-3689, wlsrb00s@naver.com</li>
-            </ul>
-
-            <h3>▶ 개인정보 보호 담당부서</h3>
-            <ul>
-                <li><strong>부서명:</strong> 고객지원팀</li>
-                <li><strong>담당자:</strong> 최진규</li>
-                <li><strong>연락처:</strong> 010-7675-3689, wlsrb00s@naver.com</li>
+                <li><a href="#article1">제1조 개인정보의 처리 목적</a></li>
+                <li><a href="#article2">제2조 처리하는 개인정보 항목</a></li>
+                <li><a href="#article3">제3조 개인정보의 처리 및 보유기간</a></li>
+                <li><a href="#article4">제4조 개인정보의 제3자 제공</a></li>
+                <li><a href="#article5">제5조 개인정보처리의 위탁</a></li>
+                <li><a href="#article6">제6조 이용자 및 법정대리인의 권리</a></li>
+                <li><a href="#article7">제7조 개인정보의 파기</a></li>
+                <li><a href="#article8">제8조 개인정보의 안전성 확보 조치</a></li>
+                <li><a href="#article9">제9조 개인정보 자동 수집 장치</a></li>
+                <li><a href="#article10">제10조 개인정보 보호책임자</a></li>
+                <li><a href="#article11">제11조 처리방침의 변경</a></li>
+                <li><a href="#article12">제12조 이용자의 의무</a></li>
             </ul>
         </div>
 
-        <p>개인정보 침해에 대한 신고나 상담이 필요하신 경우에는 아래 기관에 문의하실 수 있습니다:</p>
-        <ul>
-            <li><strong>개인정보침해신고센터:</strong> (국번없이) 118 / privacy.kisa.or.kr</li>
-            <li><strong>대검찰청 사이버범죄수사단:</strong> (국번없이) 1301 / www.spo.go.kr</li>
-            <li><strong>경찰청 사이버안전국:</strong> (국번없이) 182 / cyberbureau.police.go.kr</li>
-        </ul>
-
-        <h2>제11조 (개인정보 처리방침의 변경)</h2>
-        <p>이 개인정보 처리방침은 <strong>2025년 12월 1일</strong>부터 적용됩니다.</p>
-        <p>법령·정책 또는 보안기술의 변경에 따라 내용의 추가·삭제 및 수정이 있을 시에는 변경사항의 시행 <strong>7일 전</strong>부터 공지사항을 통하여 고지할 것입니다.</p>
-
-        <div class="note">
-            <strong>※ 개정 이력</strong>
+        <!-- 제1조 -->
+        <div id="article1" class="article">
+            <h2>제1조 (개인정보의 처리 목적)</h2>
+            <p>회사는 다음의 목적을 위하여 개인정보를 처리합니다. 처리하고 있는 개인정보는 다음의 목적 이외의 용도로는 이용되지 않으며, 이용 목적이 변경되는 경우에는 「개인정보 보호법」 제18조에 따라 별도의 동의를 받는 등 필요한 조치를 이행할 예정입니다.</p>
+            
+            <h3>1. 회원 가입 및 관리</h3>
             <ul>
-                <li>공고일자: 2025년 12월 1일</li>
-                <li>시행일자: 2025년 12월 1일</li>
+                <li>회원 가입의사 확인</li>
+                <li>회원자격 유지 및 관리</li>
+                <li>본인확인 및 본인인증</li>
+                <li>부정이용 방지 및 비인가 사용 방지</li>
+                <li>만 14세 미만 아동의 개인정보 처리 시 법정대리인의 동의 여부 확인</li>
+                <li>각종 고지 및 통지</li>
+            </ul>
+
+            <h3>2. 서비스 제공</h3>
+            <ul>
+                <li>컴퓨터 부품 시세 조회 서비스 제공</li>
+                <li>부품 판매·구매 중개 서비스 제공</li>
+                <li>완성PC 판매 요청 및 매칭 서비스 제공</li>
+                <li>보관 및 배송 서비스 제공</li>
+                <li>가격 알림 및 맞춤형 서비스 제공</li>
+                <li>본인인증 및 연령확인</li>
+            </ul>
+
+            <h3>3. 대금 결제, 배송 및 환불</h3>
+            <ul>
+                <li>상품 구매에 대한 요금 결제 및 정산</li>
+                <li>상품 및 부품 배송</li>
+                <li>환불 처리 및 본인 확인</li>
+                <li>결제 및 환불 관련 분쟁 해결</li>
+            </ul>
+
+            <h3>4. 거래 안전성 확보</h3>
+            <ul>
+                <li>부정거래 방지 및 거래 분쟁 조정</li>
+                <li>판매자/구매자 평가 및 신뢰도 관리</li>
+                <li>서비스 부정이용 방지</li>
+            </ul>
+
+            <h3>5. 고충처리 및 민원처리</h3>
+            <ul>
+                <li>민원인의 신원 확인</li>
+                <li>민원사항 확인 및 사실조사</li>
+                <li>처리결과 통보</li>
             </ul>
         </div>
 
-        <h2>제12조 (이용자의 의무)</h2>
-        <p>이용자는 자신의 개인정보를 보호할 의무가 있으며, 회사의 귀책사유가 없이 ID, 비밀번호, 접근매체 등의 양도·대여·분실이나 로그인 상태에서 이석 등 이용자 본인의 부주의나 관계법령에 의한 보안조치로 차단할 수 없는 방법이나 기술을 사용한 해킹 등 회사가 상당한 주의에도 불구하고 통제할 수 없는 인터넷 상의 문제 등으로 개인정보가 유출되어 발생한 문제에 대해 회사는 책임을 지지 않습니다.</p>
+        <!-- 제2조 -->
+        <div id="article2" class="article">
+            <h2>제2조 (처리하는 개인정보 항목)</h2>
+            <p>회사는 다음의 개인정보 항목을 처리하고 있습니다.</p>
+            
+            <h3>1. 회원가입 및 서비스 이용</h3>
+            <table>
+                <tr>
+                    <th style="width: 20%;">구분</th>
+                    <th style="width: 30%;">수집항목</th>
+                    <th style="width: 25%;">수집목적</th>
+                    <th style="width: 25%;">보유기간</th>
+                </tr>
+                <tr>
+                    <td><span class="highlight">필수항목<br>(이메일 가입)</span></td>
+                    <td>이메일, 비밀번호, 닉네임</td>
+                    <td>회원 가입 및 본인확인, 서비스 제공, 고지사항 전달</td>
+                    <td>회원 탈퇴 시까지<br>(단, 관계 법령에 따라 보존 필요시 해당 기간까지)</td>
+                </tr>
+                <tr>
+                    <td><span class="highlight">필수항목<br>(카카오 로그인)</span></td>
+                    <td>카카오 계정 이메일, 닉네임, 프로필 사진</td>
+                    <td>간편 로그인, 회원 가입 및 본인확인, 서비스 제공</td>
+                    <td>회원 탈퇴 시까지<br>(단, 관계 법령에 따라 보존 필요시 해당 기간까지)</td>
+                </tr>
+                <tr>
+                    <td><span class="highlight">선택항목</span></td>
+                    <td>배송지 주소, 수령인 이름, 전화번호</td>
+                    <td>상품 배송, 배송 관련 연락</td>
+                    <td>회원 탈퇴 시 또는 삭제 요청 시까지</td>
+                </tr>
+                <tr>
+                    <td><span class="highlight">거래 시</span></td>
+                    <td>상품 이미지, 판매/구매 내역, 거래 정보</td>
+                    <td>중개 서비스 제공, 거래 안전성 확보</td>
+                    <td>거래 완료 후 <strong>5년</strong><br>(전자상거래법)</td>
+                </tr>
+                <tr>
+                    <td><span class="highlight">환불 시</span></td>
+                    <td>환불 계좌번호, 예금주명</td>
+                    <td>환불 처리</td>
+                    <td>환불 완료 후 <strong>5년</strong><br>(전자상거래법)</td>
+                </tr>
+            </table>
 
-        <p>이용자는 개인정보를 최신의 상태로 정확하게 입력하여야 하며, 이용자의 부정확한 정보 입력으로 발생하는 문제의 책임은 이용자에게 있습니다.</p>
+            <h3>2. 자동 수집 정보</h3>
+            <p>서비스 이용 과정에서 다음의 정보가 자동으로 생성되어 수집될 수 있습니다:</p>
+            <ul>
+                <li><strong>서비스 이용 기록:</strong> 접속 로그, 접속 IP 정보, 쿠키, 서비스 이용 기록, 방문 기록</li>
+                <li><strong>기기 정보:</strong> 기기 식별번호, OS 버전, 앱 버전</li>
+                <li><strong>목적:</strong> 서비스 개선, 부정 이용 방지, 통계 분석</li>
+                <li><strong>보유기간:</strong> 수집일로부터 <strong>3년</strong></li>
+            </ul>
 
+            <div class="note-box">
+                <strong>※ 선택항목 미동의 시:</strong> 선택항목의 수집 및 이용에 동의하지 않으실 수 있으며, 이 경우 해당 정보를 활용한 서비스 이용이 제한될 수 있습니다.
+            </div>
+        </div>
+
+        <!-- 제3조 -->
+        <div id="article3" class="article">
+            <h2>제3조 (개인정보의 처리 및 보유기간)</h2>
+            <p>회사는 법령에 따른 개인정보 보유·이용기간 또는 정보주체로부터 개인정보를 수집 시에 동의받은 개인정보 보유·이용기간 내에서 개인정보를 처리·보유합니다.</p>
+            
+            <h3>1. 회원 정보</h3>
+            <ul>
+                <li><strong>보유기간:</strong> 회원 탈퇴 시까지</li>
+                <li><strong>예외:</strong> 관계 법령 위반에 따른 수사·조사 등이 진행 중인 경우에는 해당 수사·조사 종료 시까지</li>
+            </ul>
+
+            <h3>2. 관계 법령에 따른 정보보유</h3>
+            <p>상법, 전자상거래법 등 관계법령의 규정에 의하여 보존할 필요가 있는 경우 회사는 관계법령에서 정한 일정한 기간 동안 정보를 보관합니다.</p>
+            
+            <table>
+                <tr>
+                    <th>보존항목</th>
+                    <th>근거법령</th>
+                    <th>보존기간</th>
+                </tr>
+                <tr>
+                    <td>계약 또는 청약철회 등에 관한 기록</td>
+                    <td>전자상거래법</td>
+                    <td>5년</td>
+                </tr>
+                <tr>
+                    <td>대금결제 및 재화 등의 공급에 관한 기록</td>
+                    <td>전자상거래법</td>
+                    <td>5년</td>
+                </tr>
+                <tr>
+                    <td>소비자 불만 또는 분쟁처리에 관한 기록</td>
+                    <td>전자상거래법</td>
+                    <td>3년</td>
+                </tr>
+                <tr>
+                    <td>표시·광고에 관한 기록</td>
+                    <td>전자상거래법</td>
+                    <td>6개월</td>
+                </tr>
+                <tr>
+                    <td>서비스 방문 기록</td>
+                    <td>통신비밀보호법</td>
+                    <td>3개월</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- 제4조 -->
+        <div id="article4" class="article">
+            <h2>제4조 (개인정보의 제3자 제공)</h2>
+            <p>회사는 원칙적으로 이용자의 개인정보를 제1조(개인정보의 처리 목적)에서 명시한 범위 내에서만 처리하며, 이용자의 사전 동의 없이는 본래의 범위를 초과하여 처리하거나 제3자에게 제공하지 않습니다.</p>
+            
+            <p>다만, 다음의 경우에는 예외로 합니다:</p>
+            <ul>
+                <li>이용자가 사전에 동의한 경우</li>
+                <li>법령의 규정에 의거하거나, 수사 목적으로 법령에 정해진 절차와 방법에 따라 수사기관의 요구가 있는 경우</li>
+                <li>통계작성, 학술연구나 시장조사를 위하여 특정 개인을 식별할 수 없는 형태로 가공하여 제공하는 경우</li>
+            </ul>
+
+            <h3>제3자 제공 현황</h3>
+            <table>
+                <tr>
+                    <th>제공받는 자</th>
+                    <th>제공 목적</th>
+                    <th>제공 항목</th>
+                    <th>보유 및 이용기간</th>
+                </tr>
+                <tr>
+                    <td>카카오페이</td>
+                    <td>결제 처리 및 정산</td>
+                    <td>결제 정보 (상품명, 금액, 구매자 정보 등)</td>
+                    <td>거래 완료 후 5년</td>
+                </tr>
+                <tr>
+                    <td>토스페이먼츠</td>
+                    <td>결제 처리 및 정산</td>
+                    <td>결제 정보 (상품명, 금액, 구매자 정보 등)</td>
+                    <td>거래 완료 후 5년</td>
+                </tr>
+            </table>
+
+            <div class="note-box">
+                <strong>※ 참고:</strong> 위 제3자 제공 외에 추가적인 제공이 필요한 경우 사전에 고지하고 동의를 받겠습니다.
+            </div>
+        </div>
+
+        <!-- 제5조 -->
+        <div id="article5" class="article">
+            <h2>제5조 (개인정보처리의 위탁)</h2>
+            <p>회사는 서비스 향상을 위해 개인정보 처리 업무를 외부 전문업체에 위탁할 수 있습니다.</p>
+            
+            <h3>개인정보 처리 위탁 현황</h3>
+            <table>
+                <tr>
+                    <th>수탁업체</th>
+                    <th>위탁업무 내용</th>
+                    <th>개인정보의 보유 및 이용기간</th>
+                </tr>
+                <tr>
+                    <td>Google LLC (Firebase)</td>
+                    <td>회원 인증 (Firebase Auth), 데이터베이스 관리 (Firestore), 파일 저장 (Firebase Storage), 서버 인프라 제공</td>
+                    <td>위탁계약 종료 시 또는 회원 탈퇴 시까지</td>
+                </tr>
+                <tr>
+                    <td>카카오페이</td>
+                    <td>결제 처리 및 정산</td>
+                    <td>거래 완료 후 5년</td>
+                </tr>
+                <tr>
+                    <td>토스페이먼츠</td>
+                    <td>결제 처리 및 정산</td>
+                    <td>거래 완료 후 5년</td>
+                </tr>
+            </table>
+
+            <div class="info-box">
+                <strong>※ 위탁 관리:</strong> 회사는 위탁계약 체결 시 개인정보 보호법 제26조에 따라 위탁업무 수행목적 외 개인정보 처리금지, 기술적·관리적 보호조치, 재위탁 제한, 수탁자에 대한 관리·감독, 손해배상 등 책임에 관한 사항을 계약서 등 문서에 명시하고, 수탁자가 개인정보를 안전하게 처리하는지를 감독하고 있습니다.
+            </div>
+        </div>
+
+        <!-- 제6조 -->
+        <div id="article6" class="article">
+            <h2>제6조 (이용자 및 법정대리인의 권리와 그 행사방법)</h2>
+            <p>이용자는 언제든지 다음과 같은 권리를 행사할 수 있습니다:</p>
+            
+            <h3>1. 권리의 종류</h3>
+            <ul>
+                <li>개인정보 열람 요구</li>
+                <li>개인정보 정정·삭제 요구</li>
+                <li>개인정보 처리정지 요구</li>
+                <li>개인정보 전송 요구</li>
+            </ul>
+
+            <h3>2. 권리 행사 방법</h3>
+            <ul>
+                <li><strong>서면 요청:</strong> 개인정보보호법 시행규칙 별지 제8호 서식에 따라 작성 후 제출</li>
+                <li><strong>이메일:</strong> picom@picomputer.co.kr</li>
+                <li><strong>전화:</strong> 02-6402-0025</li>
+                <li><strong>앱 내:</strong> 마이페이지 > 설정 메뉴 이용</li>
+            </ul>
+
+            <h3>3. 만 14세 미만 아동의 권리</h3>
+            <p>회사는 만 14세 미만 아동의 개인정보를 보호하기 위하여 만 14세 이상의 이용자에 한하여 회원가입을 허용합니다.</p>
+
+            <h3>4. 권리 행사 시 유의사항</h3>
+            <ul>
+                <li>대리인을 통한 권리 행사 시 위임장 및 본인·대리인 신분 확인이 필요합니다.</li>
+                <li>개인정보의 정정·삭제 요구 시 다른 법령에서 해당 개인정보가 수집 대상으로 규정되어 있는 경우 삭제를 요구할 수 없습니다.</li>
+                <li>정정·삭제 요구 시 해당 정보의 정정·삭제가 완료될 때까지 해당 개인정보를 이용하거나 제공하지 않습니다.</li>
+            </ul>
+        </div>
+
+        <!-- 제7조 -->
+        <div id="article7" class="article">
+            <h2>제7조 (개인정보의 파기)</h2>
+            <p>회사는 개인정보 보유기간의 경과, 처리목적 달성 등 개인정보가 불필요하게 되었을 때에는 지체없이 해당 개인정보를 파기합니다.</p>
+            
+            <h3>1. 파기 절차</h3>
+            <ul>
+                <li>이용자가 입력한 정보는 목적 달성 후 별도의 DB에 옮겨져 내부 방침 및 관련 법령에 따라 일정기간 저장된 후 파기됩니다.</li>
+                <li>별도 DB로 옮겨진 개인정보는 법률에 의한 경우가 아니고는 다른 목적으로 이용되지 않습니다.</li>
+            </ul>
+
+            <h3>2. 파기 기한</h3>
+            <ul>
+                <li>개인정보 보유기간이 경과된 경우: 보유기간 종료일로부터 <strong>5일 이내</strong></li>
+                <li>개인정보 처리 목적 달성, 서비스 폐지, 사업 종료 등: 개인정보가 불필요하게 된 날로부터 <strong>5일 이내</strong></li>
+            </ul>
+
+            <h3>3. 파기 방법</h3>
+            <ul>
+                <li><strong>전자적 파일:</strong> 복구 및 재생이 불가능한 기술적 방법으로 완전 삭제</li>
+                <li><strong>종이 문서:</strong> 분쇄기로 분쇄하거나 소각</li>
+            </ul>
+        </div>
+
+        <!-- 제8조 -->
+        <div id="article8" class="article">
+            <h2>제8조 (개인정보의 안전성 확보 조치)</h2>
+            <p>회사는 개인정보의 안전성 확보를 위해 다음과 같은 조치를 취하고 있습니다:</p>
+            
+            <h3>1. 관리적 조치</h3>
+            <ul>
+                <li>내부관리계획 수립·시행</li>
+                <li>개인정보 취급 직원의 최소화 및 교육</li>
+                <li>정기적인 자체 감사 실시</li>
+            </ul>
+
+            <h3>2. 기술적 조치</h3>
+            <ul>
+                <li>개인정보처리시스템 접근권한 관리</li>
+                <li>접근통제시스템 설치 및 운영</li>
+                <li>개인정보의 암호화 (Firebase 보안 규칙 적용)</li>
+                <li>보안프로그램 설치 및 주기적 업데이트</li>
+                <li>SSL/TLS 암호화 통신 적용</li>
+            </ul>
+
+            <h3>3. 물리적 조치</h3>
+            <ul>
+                <li>개인정보 보관 장소에 대한 접근 통제</li>
+                <li>문서 보관 장소의 잠금장치 설치</li>
+            </ul>
+        </div>
+
+        <!-- 제9조 -->
+        <div id="article9" class="article">
+            <h2>제9조 (개인정보 자동 수집 장치의 설치·운영 및 거부)</h2>
+            
+            <h3>1. 쿠키의 사용 목적</h3>
+            <p>회사는 다음의 목적을 위해 쿠키를 사용합니다:</p>
+            <ul>
+                <li>회원과 비회원의 접속 빈도나 방문 시간 등을 분석</li>
+                <li>이용자의 취향과 관심분야를 파악</li>
+                <li>서비스 개선 및 맞춤형 서비스 제공</li>
+            </ul>
+
+            <h3>2. 쿠키의 설치·운영 및 거부</h3>
+            <p>이용자는 쿠키 설치에 대한 선택권을 가지고 있습니다:</p>
+            <ul>
+                <li><strong>웹브라우저 설정:</strong> 도구 > 인터넷 옵션 > 개인정보 메뉴에서 쿠키 저장 거부 또는 경고 설정</li>
+                <li><strong>모바일 앱:</strong> 설정 > 개인정보 > 광고 추적 제한</li>
+            </ul>
+
+            <div class="note-box">
+                <strong>※ 쿠키 저장 거부 시:</strong> 로그인이 필요한 일부 서비스 이용에 어려움이 있을 수 있습니다.
+            </div>
+        </div>
+
+        <!-- 제10조 -->
+        <div id="article10" class="article">
+            <h2>제10조 (개인정보 보호책임자)</h2>
+            <p>회사는 개인정보 처리에 관한 업무를 총괄해서 책임지고, 개인정보 처리와 관련한 정보주체의 불만처리 및 피해구제 등을 위하여 아래와 같이 개인정보 보호책임자를 지정하고 있습니다.</p>
+            
+            <div class="contact-box">
+                <h3>▶ 개인정보 보호책임자</h3>
+                <ul>
+                    <li><strong>성명:</strong> 최진규</li>
+                    <li><strong>직책:</strong> 대표이사</li>
+                    <li><strong>연락처:</strong> 02-6402-0025, picom@picomputer.co.kr</li>
+                </ul>
+
+                <h3>▶ 개인정보 보호 담당부서</h3>
+                <ul>
+                    <li><strong>부서명:</strong> 고객지원팀</li>
+                    <li><strong>담당자:</strong> 최진규</li>
+                    <li><strong>연락처:</strong> 02-6402-0025, picom@picomputer.co.kr</li>
+                </ul>
+            </div>
+
+            <p>개인정보 침해에 대한 신고나 상담이 필요하신 경우에는 아래 기관에 문의하실 수 있습니다:</p>
+            <ul>
+                <li><strong>개인정보침해신고센터:</strong> (국번없이) 118 / privacy.kisa.or.kr</li>
+                <li><strong>대검찰청 사이버범죄수사단:</strong> (국번없이) 1301 / www.spo.go.kr</li>
+                <li><strong>경찰청 사이버안전국:</strong> (국번없이) 182 / cyberbureau.police.go.kr</li>
+            </ul>
+        </div>
+
+        <!-- 제11조 -->
+        <div id="article11" class="article">
+            <h2>제11조 (개인정보 처리방침의 변경)</h2>
+            <p>이 개인정보 처리방침은 <strong>2025년 12월 1일</strong>부터 적용됩니다.</p>
+            <p>법령·정책 또는 보안기술의 변경에 따라 내용의 추가·삭제 및 수정이 있을 시에는 변경사항의 시행 <strong>7일 전</strong>부터 공지사항을 통하여 고지할 것입니다.</p>
+
+            <div class="note-box">
+                <strong>※ 개정 이력</strong>
+                <ul>
+                    <li>공고일자: 2025년 12월 1일</li>
+                    <li>시행일자: 2025년 12월 1일</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 제12조 -->
+        <div id="article12" class="article">
+            <h2>제12조 (이용자의 의무)</h2>
+            <p>이용자는 자신의 개인정보를 보호할 의무가 있으며, 회사의 귀책사유가 없이 ID, 비밀번호, 접근매체 등의 양도·대여·분실이나 로그인 상태에서 이석 등 이용자 본인의 부주의나 관계법령에 의한 보안조치로 차단할 수 없는 방법이나 기술을 사용한 해킹 등 회사가 상당한 주의에도 불구하고 통제할 수 없는 인터넷 상의 문제 등으로 개인정보가 유출되어 발생한 문제에 대해 회사는 책임을 지지 않습니다.</p>
+
+            <p>이용자는 개인정보를 최신의 상태로 정확하게 입력하여야 하며, 이용자의 부정확한 정보 입력으로 발생하는 문제의 책임은 이용자에게 있습니다.</p>
+        </div>
+
+        <!-- 부칙 -->
         <div class="footer">
-            <p>본 개인정보 처리방침은 <strong>2025년 12월 1일</strong>부터 시행됩니다.</p>
-            <p><strong>(주)파이컴퓨터</strong></p>
-            <p>대표자: 최진규</p>
-            <p>대표전화: 010-7675-3689 | 이메일: wlsrb00s@naver.com</p>
+            <h2 style="font-size: 20px; color: #059669; margin-bottom: 20px;">부칙</h2>
+            <p><strong>시행일:</strong> 본 개인정보 처리방침은 <span class="highlight">2025년 12월 1일</span>부터 시행됩니다.</p>
+            
+            <div class="company-info">
+                <h3>사업자 정보</h3>
+                <p><strong>상호:</strong> (주) 파이컴퓨터</p>
+                <p><strong>대표자:</strong> 최진규</p>
+                <p><strong>사업자등록번호:</strong> 207-87-03690</p>
+                <p><strong>통신판매업 신고번호:</strong> 2025-서울서대문-1006</p>
+                <p><strong>주소:</strong> 서울특별시 서대문구 연세로2나길 61</p>
+                <p><strong>대표전화:</strong> 02-6402-0025</p>
+                <p><strong>이메일:</strong> picom@picomputer.co.kr</p>
+            </div>
+
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                <p style="font-size: 12px; color: #6b7280;">
+                    본 개인정보 처리방침에 대한 문의사항이 있으시면 고객센터(02-6402-0025)로 연락주시기 바랍니다.
+                </p>
+            </div>
         </div>
     </div>
+
+    <!-- 맨 위로 버튼 -->
+    <a href="#" class="back-to-top" id="backToTop">↑</a>
+
+    <script>
+        // 맨 위로 버튼 표시/숨김
+        window.addEventListener('scroll', function() {
+            const backToTop = document.getElementById('backToTop');
+            if (window.pageYOffset > 300) {
+                backToTop.classList.add('visible');
+            } else {
+                backToTop.classList.remove('visible');
+            }
+        });
+
+        // 맨 위로 버튼 클릭 시 부드럽게 스크롤
+        document.getElementById('backToTop').addEventListener('click', function(e) {
+            e.preventDefault();
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // 목차 링크 클릭 시 부드럽게 스크롤
+        document.querySelectorAll('.toc a').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>
