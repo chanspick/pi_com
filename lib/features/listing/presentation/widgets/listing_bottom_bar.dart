@@ -7,6 +7,7 @@ import '../../../cart/presentation/providers/cart_provider.dart';
 import '../../../checkout/presentation/screens/checkout_screen.dart';
 import '../providers/use_case_providers.dart';
 import '../../../../core/constants/routes.dart';
+import '../../../../shared/utils/app_notification.dart';
 
 class ListingBottomBar extends ConsumerStatefulWidget {
   final ListingEntity listing;
@@ -143,18 +144,10 @@ class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
 
       if (alreadyInCart) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('이미 장바구니에 있는 상품입니다'),
-            action: SnackBarAction(
-              label: '장바구니 보기',
-              onPressed: () {
-                Navigator.pushNamed(context, Routes.cart);
-              },
-            ),
-            duration: const Duration(seconds: 3),
-            backgroundColor: Colors.orange,
-          ),
+        AppNotification.showWarning(
+          context,
+          '이미 장바구니에 담긴 상품입니다.',
+          title: '장바구니',
         );
         return;
       }
@@ -173,27 +166,17 @@ class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
 
       // 5. 성공 알림
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${widget.listing.modelName}을(를) 장바구니에 담았습니다'),
-          action: SnackBarAction(
-            label: '장바구니 보기',
-            onPressed: () {
-              Navigator.pushNamed(context, Routes.cart);
-            },
-          ),
-          duration: const Duration(seconds: 3),
-          backgroundColor: Colors.green,
-        ),
+      AppNotification.showCartNotification(
+        context,
+        '${widget.listing.modelName}을(를) 장바구니에 담았습니다.',
+        isRemoval: false,
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceAll('Exception: ', '')),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 4),
-        ),
+      AppNotification.showError(
+        context,
+        e.toString().replaceAll('Exception: ', ''),
+        title: '장바구니 오류',
       );
     } finally {
       if (mounted) {
@@ -225,12 +208,10 @@ class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceAll('Exception: ', '')),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 4),
-        ),
+      AppNotification.showError(
+        context,
+        e.toString().replaceAll('Exception: ', ''),
+        title: '구매 오류',
       );
     }
   }

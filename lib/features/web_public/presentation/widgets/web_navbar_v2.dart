@@ -226,6 +226,18 @@ class _WebNavBarV2State extends ConsumerState<WebNavBarV2> {
         ),
         SizedBox(width: spacing),
 
+        // Notifications (로그인 시에만)
+        if (currentUser != null) ...[
+          _buildIconButton(
+            context: context,
+            icon: Icons.notifications_outlined,
+            label: isMobile ? '' : '알림',
+            onTap: () => context.go(Routes.notifications),
+            isMobile: isMobile,
+          ),
+          SizedBox(width: spacing),
+        ],
+
         // Login or User menu
         if (currentUser == null) ...[
           if (!isMobile) ...[
