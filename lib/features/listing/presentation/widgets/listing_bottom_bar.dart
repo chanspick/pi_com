@@ -1,6 +1,7 @@
 // lib/features/listing/presentation/widgets/listing_bottom_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:toastification/toastification.dart';
 import '../../domain/entities/listing_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../cart/presentation/providers/cart_provider.dart';
@@ -20,6 +21,7 @@ class ListingBottomBar extends ConsumerStatefulWidget {
 
 class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
   bool _isAddingToCart = false;
+  bool _hasShownDuplicateWarning = false; // 중복 경고 toast 표시 여부
 
   @override
   Widget build(BuildContext context) {
@@ -143,12 +145,26 @@ class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
       );
 
       if (alreadyInCart) {
+        // 이미 경고를 표시했으면 중복으로 표시하지 않음
+        if (_hasShownDuplicateWarning) return;
+
         if (!mounted) return;
+        _hasShownDuplicateWarning = true;
+
+        // 기존 toast 제거 후 새로 표시
+        toastification.dismissAll();
         AppNotification.showWarning(
           context,
           '이미 장바구니에 담긴 상품입니다.',
           title: '장바구니',
         );
+
+        // 3초 후 다시 경고 표시 가능하도록 리셋
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) {
+            _hasShownDuplicateWarning = false;
+          }
+        });
         return;
       }
 

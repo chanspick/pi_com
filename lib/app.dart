@@ -44,6 +44,7 @@ import 'features/dragon_ball/presentation/screens/batch_shipment_request_screen.
 import 'features/dragon_ball/presentation/screens/batch_shipment_history_screen.dart';
 import 'features/address/presentation/screens/address_list_screen.dart';
 import 'features/price_alert/presentation/screens/price_alerts_screen.dart';
+import 'features/notification/presentations/screens/notification_list_screen.dart';
 import 'features/auth/presentation/screens/auth_screen.dart';
 
 // ✅ 관리자 페이지 (GoRouter 사용)
@@ -236,6 +237,10 @@ class MyApp extends ConsumerWidget {
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationListScreen(),
       ),
       GoRoute(
         path: '/address-list',

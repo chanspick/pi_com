@@ -8,12 +8,15 @@ import 'package:uuid/uuid.dart';
 import 'package:pi_com/features/dragon_ball/presentation/providers/dragon_ball_provider.dart';
 import 'package:pi_com/features/dragon_ball/domain/entities/dragon_ball_entity.dart';
 import 'package:pi_com/core/constants/storage_policy.dart';
-import 'package:pi_com/shared/utils/snackbar_helper.dart';
+import 'package:pi_com/shared/utils/app_notification.dart';
 import 'package:pi_com/features/address/domain/entities/address_entity.dart';
 import 'package:pi_com/features/address/data/repositories/address_repository.dart';
 import 'package:pi_com/features/address/presentation/screens/address_list_screen.dart';
 import 'package:pi_com/features/payment/presentation/providers/payment_provider.dart';
-import 'package:pi_com/features/payment/presentation/screens/payment_webview_screen.dart';
+import 'package:pi_com/features/payment/presentation/screens/toss_payment_webview_screen.dart';
+// 웹 전용 결제 화면 (조건부 import)
+import 'package:pi_com/features/payment/presentation/screens/toss_payment_web_screen_stub.dart'
+    if (dart.library.html) 'package:pi_com/features/payment/presentation/screens/toss_payment_web_screen.dart';
 import 'package:pi_com/features/payment/presentation/screens/payment_success_screen.dart';
 import 'package:pi_com/features/payment/presentation/screens/payment_failure_screen.dart';
 import 'package:pi_com/features/payment/presentation/screens/payment_cancel_screen.dart';
@@ -21,8 +24,7 @@ import 'package:pi_com/features/auth/presentation/providers/auth_provider.dart';
 
 /// 결제 방식
 enum PaymentMethod {
-  kakaoPay, // 카카오페이
-  // 향후 확장: card, bankTransfer 등
+  tossPayments, // 토스페이먼츠 (카드, 간편결제, 계좌이체 등)
 }
 
 /// 일괄 배송 요청 화면
@@ -110,23 +112,23 @@ class _BatchShipmentRequestScreenState extends ConsumerState<BatchShipmentReques
     );
   }
 
-  /// 카카오페이 결제 처리
+  /// 토스페이먼츠 결제 처리
   Future<void> _processPayment() async {
     // 배송지 확인
     if (_selectedAddress == null) {
-      SnackbarHelper.showError(context, '배송지를 선택해주세요');
+      AppNotification.showWarning(context, '배송지를 선택해주세요', title: '배송지 필요');
       return;
     }
 
     // 결제 방식 확인
     if (_selectedPaymentMethod == null) {
-      SnackbarHelper.showError(context, '결제 방식을 선택해주세요');
+      AppNotification.showWarning(context, '결제 방식을 선택해주세요', title: '결제 방식 필요');
       return;
     }
 
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      SnackbarHelper.showError(context, '로그인이 필요합니다');
+      AppNotification.showWarning(context, '로그인이 필요합니다', title: '로그인 필요');
       return;
     }
 
@@ -137,9 +139,10 @@ class _BatchShipmentRequestScreenState extends ConsumerState<BatchShipmentReques
 
     final exceededItems = selectedDragonBalls.where((db) => StoragePolicy.hasExceededMaxStorageDays(db.storedAt)).toList();
     if (exceededItems.isNotEmpty) {
-      SnackbarHelper.showError(
+      AppNotification.showError(
         context,
         '30일 최대 보관 기간을 초과한 부품이 포함되어 있습니다.\n해당 부품은 위탁판매로 전환됩니다.',
+        title: '보관 기간 초과',
       );
       return;
     }
@@ -164,55 +167,66 @@ class _BatchShipmentRequestScreenState extends ConsumerState<BatchShipmentReques
           ? 'PC 합배송 (완제품 ${widget.dragonBallIds.length}개)'
           : 'PC 합배송 (부품 ${widget.dragonBallIds.length}개)';
 
-      // 리다이렉트 URL 설정
-      final String approvalUrl;
-      final String cancelUrl;
-      final String failUrl;
+      // 리다이렉트 URL 설정 (Firebase Functions 사용)
+      final successUrl = 'https://asia-northeast3-picom-team.cloudfunctions.net/api/toss-payment-redirect/success';
+      final failUrl = 'https://asia-northeast3-picom-team.cloudfunctions.net/api/toss-payment-redirect/fail';
+
+      // 사용자 정보 가져오기
+      final currentUser = ref.read(currentUserProvider);
+      final customerName = currentUser?.displayName ?? '고객';
+      final customerEmail = currentUser?.email ?? '';
+      final customerPhone = _selectedAddress?.recipientPhone ?? '';
+
+      if (!mounted) return;
+
+      // 토스페이먼츠 결제 화면 열기 (웹/모바일 분기)
+      final Map<String, dynamic>? paymentResult;
 
       if (kIsWeb) {
-        approvalUrl = '${Uri.base.origin}/payment/approve?order_id=$orderId';
-        cancelUrl = '${Uri.base.origin}/payment/cancel';
-        failUrl = '${Uri.base.origin}/payment/fail';
-      } else {
-        approvalUrl = 'https://asia-northeast3-picom-team.cloudfunctions.net/api/payment-redirect/approve?order_id=$orderId';
-        cancelUrl = 'https://asia-northeast3-picom-team.cloudfunctions.net/api/payment-redirect/cancel';
-        failUrl = 'https://asia-northeast3-picom-team.cloudfunctions.net/api/payment-redirect/fail';
-      }
-
-      // 카카오페이 결제 준비
-      final payment = await ref.read(preparePaymentUseCaseProvider).call(
-        orderId: orderId,
-        userId: user.uid,
-        itemName: itemName,
-        quantity: widget.dragonBallIds.length,
-        totalAmount: totalAmount,
-        approvalUrl: approvalUrl,
-        cancelUrl: cancelUrl,
-        failUrl: failUrl,
-      );
-
-      ref.read(currentPaymentProvider.notifier).state = payment;
-
-      if (mounted) {
-        // 결제 화면 이동
-        final paymentResult = await Navigator.push(
+        // 웹: iframe 기반 결제 화면
+        paymentResult = await Navigator.push<Map<String, dynamic>>(
           context,
           MaterialPageRoute(
-            builder: (context) => PaymentWebViewScreen(
-              paymentUrl: payment.nextRedirectMobileUrl ?? payment.nextRedirectPcUrl ?? '',
-              tid: payment.tid,
+            builder: (context) => TossPaymentWebScreen(
               orderId: orderId,
               userId: user.uid,
+              orderName: itemName,
+              amount: totalAmount,
+              productAmount: totalAmount,
+              shippingFee: 0,
+              customerName: customerName,
+              customerEmail: customerEmail,
+              customerPhone: customerPhone,
+              successUrl: successUrl,
+              failUrl: failUrl,
             ),
           ),
         );
-
-        // 결제 결과 처리
-        await _handlePaymentResult(paymentResult, orderId, user.uid, selectedDragonBalls, shippingCost, servicesCost);
+      } else {
+        // 모바일: WebView 기반 결제 화면
+        paymentResult = await Navigator.push<Map<String, dynamic>>(
+          context,
+          MaterialPageRoute(
+            builder: (context) => TossPaymentWebViewScreen(
+              orderId: orderId,
+              userId: user.uid,
+              orderName: itemName,
+              amount: totalAmount,
+              customerName: customerName,
+              customerEmail: customerEmail,
+              customerPhone: customerPhone,
+              successUrl: successUrl,
+              failUrl: failUrl,
+            ),
+          ),
+        );
       }
+
+      // 결제 결과 처리
+      await _handleTossPaymentResult(paymentResult, orderId, user.uid, selectedDragonBalls, shippingCost, servicesCost);
     } catch (e) {
       if (mounted) {
-        SnackbarHelper.showError(context, '결제 준비 중 오류가 발생했습니다: $e');
+        AppNotification.showError(context, '결제 준비 중 오류가 발생했습니다', title: '결제 오류');
       }
     } finally {
       if (mounted) {
@@ -221,16 +235,16 @@ class _BatchShipmentRequestScreenState extends ConsumerState<BatchShipmentReques
     }
   }
 
-  /// 결제 결과 처리
-  Future<void> _handlePaymentResult(
-    dynamic paymentResult,
+  /// 토스페이먼츠 결제 결과 처리
+  Future<void> _handleTossPaymentResult(
+    Map<String, dynamic>? paymentResult,
     String orderId,
     String userId,
     List<DragonBallEntity> selectedDragonBalls,
     int shippingCost,
     int servicesCost,
   ) async {
-    if (paymentResult == true) {
+    if (paymentResult != null && paymentResult['success'] == true) {
       // 결제 성공: 배송 요청 생성
       try {
         final createBatchShipmentUseCase = ref.read(createBatchShipmentUseCaseProvider);
@@ -248,32 +262,63 @@ class _BatchShipmentRequestScreenState extends ConsumerState<BatchShipmentReques
         // 선택 초기화
         ref.read(clearDragonBallSelectionProvider)();
 
-        final approvedPayment = ref.read(currentPaymentProvider);
+        final payment = ref.read(currentPaymentProvider);
         if (mounted) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => PaymentSuccessScreen(
-                payment: approvedPayment,
+                payment: payment,
                 orderId: orderId,
               ),
             ),
           );
         }
       } catch (e) {
+        // 배송 요청 생성 실패 시 결제 취소 시도
+        final paymentKey = paymentResult['paymentKey'] as String?;
+        if (paymentKey != null) {
+          try {
+            final cancelUseCase = ref.read(cancelTossPaymentUseCaseProvider);
+            await cancelUseCase.call(
+              paymentKey: paymentKey,
+              cancelReason: '배송 요청 생성 실패로 인한 자동 취소',
+            );
+
+            if (mounted) {
+              AppNotification.showWarning(
+                context,
+                '배송 요청 생성에 실패하여 결제가 자동으로 취소되었습니다.',
+                title: '결제 취소',
+              );
+            }
+          } catch (cancelError) {
+            print('⚠️ 결제 취소 실패 (수동 처리 필요) - PaymentKey: $paymentKey, 에러: $cancelError');
+            if (mounted) {
+              AppNotification.showError(
+                context,
+                '결제는 완료되었으나 배송 요청 생성에 실패했습니다. 고객센터로 문의해주세요.',
+                title: '오류 발생',
+                duration: const Duration(seconds: 5),
+              );
+            }
+          }
+        }
+
         if (mounted) {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => PaymentFailureScreen(
-                errorMessage: '배송 요청 생성에 실패했습니다: $e',
+                errorMessage: '배송 요청 생성에 실패했습니다',
                 orderId: orderId,
               ),
             ),
           );
         }
       }
-    } else if (paymentResult == 'cancel') {
+    } else if (paymentResult != null && paymentResult['errorCode'] == 'USER_CANCEL') {
+      // 사용자가 결제 취소
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -282,8 +327,9 @@ class _BatchShipmentRequestScreenState extends ConsumerState<BatchShipmentReques
           ),
         );
       }
-    } else if (paymentResult is String && paymentResult.startsWith('fail:')) {
-      final errorMsg = paymentResult.substring(5);
+    } else if (paymentResult != null) {
+      // 결제 실패
+      final errorMsg = paymentResult['errorMessage'] as String? ?? '알 수 없는 오류';
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -471,10 +517,10 @@ class _BatchShipmentRequestScreenState extends ConsumerState<BatchShipmentReques
                       onPressed: (_isLoading || _selectedPaymentMethod == null) ? null : _processPayment,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        backgroundColor: _selectedPaymentMethod == PaymentMethod.kakaoPay
-                            ? Colors.yellow[700]
+                        backgroundColor: _selectedPaymentMethod == PaymentMethod.tossPayments
+                            ? const Color(0xFF0064FF)  // 토스 블루
                             : Colors.grey[400],
-                        foregroundColor: Colors.black,
+                        foregroundColor: Colors.white,
                         disabledBackgroundColor: Colors.grey[300],
                         disabledForegroundColor: Colors.grey[600],
                       ),
@@ -482,7 +528,7 @@ class _BatchShipmentRequestScreenState extends ConsumerState<BatchShipmentReques
                           ? const SizedBox(
                               height: 20,
                               width: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                             )
                           : Text(
                               _selectedPaymentMethod == null
@@ -684,35 +730,41 @@ class _PaymentMethodSelector extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // 카카오페이
+          // 토스페이먼츠
           InkWell(
-            onTap: () => onMethodChanged(PaymentMethod.kakaoPay),
+            onTap: () => onMethodChanged(PaymentMethod.tossPayments),
             borderRadius: BorderRadius.circular(12),
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: selectedMethod == PaymentMethod.kakaoPay
-                    ? Colors.yellow[50]
+                color: selectedMethod == PaymentMethod.tossPayments
+                    ? const Color(0xFF0064FF).withOpacity(0.1)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(12),
-                border: selectedMethod == PaymentMethod.kakaoPay
-                    ? Border.all(color: Colors.yellow[700]!, width: 2)
+                border: selectedMethod == PaymentMethod.tossPayments
+                    ? Border.all(color: const Color(0xFF0064FF), width: 2)
                     : null,
               ),
               child: Row(
                 children: [
                   Radio<PaymentMethod>(
-                    value: PaymentMethod.kakaoPay,
+                    value: PaymentMethod.tossPayments,
                     groupValue: selectedMethod,
                     onChanged: (value) => onMethodChanged(value!),
-                    activeColor: Colors.yellow[700],
+                    activeColor: const Color(0xFF0064FF),
                   ),
                   const SizedBox(width: 12),
-                  Image.asset(
-                    'assets/images/kakaopay_logo.png',
-                    height: 24,
-                    errorBuilder: (context, error, stackTrace) =>
-                        Icon(Icons.payment, size: 24, color: Colors.yellow[700]),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0064FF),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Icon(
+                      Icons.credit_card,
+                      size: 20,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -720,7 +772,7 @@ class _PaymentMethodSelector extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         const Text(
-                          '카카오페이',
+                          '토스페이먼츠',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -728,7 +780,7 @@ class _PaymentMethodSelector extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '간편하고 안전한 카카오페이 결제',
+                          '카드, 간편결제, 계좌이체, 휴대폰',
                           style: TextStyle(
                             fontSize: 13,
                             color: Colors.grey[600],
@@ -737,8 +789,8 @@ class _PaymentMethodSelector extends StatelessWidget {
                       ],
                     ),
                   ),
-                  if (selectedMethod == PaymentMethod.kakaoPay)
-                    Icon(Icons.check_circle, color: Colors.yellow[700], size: 24),
+                  if (selectedMethod == PaymentMethod.tossPayments)
+                    const Icon(Icons.check_circle, color: Color(0xFF0064FF), size: 24),
                 ],
               ),
             ),
