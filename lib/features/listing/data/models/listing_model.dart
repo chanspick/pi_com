@@ -19,6 +19,7 @@ class ListingModel {
   final Timestamp? soldAt;  // 추가
   final bool? markedForSold;  // 판매완료 마킹 (그래프 데이터 유지용)
   final Timestamp? markedAt;  // 마킹 시간
+  final String? sourceUrl;  // 원본 링크 (당근마켓 등)
 
   ListingModel({
     required this.listingId,
@@ -36,6 +37,7 @@ class ListingModel {
     this.soldAt,  // 추가
     this.markedForSold,  // 추가
     this.markedAt,  // 추가
+    this.sourceUrl,  // 추가
   });
 
   factory ListingModel.fromFirestore(DocumentSnapshot doc) {
@@ -89,6 +91,7 @@ class ListingModel {
         soldAt: data['soldAt'],  // 추가
         markedForSold: data['markedForSold'],  // 추가
         markedAt: data['markedAt'],  // 추가
+        sourceUrl: data['sourceUrl'],  // 추가
       );
 
       print('✅ [ListingModel] Successfully created model for: ${model.listingId}');
@@ -120,6 +123,7 @@ class ListingModel {
         createdAt: dateTime,
         category: category,
         markedForSold: markedForSold,
+        sourceUrl: sourceUrl,
       );
     } catch (e) {
 
@@ -160,6 +164,7 @@ class ListingModel {
       if (soldAt != null) 'soldAt': soldAt,
       if (markedForSold != null) 'markedForSold': markedForSold,
       if (markedAt != null) 'markedAt': markedAt,
+      if (sourceUrl != null) 'sourceUrl': sourceUrl,
     };
   }
 }
