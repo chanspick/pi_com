@@ -27,6 +27,7 @@ import 'package:pi_com/features/address/presentation/screens/address_list_screen
 import '../../../../core/utils/responsive_helper.dart';
 import '../../../../core/models/dragon_ball_model.dart';
 import '../../../../core/constants/routes.dart';
+import '../../../../shared/utils/app_notification.dart';
 import '../../../web_public/presentation/widgets/web_navbar_v2.dart';
 
 enum ShippingMethod {
@@ -290,25 +291,19 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
     // 결제 수단 선택 확인
     if (_selectedPaymentMethod == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('결제 방법을 선택하세요.')),
-      );
+      AppNotification.showWarning(context, '결제 방법을 선택해주세요.');
       return;
     }
 
     // 즉시 배송 시 배송지 선택 확인
     if (_selectedShippingMethod == ShippingMethod.immediate && _selectedAddress == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('배송지를 선택해주세요.')),
-      );
+      AppNotification.showWarning(context, '배송지를 선택해주세요.');
       return;
     }
 
     // 드래곤볼 선택 시 약관 동의 확인
     if (_selectedShippingMethod == ShippingMethod.dragonBall && !_agreedToDragonBallTerms) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('드래곤볼 서비스 약관에 동의해주세요.')),
-      );
+      AppNotification.showWarning(context, 'PC 보관함 서비스 약관에 동의해주세요.');
       return;
     }
 
@@ -320,12 +315,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       if (removedItems.isNotEmpty) {
         if (mounted) {
           final itemNames = removedItems.map((e) => e.partName).join(', ');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('이미 판매된 상품이 장바구니에서 제거되었습니다: $itemNames'),
-              backgroundColor: Colors.orange,
-              duration: const Duration(seconds: 3),
-            ),
+          AppNotification.showWarning(
+            context,
+            '이미 판매된 상품이 장바구니에서 제거되었습니다: $itemNames',
+            title: '품절 상품 제거',
           );
         }
         // 장바구니가 비었으면 결제 중단
@@ -457,23 +450,21 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               );
 
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('주문 생성에 실패하여 결제가 자동으로 취소되었습니다.'),
-                    backgroundColor: Colors.orange,
-                  ),
+                AppNotification.showWarning(
+                  context,
+                  '주문 생성에 실패하여 결제가 자동으로 취소되었습니다.',
+                  title: '결제 취소',
                 );
               }
             } catch (cancelError) {
               // 결제 취소도 실패한 경우 - 관리자 개입 필요
               print('⚠️ 결제 취소 실패 (수동 처리 필요) - TID: ${approvedPayment.tid}, 에러: $cancelError');
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('결제는 완료되었으나 주문 생성에 실패했습니다. 고객센터로 문의해주세요.'),
-                    backgroundColor: Colors.red,
-                    duration: Duration(seconds: 5),
-                  ),
+                AppNotification.showError(
+                  context,
+                  '결제는 완료되었으나 주문 생성에 실패했습니다. 고객센터로 문의해주세요.',
+                  title: '오류 발생',
+                  duration: const Duration(seconds: 5),
                 );
               }
             }
@@ -518,11 +509,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     } catch (e) {
       ref.read(isPreparingPaymentProvider.notifier).state = false;
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_getUserFriendlyErrorMessage(e)),
-            backgroundColor: Colors.red,
-          ),
+        AppNotification.showError(
+          context,
+          _getUserFriendlyErrorMessage(e),
+          title: '결제 오류',
         );
       }
     }
@@ -644,22 +634,20 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               );
 
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('주문 생성에 실패하여 결제가 자동으로 취소되었습니다.'),
-                    backgroundColor: Colors.orange,
-                  ),
+                AppNotification.showWarning(
+                  context,
+                  '주문 생성에 실패하여 결제가 자동으로 취소되었습니다.',
+                  title: '결제 취소',
                 );
               }
             } catch (cancelError) {
               print('⚠️ 결제 취소 실패 (수동 처리 필요) - PaymentKey: $paymentKey, 에러: $cancelError');
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('결제는 완료되었으나 주문 생성에 실패했습니다. 고객센터로 문의해주세요.'),
-                    backgroundColor: Colors.red,
-                    duration: Duration(seconds: 5),
-                  ),
+                AppNotification.showError(
+                  context,
+                  '결제는 완료되었으나 주문 생성에 실패했습니다. 고객센터로 문의해주세요.',
+                  title: '오류 발생',
+                  duration: const Duration(seconds: 5),
                 );
               }
             }
@@ -703,11 +691,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_getUserFriendlyErrorMessage(e)),
-            backgroundColor: Colors.red,
-          ),
+        AppNotification.showError(
+          context,
+          _getUserFriendlyErrorMessage(e),
+          title: '결제 오류',
         );
       }
     }
@@ -725,11 +712,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       await _completeOrder(userId, cartItems, shippingAddress, orderId);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_getUserFriendlyErrorMessage(e)),
-            backgroundColor: Colors.red,
-          ),
+        AppNotification.showError(
+          context,
+          _getUserFriendlyErrorMessage(e),
+          title: '주문 오류',
         );
       }
     }
@@ -813,14 +799,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _selectedShippingMethod == ShippingMethod.dragonBall
-                  ? '결제가 완료되었습니다. 부품이 PC 보관함에 보관되었습니다!'
-                  : '결제가 완료되었습니다.',
-            ),
-          ),
+        AppNotification.showPaymentSuccess(
+          context,
+          _selectedShippingMethod == ShippingMethod.dragonBall
+              ? '부품이 PC 보관함에 보관되었습니다!'
+              : '주문이 완료되었습니다.',
         );
 
         // 웹에서는 GoRouter 사용, 모바일에서는 Navigator 사용

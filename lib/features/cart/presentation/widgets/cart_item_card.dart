@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pi_com/features/cart/domain/entities/cart_item_entity.dart';
 import 'package:pi_com/features/cart/presentation/providers/cart_provider.dart';
+import 'package:pi_com/shared/utils/app_notification.dart';
+import 'package:pi_com/shared/widgets/confirm_dialog.dart';
 
 class CartItemCard extends ConsumerWidget {
   final CartItemEntity item;
@@ -122,29 +124,25 @@ class CartItemCard extends ConsumerWidget {
                   IconButton(
                     icon: const Icon(Icons.close, size: 20),
                     onPressed: () async {
-                      final confirmed = await showDialog<bool>(
+                      final confirmed = await ConfirmDialog.show(
                         context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('상품 삭제'),
-                          content: const Text('장바구니에서 이 상품을 삭제하시겠습니까?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: const Text('취소'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.red,
-                              ),
-                              child: const Text('삭제'),
-                            ),
-                          ],
-                        ),
+                        title: '상품 삭제',
+                        content: '장바구니에서 이 상품을 삭제하시겠습니까?',
+                        confirmText: '삭제',
+                        cancelText: '취소',
+                        icon: Icons.remove_shopping_cart_outlined,
+                        isDangerous: true,
                       );
 
-                      if (confirmed == true) {
+                      if (confirmed) {
                         await ref.read(removeFromCartProvider).call(item.listingId);
+                        if (context.mounted) {
+                          AppNotification.showCartNotification(
+                            context,
+                            '상품이 장바구니에서 삭제되었습니다.',
+                            isRemoval: true,
+                          );
+                        }
                       }
                     },
                   ),

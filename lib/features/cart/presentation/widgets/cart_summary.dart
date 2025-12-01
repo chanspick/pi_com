@@ -8,6 +8,8 @@ import 'package:go_router/go_router.dart';
 import 'package:pi_com/features/cart/domain/entities/cart_item_entity.dart';
 import 'package:pi_com/features/cart/presentation/providers/cart_provider.dart';
 import 'package:pi_com/core/constants/routes.dart';
+import 'package:pi_com/shared/utils/app_notification.dart';
+import 'package:pi_com/shared/widgets/confirm_dialog.dart';
 
 class CartSummary extends ConsumerWidget {
   final List<CartItemEntity> items;
@@ -116,29 +118,25 @@ class CartSummary extends ConsumerWidget {
                   width: double.infinity,
                   child: OutlinedButton(
                     onPressed: () async {
-                      final confirmed = await showDialog<bool>(
+                      final confirmed = await ConfirmDialog.show(
                         context: context,
-                        builder: (context) => AlertDialog(
-                          title: const Text('장바구니 비우기'),
-                          content: const Text('장바구니의 모든 상품을 삭제하시겠습니까?'),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, false),
-                              child: const Text('취소'),
-                            ),
-                            TextButton(
-                              onPressed: () => Navigator.pop(context, true),
-                              style: TextButton.styleFrom(
-                                foregroundColor: Colors.red,
-                              ),
-                              child: const Text('비우기'),
-                            ),
-                          ],
-                        ),
+                        title: '장바구니 비우기',
+                        content: '장바구니의 모든 상품을 삭제하시겠습니까?',
+                        confirmText: '비우기',
+                        cancelText: '취소',
+                        icon: Icons.delete_sweep_outlined,
+                        isDangerous: true,
                       );
 
-                      if (confirmed == true) {
+                      if (confirmed) {
                         await ref.read(clearCartProvider).call();
+                        if (context.mounted) {
+                          AppNotification.showCartNotification(
+                            context,
+                            '장바구니를 비웠습니다.',
+                            isRemoval: true,
+                          );
+                        }
                       }
                     },
                     style: OutlinedButton.styleFrom(

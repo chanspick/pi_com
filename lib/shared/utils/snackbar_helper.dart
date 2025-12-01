@@ -2,8 +2,12 @@
 
 import 'package:flutter/material.dart';
 
+/// @deprecated 이 클래스는 더 이상 사용되지 않습니다.
+/// 대신 [AppNotification]을 사용하세요.
+///
 /// SnackBar 표시 유틸리티
 /// UI 로직을 서비스에서 분리하기 위한 헬퍼 클래스
+@Deprecated('Use AppNotification instead')
 class SnackbarHelper {
   /// 성공 메시지 (초록색)
   static void showSuccess(BuildContext context, String message) {

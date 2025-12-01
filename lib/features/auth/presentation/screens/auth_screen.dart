@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../shared/utils/snackbar_helper.dart';
+import '../../../../shared/utils/app_notification.dart';
 import '../providers/auth_provider.dart';
 import 'auth_screen_html_web.dart' if (dart.library.io) 'auth_screen_html_mobile.dart';
 
@@ -74,9 +74,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       await authRepository.signInWithKakaoCode(code);
 
       if (!mounted) return;
-      SnackbarHelper.showSuccess(
+      AppNotification.showAuthNotification(
         context,
-        '카카오 로그인 성공',
+        '환영합니다!',
+        isLogin: true,
       );
 
       // 홈으로 리다이렉트
@@ -87,9 +88,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      SnackbarHelper.showError(
+      AppNotification.showError(
         context,
-        '카카오 로그인 실패: ${e.toString()}',
+        '카카오 로그인에 실패했습니다. 다시 시도해주세요.',
+        title: '로그인 실패',
       );
     } finally {
       if (mounted) {
@@ -106,9 +108,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       await useCase();
 
       if (!mounted) return;
-      SnackbarHelper.showSuccess(
+      AppNotification.showAuthNotification(
         context,
-        '카카오 로그인 성공',
+        '환영합니다!',
+        isLogin: true,
       );
 
       // 홈으로 리다이렉트
@@ -119,9 +122,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      SnackbarHelper.showError(
+      AppNotification.showError(
         context,
-        '카카오 로그인 실패: ${e.toString()}',
+        '카카오 로그인에 실패했습니다. 다시 시도해주세요.',
+        title: '로그인 실패',
       );
     } finally {
       if (mounted) {
@@ -143,9 +147,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       );
 
       if (!mounted) return;
-      SnackbarHelper.showSuccess(
+      AppNotification.showAuthNotification(
         context,
-        '이메일 로그인 성공',
+        '환영합니다!',
+        isLogin: true,
       );
 
       // 홈으로 리다이렉트
@@ -156,9 +161,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      SnackbarHelper.showError(
+      AppNotification.showError(
         context,
-        '이메일 로그인 실패: ${e.toString()}',
+        '이메일 또는 비밀번호를 확인해주세요.',
+        title: '로그인 실패',
       );
     } finally {
       if (mounted) {
@@ -181,9 +187,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       );
 
       if (!mounted) return;
-      SnackbarHelper.showSuccess(
+      AppNotification.showSuccess(
         context,
-        '회원가입 성공',
+        '회원가입이 완료되었습니다. 환영합니다!',
+        title: '회원가입 완료',
       );
 
       // 홈으로 리다이렉트
@@ -194,9 +201,10 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       }
     } catch (e) {
       if (!mounted) return;
-      SnackbarHelper.showError(
+      AppNotification.showError(
         context,
-        '회원가입 실패: ${e.toString()}',
+        '회원가입에 실패했습니다. 다시 시도해주세요.',
+        title: '회원가입 실패',
       );
     } finally {
       if (mounted) {

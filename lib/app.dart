@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:toastification/toastification.dart';
 
 // ✅ 앱 내부용 Router
 import 'core/router/app_router.dart';
@@ -65,25 +66,29 @@ class MyApp extends ConsumerWidget {
 
     // ✅ 웹인 경우: GoRouter 사용 (웹 공개 페이지 + Admin)
     if (kIsWeb) {
-      return MaterialApp.router(
-        title: 'PiCom',
-        theme: lightTheme,
-        darkTheme: darkTheme,
-        themeMode: themeMode,
-        routerConfig: _webRouter,
-        debugShowCheckedModeBanner: false,
+      return ToastificationWrapper(
+        child: MaterialApp.router(
+          title: 'PiCom',
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          themeMode: themeMode,
+          routerConfig: _webRouter,
+          debugShowCheckedModeBanner: false,
+        ),
       );
     }
 
     // ✅ 모바일/데스크톱: MaterialApp + Navigator 사용
-    return MaterialApp(
-      title: 'PiCom',
-      theme: lightTheme,
-      darkTheme: darkTheme,
-      themeMode: themeMode,
-      home: const AuthGate(), // 인증 게이트
-      onGenerateRoute: AppRouter.generateRoute, // ✅ Navigator 라우트 생성
-      debugShowCheckedModeBanner: false,
+    return ToastificationWrapper(
+      child: MaterialApp(
+        title: 'PiCom',
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        themeMode: themeMode,
+        home: const AuthGate(), // 인증 게이트
+        onGenerateRoute: AppRouter.generateRoute, // ✅ Navigator 라우트 생성
+        debugShowCheckedModeBanner: false,
+      ),
     );
   }
 
