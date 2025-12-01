@@ -7,6 +7,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../../core/constants/routes.dart';
+import '../../../../shared/utils/app_notification.dart';
+import '../../../../shared/widgets/confirm_dialog.dart';
 import 'notification_settings_screen.dart';
 
 /// 플랫폼에 맞는 네비게이션 헬퍼
@@ -417,30 +419,23 @@ class MyPageScreen extends ConsumerWidget {
   }
 
   Future<void> _handleLogout(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await ConfirmDialog.show(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('로그아웃'),
-        content: const Text('정말 로그아웃 하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('로그아웃'),
-          ),
-        ],
-      ),
+      title: '로그아웃',
+      content: '정말 로그아웃 하시겠습니까?',
+      confirmText: '로그아웃',
+      cancelText: '취소',
+      icon: Icons.logout_rounded,
+      isDangerous: true,
     );
 
-    if (confirmed == true) {
+    if (confirmed) {
       await ref.read(authRepositoryProvider).signOut();
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('로그아웃되었습니다')),
+        AppNotification.showAuthNotification(
+          context,
+          '안녕히 가세요!',
+          isLogin: false,
         );
       }
     }

@@ -13,6 +13,7 @@ import '../../../price_alert/presentation/widgets/price_alert_setup_dialog.dart'
 import '../../../price_alert/presentation/providers/price_alert_provider.dart';
 import '../../../../core/utils/responsive_helper.dart';
 import '../../../../core/constants/routes.dart';
+import '../../../../shared/utils/app_notification.dart';
 import '../../../web_public/presentation/widgets/web_navbar_v2.dart';
 
 class ListingDetailScreen extends ConsumerWidget {
@@ -40,9 +41,7 @@ class ListingDetailScreen extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.share_outlined, color: Colors.black),
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('공유 기능은 준비 중입니다.')),
-                    );
+                    AppNotification.showInfo(context, '공유 기능은 준비 중입니다.');
                   },
                 ),
 
@@ -614,20 +613,13 @@ class ListingDetailScreen extends ConsumerWidget {
   ) async {
     // basePartId가 없으면 알림 설정 불가
     if (listing.basePartId == null || listing.basePartId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('이 상품은 가격 알림을 설정할 수 없습니다'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      AppNotification.showWarning(context, '이 상품은 가격 알림을 설정할 수 없습니다.');
       return;
     }
 
     final actions = ref.read(priceAlertActionsProvider);
     if (actions == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('로그인이 필요합니다')),
-      );
+      AppNotification.showWarning(context, '로그인이 필요합니다.');
       return;
     }
 

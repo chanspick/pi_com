@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:toastification/toastification.dart';
 
 // ✅ 앱 내부용 Router
 import 'core/router/app_router.dart';
@@ -43,6 +44,7 @@ import 'features/dragon_ball/presentation/screens/batch_shipment_request_screen.
 import 'features/dragon_ball/presentation/screens/batch_shipment_history_screen.dart';
 import 'features/address/presentation/screens/address_list_screen.dart';
 import 'features/price_alert/presentation/screens/price_alerts_screen.dart';
+import 'features/notification/presentations/screens/notification_list_screen.dart';
 import 'features/auth/presentation/screens/auth_screen.dart';
 
 // ✅ 관리자 페이지 (GoRouter 사용)
@@ -65,25 +67,29 @@ class MyApp extends ConsumerWidget {
 
     // ✅ 웹인 경우: GoRouter 사용 (웹 공개 페이지 + Admin)
     if (kIsWeb) {
-      return MaterialApp.router(
-        title: 'PiCom',
-        theme: lightTheme,
-        darkTheme: darkTheme,
-        themeMode: themeMode,
-        routerConfig: _webRouter,
-        debugShowCheckedModeBanner: false,
+      return ToastificationWrapper(
+        child: MaterialApp.router(
+          title: 'PiCom',
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          themeMode: themeMode,
+          routerConfig: _webRouter,
+          debugShowCheckedModeBanner: false,
+        ),
       );
     }
 
     // ✅ 모바일/데스크톱: MaterialApp + Navigator 사용
-    return MaterialApp(
-      title: 'PiCom',
-      theme: lightTheme,
-      darkTheme: darkTheme,
-      themeMode: themeMode,
-      home: const AuthGate(), // 인증 게이트
-      onGenerateRoute: AppRouter.generateRoute, // ✅ Navigator 라우트 생성
-      debugShowCheckedModeBanner: false,
+    return ToastificationWrapper(
+      child: MaterialApp(
+        title: 'PiCom',
+        theme: lightTheme,
+        darkTheme: darkTheme,
+        themeMode: themeMode,
+        home: const AuthGate(), // 인증 게이트
+        onGenerateRoute: AppRouter.generateRoute, // ✅ Navigator 라우트 생성
+        debugShowCheckedModeBanner: false,
+      ),
     );
   }
 
@@ -231,6 +237,10 @@ class MyApp extends ConsumerWidget {
       GoRoute(
         path: '/settings',
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationListScreen(),
       ),
       GoRoute(
         path: '/address-list',

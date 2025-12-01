@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:pi_com/features/payment/presentation/providers/payment_provider.dart';
+import 'package:pi_com/shared/utils/app_notification.dart';
+import 'package:pi_com/shared/widgets/confirm_dialog.dart';
 
 /// 카카오페이 WebView 결제 화면
 class PaymentWebViewScreen extends ConsumerStatefulWidget {
@@ -158,12 +160,10 @@ class _PaymentWebViewScreenState extends ConsumerState<PaymentWebViewScreen> {
     ref.read(paymentErrorProvider.notifier).state = message;
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 3),
-        ),
+      AppNotification.showError(
+        context,
+        message,
+        title: '결제 오류',
       );
       Navigator.pop(context, false);
     }
@@ -179,27 +179,20 @@ class _PaymentWebViewScreenState extends ConsumerState<PaymentWebViewScreen> {
         backgroundColor: const Color(0xFFFFE812), // 카카오 노란색
         leading: IconButton(
           icon: const Icon(Icons.close),
-          onPressed: () {
-            showDialog(
+          onPressed: () async {
+            final confirmed = await ConfirmDialog.show(
               context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('결제 취소'),
-                content: const Text('결제를 취소하시겠습니까?'),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('계속 진행'),
-                  ),
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context); // 다이얼로그 닫기
-                      Navigator.pop(context, false); // WebView 닫기
-                    },
-                    child: const Text('취소'),
-                  ),
-                ],
-              ),
+              title: '결제 취소',
+              content: '결제를 취소하시겠습니까?',
+              confirmText: '취소하기',
+              cancelText: '계속 진행',
+              icon: Icons.payment_rounded,
+              isDangerous: true,
             );
+
+            if (confirmed && mounted) {
+              Navigator.pop(context, false);
+            }
           },
         ),
       ),

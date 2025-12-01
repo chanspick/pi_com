@@ -1,12 +1,14 @@
 // lib/features/listing/presentation/widgets/listing_bottom_bar.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:toastification/toastification.dart';
 import '../../domain/entities/listing_entity.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../cart/presentation/providers/cart_provider.dart';
 import '../../../checkout/presentation/screens/checkout_screen.dart';
 import '../providers/use_case_providers.dart';
 import '../../../../core/constants/routes.dart';
+import '../../../../shared/utils/app_notification.dart';
 
 class ListingBottomBar extends ConsumerStatefulWidget {
   final ListingEntity listing;
@@ -19,6 +21,7 @@ class ListingBottomBar extends ConsumerStatefulWidget {
 
 class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
   bool _isAddingToCart = false;
+  bool _hasShownDuplicateWarning = false; // 중복 경고 toast 표시 여부
 
   @override
   Widget build(BuildContext context) {
@@ -142,20 +145,26 @@ class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
       );
 
       if (alreadyInCart) {
+        // 이미 경고를 표시했으면 중복으로 표시하지 않음
+        if (_hasShownDuplicateWarning) return;
+
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('이미 장바구니에 있는 상품입니다'),
-            action: SnackBarAction(
-              label: '장바구니 보기',
-              onPressed: () {
-                Navigator.pushNamed(context, Routes.cart);
-              },
-            ),
-            duration: const Duration(seconds: 3),
-            backgroundColor: Colors.orange,
-          ),
+        _hasShownDuplicateWarning = true;
+
+        // 기존 toast 제거 후 새로 표시
+        toastification.dismissAll();
+        AppNotification.showWarning(
+          context,
+          '이미 장바구니에 담긴 상품입니다.',
+          title: '장바구니',
         );
+
+        // 3초 후 다시 경고 표시 가능하도록 리셋
+        Future.delayed(const Duration(seconds: 3), () {
+          if (mounted) {
+            _hasShownDuplicateWarning = false;
+          }
+        });
         return;
       }
 
@@ -173,27 +182,17 @@ class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
 
       // 5. 성공 알림
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${widget.listing.modelName}을(를) 장바구니에 담았습니다'),
-          action: SnackBarAction(
-            label: '장바구니 보기',
-            onPressed: () {
-              Navigator.pushNamed(context, Routes.cart);
-            },
-          ),
-          duration: const Duration(seconds: 3),
-          backgroundColor: Colors.green,
-        ),
+      AppNotification.showCartNotification(
+        context,
+        '${widget.listing.modelName}을(를) 장바구니에 담았습니다.',
+        isRemoval: false,
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceAll('Exception: ', '')),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 4),
-        ),
+      AppNotification.showError(
+        context,
+        e.toString().replaceAll('Exception: ', ''),
+        title: '장바구니 오류',
       );
     } finally {
       if (mounted) {
@@ -225,12 +224,10 @@ class _ListingBottomBarState extends ConsumerState<ListingBottomBar> {
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.toString().replaceAll('Exception: ', '')),
-          backgroundColor: Colors.red,
-          duration: const Duration(seconds: 4),
-        ),
+      AppNotification.showError(
+        context,
+        e.toString().replaceAll('Exception: ', ''),
+        title: '구매 오류',
       );
     }
   }

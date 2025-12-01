@@ -1,7 +1,9 @@
 // lib/features/dragon_ball/presentation/screens/pc_storage_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pi_com/features/dragon_ball/presentation/providers/dragon_ball_provider.dart';
 import 'package:pi_com/features/dragon_ball/presentation/screens/batch_shipment_request_screen.dart';
 import 'package:pi_com/core/constants/routes.dart';
@@ -121,7 +123,11 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 32),
             OutlinedButton.icon(
               onPressed: () {
-                Navigator.of(context).pushNamed(Routes.myEstimate);
+                if (kIsWeb) {
+                  context.go(Routes.myEstimate);
+                } else {
+                  Navigator.of(context).pushNamed(Routes.myEstimate);
+                }
               },
               icon: const Icon(Icons.lightbulb_outline),
               label: const Text('PC 견적 추천받기'),
@@ -135,7 +141,11 @@ class _EmptyState extends StatelessWidget {
             const SizedBox(height: 12),
             ElevatedButton.icon(
               onPressed: () {
-                Navigator.of(context).pushNamed(Routes.partShop);
+                if (kIsWeb) {
+                  context.go(Routes.partShop);
+                } else {
+                  Navigator.of(context).pushNamed(Routes.partShop);
+                }
               },
               icon: const Icon(Icons.shopping_bag),
               label: const Text('부품 쇼핑하러 가기'),
