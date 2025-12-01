@@ -8,15 +8,15 @@ class BasePartRepository {
   BasePartRepository({FirebaseFirestore? firestore})
       : _firestore = firestore ?? FirebaseFirestore.instance;
 
-  /// 카테고리별 재고가 있는 BasePart 조회
+  /// 카테고리별 BasePart 조회
   ///
   /// [category] 부품 카테고리 (cpu, gpu, mainboard, ram, ssd, psu, cooler, case)
-  /// [minListingCount] 최소 매물 수 (기본값: 1)
+  /// [minListingCount] 최소 매물 수 (기본값: 0 - 매물 없어도 표시)
   ///
   /// Returns: 해당 카테고리의 BasePart 목록
   Future<List<BasePart>> getAvailablePartsByCategory(
     String category, {
-    int minListingCount = 1,
+    int minListingCount = 0,
   }) async {
     try {
       print('🔍 [BasePartRepository] Querying category="$category", minListingCount=$minListingCount');
@@ -44,13 +44,13 @@ class BasePartRepository {
     }
   }
 
-  /// 모든 카테고리의 재고가 있는 BasePart 조회
+  /// 모든 카테고리의 BasePart 조회
   ///
-  /// [minListingCount] 최소 매물 수 (기본값: 1)
+  /// [minListingCount] 최소 매물 수 (기본값: 0 - 매물 없어도 표시)
   ///
   /// Returns: 카테고리별로 그룹화된 BasePart Map
   Future<Map<String, List<BasePart>>> getAllAvailableParts({
-    int minListingCount = 1,
+    int minListingCount = 0,
   }) async {
     final categories = ['cpu', 'gpu', 'mainboard', 'ram', 'ssd', 'psu', 'cooler', 'case'];
     final Map<String, List<BasePart>> result = {};
@@ -72,7 +72,7 @@ class BasePartRepository {
   Future<List<BasePart>> getPartsBySpec({
     required String category,
     Map<String, dynamic>? specs,
-    int minListingCount = 1,
+    int minListingCount = 0,
   }) async {
     try {
       Query query = _firestore.collection('base_parts');
@@ -112,7 +112,7 @@ class BasePartRepository {
     required String category,
     required int minCapacity,
     int? maxCapacity,
-    int minListingCount = 1,
+    int minListingCount = 0,
   }) async {
     try {
       Query query = _firestore
@@ -140,7 +140,7 @@ class BasePartRepository {
   Future<List<BasePart>> getPartsBySocket({
     required String category,
     required String socket,
-    int minListingCount = 1,
+    int minListingCount = 0,
   }) async {
     try {
       final querySnapshot = await _firestore
@@ -163,7 +163,7 @@ class BasePartRepository {
   Future<List<BasePart>> getPsuByWattageRange({
     required int minWattage,
     int? maxWattage,
-    int minListingCount = 1,
+    int minListingCount = 0,
   }) async {
     try {
       Query query = _firestore

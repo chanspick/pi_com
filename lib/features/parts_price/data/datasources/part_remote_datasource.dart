@@ -28,10 +28,26 @@ class PartRemoteDataSourceImpl implements PartRemoteDataSource {
     return _firestore
         .collection('base_parts')
         .where('category', isEqualTo: category)
-        .orderBy('listingCount', descending: true)
+        .orderBy('modelName')  // 모델명 기준 정렬 (매물 없어도 표시)
         .snapshots()
-        .map((snapshot) =>
-        snapshot.docs.map((doc) => BasePartModel.fromFirestore(doc)).toList());
+        .map((snapshot) {
+          final parts = snapshot.docs
+              .map((doc) => BasePartModel.fromFirestore(doc))
+              .toList();
+          // 클라이언트에서 매물 있는 것 우선 정렬
+          parts.sort((a, b) {
+            // 매물 있는 것 먼저
+            if (a.listingCount > 0 && b.listingCount == 0) return -1;
+            if (a.listingCount == 0 && b.listingCount > 0) return 1;
+            // 둘 다 매물 있으면 매물 수 기준
+            if (a.listingCount > 0 && b.listingCount > 0) {
+              return b.listingCount.compareTo(a.listingCount);
+            }
+            // 둘 다 매물 없으면 모델명 기준
+            return a.modelName.compareTo(b.modelName);
+          });
+          return parts;
+        });
   }
 
   @override
