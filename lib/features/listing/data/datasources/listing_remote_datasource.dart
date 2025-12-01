@@ -99,14 +99,16 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
   }) async {
     print('⚠️ [DEPRECATED] getListings() called - use getListingsPaginated() instead');
 
-    // 🎯 비용 최적화: limit를 20으로 제한 + 무한 스크롤
+    // 🎯 Admin용: includeAllStatuses면 더 많이 가져오기
+    final limit = includeAllStatuses ? 500 : 20;
+
     // ⚠️ 중고 거래 플랫폼 특성상 실시간성 중요 → 캐시 사용 안 함
     final result = await getListingsPaginated(
       category: category,
       sortBy: sortBy,
       searchQuery: searchQuery,
       includeAllStatuses: includeAllStatuses,
-      limit: 20, // ✅ 493개 → 20개로 대폭 감소 (비용 96% 절감)
+      limit: limit,
       useCache: false, // ✅ 실시간성 보장 (판매 완료 상품 즉시 반영)
     );
 

@@ -2,6 +2,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:pi_com/features/listing/domain/entities/listing_entity.dart';
 import 'package:pi_com/features/listing/presentation/providers/listing_provider.dart';
 import 'package:pi_com/features/listing/data/repositories/listing_repository_impl.dart';
@@ -278,6 +279,35 @@ class _ListingListPageImprovedState extends ConsumerState<ListingListPageImprove
                               children: [
                                 _buildStatusChip(listing.status),
                                 const SizedBox(width: 8),
+                                if (listing.sourceUrl != null && listing.sourceUrl!.isNotEmpty)
+                                  GestureDetector(
+                                    onTap: () => _openSourceUrl(listing.sourceUrl!),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(color: Colors.orange),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.open_in_new, size: 10, color: Colors.orange),
+                                          SizedBox(width: 2),
+                                          Text(
+                                            '당근',
+                                            style: TextStyle(
+                                              color: Colors.orange,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                if (listing.sourceUrl != null && listing.sourceUrl!.isNotEmpty)
+                                  const SizedBox(width: 8),
                                 Text(
                                   'ID: ${listing.listingId.substring(0, 8)}...',
                                   style: TextStyle(
@@ -293,6 +323,19 @@ class _ListingListPageImprovedState extends ConsumerState<ListingListPageImprove
                             ? PopupMenuButton<String>(
                                 onSelected: (value) => _handleListingAction(value, listing),
                                 itemBuilder: (context) => [
+                                  if (listing.sourceUrl != null && listing.sourceUrl!.isNotEmpty)
+                                    const PopupMenuItem(
+                                      value: 'open_source',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.open_in_new, size: 18, color: Colors.orange),
+                                          SizedBox(width: 8),
+                                          Text('당근 페이지 열기'),
+                                        ],
+                                      ),
+                                    ),
+                                  if (listing.sourceUrl != null && listing.sourceUrl!.isNotEmpty)
+                                    const PopupMenuDivider(),
                                   const PopupMenuItem(
                                     value: 'mark_sold_external',
                                     child: Row(
@@ -505,6 +548,35 @@ class _ListingListPageImprovedState extends ConsumerState<ListingListPageImprove
                               children: [
                                 _buildMarkedChip(),
                                 const SizedBox(width: 8),
+                                if (listing.sourceUrl != null && listing.sourceUrl!.isNotEmpty)
+                                  GestureDetector(
+                                    onTap: () => _openSourceUrl(listing.sourceUrl!),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                        border: Border.all(color: Colors.orange),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.open_in_new, size: 10, color: Colors.orange),
+                                          SizedBox(width: 2),
+                                          Text(
+                                            '당근',
+                                            style: TextStyle(
+                                              color: Colors.orange,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                if (listing.sourceUrl != null && listing.sourceUrl!.isNotEmpty)
+                                  const SizedBox(width: 8),
                                 Text(
                                   'ID: ${listing.listingId.substring(0, 8)}...',
                                   style: TextStyle(
@@ -520,6 +592,19 @@ class _ListingListPageImprovedState extends ConsumerState<ListingListPageImprove
                             ? PopupMenuButton<String>(
                                 onSelected: (value) => _handleListingAction(value, listing),
                                 itemBuilder: (context) => [
+                                  if (listing.sourceUrl != null && listing.sourceUrl!.isNotEmpty)
+                                    const PopupMenuItem(
+                                      value: 'open_source',
+                                      child: Row(
+                                        children: [
+                                          Icon(Icons.open_in_new, size: 18, color: Colors.orange),
+                                          SizedBox(width: 8),
+                                          Text('당근 페이지 열기'),
+                                        ],
+                                      ),
+                                    ),
+                                  if (listing.sourceUrl != null && listing.sourceUrl!.isNotEmpty)
+                                    const PopupMenuDivider(),
                                   const PopupMenuItem(
                                     value: 'mark_sold',
                                     child: Row(
@@ -717,6 +802,11 @@ class _ListingListPageImprovedState extends ConsumerState<ListingListPageImprove
 
   Future<void> _handleListingAction(String action, ListingEntity listing) async {
     switch (action) {
+      case 'open_source':
+        if (listing.sourceUrl != null) {
+          await _openSourceUrl(listing.sourceUrl!);
+        }
+        break;
       case 'mark_sold_external':
         await _updateListingStatus(listing.listingId, ListingStatus.sold_external);
         break;
@@ -732,6 +822,33 @@ class _ListingListPageImprovedState extends ConsumerState<ListingListPageImprove
       case 'delete':
         _showDeleteConfirmation(singleListingId: listing.listingId);
         break;
+    }
+  }
+
+  Future<void> _openSourceUrl(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('URL을 열 수 없습니다: $url'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('오류 발생: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

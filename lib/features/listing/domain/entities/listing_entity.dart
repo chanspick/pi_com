@@ -21,6 +21,7 @@ class ListingEntity {
   final DateTime createdAt;
   final String? category;
   final bool? markedForSold;  // 판매완료 마킹 (그래프 데이터 유지용)
+  final String? sourceUrl;    // 원본 링크 (당근마켓 등)
 
   ListingEntity({
     required this.listingId,
@@ -35,6 +36,7 @@ class ListingEntity {
     required this.createdAt,
     this.category,
     this.markedForSold,
+    this.sourceUrl,
   });
 
   bool get isSold => status == ListingStatus.sold;
