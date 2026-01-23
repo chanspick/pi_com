@@ -8,7 +8,8 @@
 spec_id: SPEC-PHASE1-001
 title: Phase 1 - Backend Stabilization (백엔드 안정화)
 created: 2026-01-23T00:00:00+09:00
-status: Planned
+completed: 2026-01-23T00:00:00+09:00
+status: Completed
 priority: High
 lifecycle: spec-anchored
 assigned: manager-tdd
