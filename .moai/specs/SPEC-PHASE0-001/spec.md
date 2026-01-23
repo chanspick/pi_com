@@ -8,7 +8,7 @@
 spec_id: SPEC-PHASE0-001
 title: Phase 0 - 전역 인프라 구축 및 Critical 버그 수정
 created: 2026-01-22T00:00:00+09:00
-status: Planned
+status: Completed
 priority: High
 lifecycle: spec-anchored
 assigned: manager-tdd
