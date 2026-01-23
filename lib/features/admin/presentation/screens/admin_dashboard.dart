@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import '../../../../core/utils/app_logger.dart';
 import 'package:go_router/go_router.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -278,7 +279,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
         totalUpdated += updatedCount;
 
-        print('✅ 배치 완료: $updatedCount개 업데이트, 총 $totalUpdated개');
+        AppLogger.i('배치 완료: $updatedCount개 업데이트, 총 $totalUpdated개', tag: 'AdminDashboard');
       }
 
       // 다이얼로그 닫기

@@ -2,6 +2,7 @@
 // lib/features/order/data/models/order_model.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pi_com/core/constants/app_constants.dart';
 import 'package:pi_com/features/cart/data/models/cart_item_model.dart';
 import 'package:pi_com/features/order/domain/entities/order_entity.dart';
 
@@ -57,7 +58,7 @@ class OrderModel {
       sellerName: data['sellerName'],
       items: (data['items'] as List).map((item) => CartItemModel.fromFirestore(item)).toList(),
       totalPrice: (data['totalPrice'] as num).toDouble(),
-      shippingFee: (data['shippingFee'] as num?)?.toDouble() ?? 3000.0,
+      shippingFee: (data['shippingFee'] as num?)?.toDouble() ?? AppConstants.defaultShippingFee.toDouble(),
       status: data['status'],
       createdAt: data['createdAt'],
       shippingAddress: data['shippingAddress'],

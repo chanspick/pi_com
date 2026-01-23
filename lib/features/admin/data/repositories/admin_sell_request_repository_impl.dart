@@ -1,6 +1,7 @@
 // lib/features/admin/data/repositories/admin_sell_request_repository_impl.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/utils/app_logger.dart';
 import '../../domain/repositories/admin_sell_request_repository.dart';
 import '../datasources/admin_sell_request_datasource.dart';
 import '../datasources/admin_notification_datasource.dart';
@@ -62,7 +63,7 @@ class AdminSellRequestRepositoryImpl implements AdminSellRequestRepository {
       finalPrice: finalPrice,
     );
 
-    print('✅ 승인 알림 발송 완료: ${sellRequest.sellerId}');
+    AppLogger.i('승인 알림 발송 완료: ${sellRequest.sellerId}', tag: 'AdminSellRequest');
   }
 
   @override
@@ -107,7 +108,7 @@ class AdminSellRequestRepositoryImpl implements AdminSellRequestRepository {
       penaltyAmount: penaltyAmount,
     );
 
-    print('✅ 반려 알림 발송 완료: ${sellRequest.sellerId}');
+    AppLogger.i('반려 알림 발송 완료: ${sellRequest.sellerId}', tag: 'AdminSellRequest');
   }
 
   @override

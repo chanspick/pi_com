@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import '../../../../core/models/base_part_model.dart';
+import '../../../../core/utils/app_logger.dart';
 
 /// 부품 검색 화면 (Cloud Functions searchParts 사용)
 class PartSearchScreen extends StatefulWidget {
@@ -59,16 +60,16 @@ class _PartSearchScreenState extends State<PartSearchScreen> {
       });
 
       final data = result.data as List<dynamic>;
-      // 🔍 디버그: Cloud Function 응답 확인
-      print('🔍 searchParts 응답 데이터: $data');
+      // 디버그: Cloud Function 응답 확인
+      AppLogger.d('searchParts 응답 데이터: $data', tag: 'PartSearch');
       setState(() {
         // ✅ 타입 캐스팅 수정: .cast() 대신 Map.from() 사용
         _searchResults = data.map((item) => Map<String, dynamic>.from(item as Map)).toList();
         _isSearching = false;
       });
-      // 🔍 디버그: 변환 후 결과 확인
+      // 디버그: 변환 후 결과 확인
       if (_searchResults.isNotEmpty) {
-        print('🔍 첫 번째 검색 결과: ${_searchResults[0]}');
+        AppLogger.d('첫 번째 검색 결과: ${_searchResults[0]}', tag: 'PartSearch');
       }
 
       if (_searchResults.isEmpty) {
@@ -86,9 +87,9 @@ class _PartSearchScreenState extends State<PartSearchScreen> {
 
   /// 부품 선택 시 BasePart로 변환하여 반환
   void _selectPart(Map<String, dynamic> partData) {
-    // 🔍 디버그: 선택된 부품 데이터 전체 출력
-    print('🔍 _selectPart 호출됨, partData: $partData');
-    print('🔍 partData의 brand 값: ${partData['brand']}');
+    // 디버그: 선택된 부품 데이터 전체 출력
+    AppLogger.d('_selectPart 호출됨, partData: $partData', tag: 'PartSearch');
+    AppLogger.d('partData의 brand 값: ${partData['brand']}', tag: 'PartSearch');
 
     final referencePrice = (partData['referencePrice'] as num?)?.toInt() ?? 0;
 
@@ -102,8 +103,8 @@ class _PartSearchScreenState extends State<PartSearchScreen> {
       listingCount: 0,
     );
 
-    // 🔍 디버그: 생성된 BasePart 확인
-    print('🔍 생성된 BasePart: basePartId=${basePart.basePartId}, brand=${basePart.brand}, modelName=${basePart.modelName}');
+    // 디버그: 생성된 BasePart 확인
+    AppLogger.d('생성된 BasePart: basePartId=${basePart.basePartId}, brand=${basePart.brand}, modelName=${basePart.modelName}', tag: 'PartSearch');
 
     Navigator.pop(context, basePart);
   }

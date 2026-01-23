@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/utils/app_logger.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:uuid/uuid.dart';
 import 'package:pi_com/features/dragon_ball/presentation/providers/dragon_ball_provider.dart';
@@ -293,7 +294,7 @@ class _BatchShipmentRequestScreenState extends ConsumerState<BatchShipmentReques
               );
             }
           } catch (cancelError) {
-            print('⚠️ 결제 취소 실패 (수동 처리 필요) - PaymentKey: $paymentKey, 에러: $cancelError');
+            AppLogger.w('결제 취소 실패 (수동 처리 필요) - PaymentKey: $paymentKey, 에러: $cancelError', tag: 'BatchShipment');
             if (mounted) {
               AppNotification.showError(
                 context,

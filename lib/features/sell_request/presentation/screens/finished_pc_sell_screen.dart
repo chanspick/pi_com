@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../../../../core/models/base_part_model.dart';
+import '../../../../core/utils/app_logger.dart';
 import 'sell_request_details_screen.dart';
 import 'part_search_screen.dart'; // ⭐️ [추가] 부품 검색 화면 임포트
 
@@ -145,7 +146,7 @@ class _FinishedPcSellScreenState extends State<FinishedPcSellScreen> {
     if (selectedBasePart != null) {
       setState(() {
         _selectedComponents[category] = selectedBasePart;
-        debugPrint('✅ 선택됨: ${category.name} - ${selectedBasePart.modelName}');
+        AppLogger.i('선택됨: ${category.name} - ${selectedBasePart.modelName}', tag: 'SellRequest');
       });
     }
   }

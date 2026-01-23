@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../../core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/listing_provider.dart';
@@ -121,15 +122,15 @@ class _PartShopScreenState
           category = uri.queryParameters['category'];
           basePartSearch = uri.queryParameters['basePartSearch'];
 
-          print('🔍 [PartShopScreen] Fallback to Uri.base parsing');
+          AppLogger.d('Fallback to Uri.base parsing', tag: 'PartShopScreen');
         }
 
-        print('🔍 [PartShopScreen] Category: $category');
-        print('🔍 [PartShopScreen] BasePartSearch: $basePartSearch');
+        AppLogger.d('Category: $category', tag: 'PartShopScreen');
+        AppLogger.d('BasePartSearch: $basePartSearch', tag: 'PartShopScreen');
 
         // base_parts 검색어 처리
         if (basePartSearch != null && basePartSearch.isNotEmpty) {
-          print('🔍 [PartShopScreen] Starting search: $basePartSearch');
+          AppLogger.d('Starting search: $basePartSearch', tag: 'PartShopScreen');
           ref.read(basePartSearchQueryProvider.notifier).state = basePartSearch;
 
           // base_parts에서 검색
@@ -143,15 +144,15 @@ class _PartShopScreenState
               ref.read(selectedBasePartIdsProvider.notifier).state = basePartIds;
               ref.read(selectedCategoryProvider.notifier).state = 'All'; // 카테고리 초기화
 
-              print('✅ Base parts 검색 완료: ${results.length}개 발견');
-              print('✅ BasePartIds: $basePartIds');
+              AppLogger.i('Base parts 검색 완료: ${results.length}개 발견', tag: 'PartShopScreen');
+              AppLogger.d('BasePartIds: $basePartIds', tag: 'PartShopScreen');
             } else {
               // 검색 결과가 없을 때
               ref.read(selectedBasePartIdsProvider.notifier).state = [];
-              print('⚠️ Base parts 검색 결과 없음: $basePartSearch');
+              AppLogger.w('Base parts 검색 결과 없음: $basePartSearch', tag: 'PartShopScreen');
             }
           } catch (e) {
-            print('❌ Base parts 검색 실패: $e');
+            AppLogger.e('Base parts 검색 실패: $e', tag: 'PartShopScreen');
             ref.read(selectedBasePartIdsProvider.notifier).state = [];
           }
         } else if (category != null) {
@@ -163,7 +164,7 @@ class _PartShopScreenState
           ref.read(basePartSearchQueryProvider.notifier).state = null;
         } else {
           // 파라미터가 없으면 기본 상태 유지
-          print('🔍 [PartShopScreen] No parameters, showing all listings');
+          AppLogger.d('No parameters, showing all listings', tag: 'PartShopScreen');
         }
       });
     }

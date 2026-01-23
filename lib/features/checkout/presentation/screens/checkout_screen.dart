@@ -29,6 +29,8 @@ import '../../../../core/models/dragon_ball_model.dart';
 import '../../../../core/constants/routes.dart';
 import '../../../../shared/utils/app_notification.dart';
 import '../../../web_public/presentation/widgets/web_navbar_v2.dart';
+import 'package:pi_com/core/constants/app_constants.dart';
+import 'package:pi_com/core/utils/app_logger.dart';
 
 enum ShippingMethod {
   immediate,  // 즉시 배송
@@ -262,7 +264,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               // 결제 금액 요약
               _PaymentSummary(
                 cartItems: cartItems,
-                shippingFee: _selectedShippingMethod == ShippingMethod.immediate ? 4500 : 0,
+                shippingFee: _selectedShippingMethod == ShippingMethod.immediate ? AppConstants.defaultShippingFee : 0,
               ),
               const SizedBox(height: 24),
 
@@ -328,7 +330,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         }
       }
     } catch (e) {
-      print('⚠️ [Checkout] Error checking sold items: $e');
+      AppLogger.w('Error checking sold items: $e', tag: 'Checkout');
       // 검증 실패해도 결제 진행 (Firestore 규칙에서 최종 검증)
     }
 
@@ -458,7 +460,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               }
             } catch (cancelError) {
               // 결제 취소도 실패한 경우 - 관리자 개입 필요
-              print('⚠️ 결제 취소 실패 (수동 처리 필요) - TID: ${approvedPayment.tid}, 에러: $cancelError');
+              AppLogger.e('결제 취소 실패 (수동 처리 필요) - TID: ${approvedPayment.tid}, 에러: $cancelError', tag: 'Checkout');
               if (mounted) {
                 AppNotification.showError(
                   context,
@@ -530,7 +532,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
       // 2. 결제 금액 계산 (상품금액, 배송비 분리)
       final productAmount = _calculateProductAmount(cartItems);
-      final shippingFee = _selectedShippingMethod == ShippingMethod.immediate ? 4500 : 0;
+      final shippingFee = _selectedShippingMethod == ShippingMethod.immediate ? AppConstants.defaultShippingFee : 0;
       final totalAmount = productAmount + shippingFee;
 
       // 3. 상품명 생성
@@ -550,16 +552,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       if (!mounted) return;
 
       // 디버깅: 결제 화면으로 전달할 값 확인
-      print('💰 [Checkout] === 토스페이먼츠 결제 시작 ===');
-      print('💰 [Checkout] orderId: $orderId');
-      print('💰 [Checkout] userId: $userId');
-      print('💰 [Checkout] orderName: $itemName');
-      print('💰 [Checkout] productAmount (상품금액): $productAmount');
-      print('💰 [Checkout] shippingFee (배송비): $shippingFee');
-      print('💰 [Checkout] totalAmount (총액): $totalAmount');
-      print('💰 [Checkout] customerName: $customerName');
-      print('💰 [Checkout] customerEmail: $customerEmail');
-      print('💰 [Checkout] customerPhone: $customerPhone');
+      AppLogger.d('토스페이먼츠 결제 시작 - orderId: $orderId, userId: $userId, orderName: $itemName, productAmount: $productAmount, shippingFee: $shippingFee, totalAmount: $totalAmount, customerName: $customerName, customerEmail: $customerEmail, customerPhone: $customerPhone', tag: 'Checkout');
 
       final Map<String, dynamic>? paymentResult;
 
@@ -641,7 +634,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 );
               }
             } catch (cancelError) {
-              print('⚠️ 결제 취소 실패 (수동 처리 필요) - PaymentKey: $paymentKey, 에러: $cancelError');
+              AppLogger.e('결제 취소 실패 (수동 처리 필요) - PaymentKey: $paymentKey, 에러: $cancelError', tag: 'Checkout');
               if (mounted) {
                 AppNotification.showError(
                   context,
@@ -729,30 +722,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     String orderId,
   ) async {
     try {
-      // 🔍 디버깅: 주문 생성 전 상태 확인
+      // 디버깅: 주문 생성 전 상태 확인
       final currentUser = ref.read(currentUserProvider);
-      print('═══════════════════════════════════════════════════════');
-      print('🛒 주문 생성 시작');
-      print('📋 Order ID: $orderId');
-      print('👤 userId (파라미터): $userId');
-      print('👤 currentUser?.uid: ${currentUser?.uid}');
-      print('🔐 인증 상태: ${currentUser != null ? "로그인됨" : "로그아웃됨"}');
-      print('📍 배송지: $shippingAddress');
-      print('📦 장바구니 아이템 수: ${cartItems.length}');
+      AppLogger.d('주문 생성 시작 - orderId: $orderId, userId: $userId, currentUser: ${currentUser?.uid}, 인증상태: ${currentUser != null ? "로그인됨" : "로그아웃됨"}, 배송지: $shippingAddress, 아이템 수: ${cartItems.length}', tag: 'Checkout');
       for (int i = 0; i < cartItems.length; i++) {
         final item = cartItems[i];
-        print('  [$i] ${item.partName}');
-        print('      - listingId: ${item.listingId}');
-        print('      - sellerId: ${item.sellerId}');
-        print('      - sellerName: ${item.sellerName}');
-        print('      - price: ${item.price}');
-        print('      - quantity: ${item.quantity}');
+        AppLogger.d('아이템[$i] ${item.partName} - listingId: ${item.listingId}, sellerId: ${item.sellerId}, sellerName: ${item.sellerName}, price: ${item.price}, quantity: ${item.quantity}', tag: 'Checkout');
       }
-      print('═══════════════════════════════════════════════════════');
 
       // userId 불일치 체크
       if (currentUser?.uid != userId) {
-        print('⚠️ 경고: userId 불일치! 파라미터($userId) != currentUser(${currentUser?.uid})');
+        AppLogger.w('userId 불일치! 파라미터($userId) != currentUser(${currentUser?.uid})', tag: 'Checkout');
       }
 
       // 1. 주문 생성 (가장 중요 - 실패 시 결제 취소 필요)
@@ -783,7 +763,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           } catch (dragonBallError) {
             // 드래곤볼 생성 실패는 로그만 남기고 계속 진행
             // (주문은 이미 생성되었으므로 나중에 수동 처리 가능)
-            print('드래곤볼 생성 실패 (orderId: $orderId): $dragonBallError');
+            AppLogger.w('드래곤볼 생성 실패 (orderId: $orderId): $dragonBallError', tag: 'Checkout');
           }
         }
       }
@@ -794,7 +774,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           await ref.read(clearCartProvider).call();
         } catch (clearCartError) {
           // 장바구니 비우기 실패는 무시 (중요하지 않음)
-          print('장바구니 비우기 실패: $clearCartError');
+          AppLogger.w('장바구니 비우기 실패: $clearCartError', tag: 'Checkout');
         }
       }
 
@@ -815,7 +795,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       }
     } catch (orderError) {
       // 주문 생성 실패 시 에러를 상위로 전파 (결제 취소 필요)
-      print('주문 생성 실패 (orderId: $orderId): $orderError');
+      AppLogger.e('주문 생성 실패 (orderId: $orderId): $orderError', tag: 'Checkout');
       rethrow;
     }
   }
@@ -832,8 +812,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   /// 총 결제 금액 계산 (배송비 포함)
   int _calculateTotalAmount(List<CartItemEntity> cartItems) {
     final productAmount = _calculateProductAmount(cartItems);
-    // 배송비 추가 (즉시 배송 시 4,500원, PC 보관함은 합배송 시 부과)
-    final shippingFee = _selectedShippingMethod == ShippingMethod.immediate ? 4500 : 0;
+    // 배송비 추가 (즉시 배송 시 기본 배송비, PC 보관함은 합배송 시 부과)
+    final shippingFee = _selectedShippingMethod == ShippingMethod.immediate ? AppConstants.defaultShippingFee : 0;
     return productAmount + shippingFee;
   }
 

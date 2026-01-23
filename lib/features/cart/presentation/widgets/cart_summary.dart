@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:pi_com/features/cart/domain/entities/cart_item_entity.dart';
 import 'package:pi_com/features/cart/presentation/providers/cart_provider.dart';
 import 'package:pi_com/core/constants/routes.dart';
+import 'package:pi_com/core/constants/app_constants.dart';
 import 'package:pi_com/shared/utils/app_notification.dart';
 import 'package:pi_com/shared/widgets/confirm_dialog.dart';
 
@@ -31,9 +32,9 @@ class CartSummary extends ConsumerWidget {
   }
 
   int _getShippingCost(WidgetRef ref) {
-    // 부품 배송비 고정 (4,500원)
-    // 장바구니는 부품만 취급하므로 항상 4,500원
-    return 4500;
+    // 부품 배송비 (기본 배송비 상수 사용)
+    // 장바구니는 부품만 취급하므로 항상 기본 배송비
+    return AppConstants.defaultShippingFee;
   }
 
   int _getFinalTotal(WidgetRef ref) {

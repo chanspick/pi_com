@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:pi_com/core/utils/app_logger.dart';
 import '../../../../shared/utils/app_notification.dart';
 import '../providers/auth_provider.dart';
 import 'auth_screen_html_web.dart' if (dart.library.io) 'auth_screen_html_mobile.dart';
@@ -50,7 +51,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
       final code = htmlStorage['kakao_auth_code'];
 
       if (code != null && code.isNotEmpty) {
-        print('🔍 Found Kakao auth code in localStorage: ${code.substring(0, 20)}...');
+        AppLogger.d('Found Kakao auth code in localStorage: ${code.substring(0, 20)}...', tag: 'Auth');
 
         // localStorage에서 코드 삭제 (중복 처리 방지)
         htmlStorage.remove('kakao_auth_code');
@@ -59,7 +60,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
         await _handleKakaoSignInWithCode(code);
       }
     } catch (e) {
-      print('❌ Failed to check localStorage: $e');
+      AppLogger.e('Failed to check localStorage: $e', tag: 'Auth');
     }
   }
 
@@ -67,7 +68,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
   Future<void> _handleKakaoSignInWithCode(String code) async {
     setState(() => _isLoading = true);
     try {
-      print('🔍 Processing Kakao login with code from localStorage...');
+      AppLogger.d('Processing Kakao login with code from localStorage...', tag: 'Auth');
 
       // Repository를 통해 로그인 처리
       final authRepository = ref.read(authRepositoryProvider);

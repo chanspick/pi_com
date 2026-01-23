@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:pi_com/core/constants/app_constants.dart';
 import 'package:pi_com/features/payment/data/datasources/payment_remote_datasource.dart';
 import 'package:pi_com/features/payment/data/models/payment_prepare_request_model.dart';
 import 'package:pi_com/features/payment/data/models/payment_prepare_response_model.dart';
@@ -14,9 +15,9 @@ class PaymentRemoteDataSourceImpl implements PaymentRemoteDataSource {
     Dio? dio,
     String? baseUrl,
   })  : _dio = dio ?? Dio(BaseOptions(
-          connectTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 15),
-          sendTimeout: const Duration(seconds: 15),
+          connectTimeout: AppConstants.httpConnectTimeout,
+          receiveTimeout: AppConstants.httpReceiveTimeout,
+          sendTimeout: AppConstants.httpReceiveTimeout,
         )),
         // Firebase Functions URL 사용
         _baseUrl = baseUrl ?? 'https://asia-northeast3-picom-team.cloudfunctions.net/api';

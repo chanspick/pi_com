@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/utils/app_logger.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
@@ -126,11 +127,8 @@ class _SellRequestScreenState extends ConsumerState<SellRequestScreen> {
         usageFrequency = '주 $_usageDaysPerWeek일, 하루 $_usageHoursPerDay시간';
       }
 
-      // 🔍 디버그: 선택된 부품 정보 확인
-      print('🔍 sell_request_screen - _selectedPart 정보:');
-      print('  - basePartId: ${_selectedPart!.basePartId}');
-      print('  - brand: ${_selectedPart!.brand}');
-      print('  - modelName: ${_selectedPart!.modelName}');
+      // 디버그: 선택된 부품 정보 확인
+      AppLogger.d('_selectedPart 정보: basePartId=${_selectedPart!.basePartId}, brand=${_selectedPart!.brand}, modelName=${_selectedPart!.modelName}', tag: 'SellRequest');
 
       // SellRequest 생성
       final sellRequest = SellRequest(
@@ -155,11 +153,8 @@ class _SellRequestScreenState extends ConsumerState<SellRequestScreen> {
         updatedAt: DateTime.now(),
       );
 
-      // 🔍 디버그: 생성된 SellRequest 확인
-      print('🔍 생성된 SellRequest:');
-      print('  - requestId: ${sellRequest.requestId}');
-      print('  - brand: ${sellRequest.brand}');
-      print('  - modelName: ${sellRequest.modelName}');
+      // 디버그: 생성된 SellRequest 확인
+      AppLogger.d('생성된 SellRequest: requestId=${sellRequest.requestId}, brand=${sellRequest.brand}, modelName=${sellRequest.modelName}', tag: 'SellRequest');
 
       // Controller 호출
       await ref

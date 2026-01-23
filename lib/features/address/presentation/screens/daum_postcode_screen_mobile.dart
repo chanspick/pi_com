@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:webview_flutter/webview_flutter.dart';
+import '../../../../core/utils/app_logger.dart';
 
 /// 다음 우편번호 검색 결과
 class DaumPostcodeResult {
@@ -63,7 +64,7 @@ class _DaumPostcodeScreenState extends State<DaumPostcodeScreen> {
             setState(() => _isLoading = false);
           },
           onWebResourceError: (WebResourceError error) {
-            debugPrint('WebView 오류: ${error.description}');
+            AppLogger.e('WebView 오류: ${error.description}', tag: 'DaumPostcode');
           },
         ),
       )
@@ -96,7 +97,7 @@ class _DaumPostcodeScreenState extends State<DaumPostcodeScreen> {
       // 결과를 반환하고 화면 닫기
       Navigator.pop(context, result);
     } catch (e) {
-      debugPrint('우편번호 결과 파싱 오류: $e');
+      AppLogger.e('우편번호 결과 파싱 오류: $e', tag: 'DaumPostcode');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('주소 정보를 처리하는 중 오류가 발생했습니다: $e'),

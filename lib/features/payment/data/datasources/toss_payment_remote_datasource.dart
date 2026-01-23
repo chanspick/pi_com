@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:pi_com/core/constants/app_constants.dart';
 import 'package:pi_com/features/payment/domain/entities/toss_payment_entity.dart';
 
 /// 토스페이먼츠 Remote DataSource 인터페이스
@@ -33,9 +34,9 @@ class TossPaymentRemoteDataSourceImpl implements TossPaymentRemoteDataSource {
     String? baseUrl,
   })  : _dio = dio ??
             Dio(BaseOptions(
-              connectTimeout: const Duration(seconds: 10),
-              receiveTimeout: const Duration(seconds: 15),
-              sendTimeout: const Duration(seconds: 15),
+              connectTimeout: AppConstants.httpConnectTimeout,
+              receiveTimeout: AppConstants.httpReceiveTimeout,
+              sendTimeout: AppConstants.httpReceiveTimeout,
             )),
         // Firebase Functions URL 사용
         _baseUrl = baseUrl ??

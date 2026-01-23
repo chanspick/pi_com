@@ -1,8 +1,8 @@
 // lib/features/auth/data/datasources/firestore_user_datasource.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/foundation.dart';
 import '../../../../core/models/user_model.dart';
+import '../../../../core/utils/app_logger.dart';
 
 /// Firestore의 users 컬렉션 전용 데이터 소스
 /// User 데이터의 CRUD만 담당
@@ -22,7 +22,7 @@ class FirestoreUserDataSource {
         user.toFirestore(),
         SetOptions(merge: true),
       );
-      debugPrint('✅ [FirestoreUserDataSource] User created/updated: ${user.uid}');
+      AppLogger.i('User created/updated: ${user.uid}', tag: 'Firestore');
     } catch (e) {
       throw Exception('Failed to create/update user: $e');
     }
@@ -47,7 +47,7 @@ class FirestoreUserDataSource {
         if (existingData.containsKey('isAdmin')) {
           final existingIsAdmin = existingData['isAdmin'];
           dataToUpdate['isAdmin'] = existingIsAdmin;  // 기존 값 유지
-          debugPrint('⚠️ [FirestoreUserDataSource] Preserving isAdmin value: $existingIsAdmin for user ${user.uid}');
+          AppLogger.w('Preserving isAdmin value: $existingIsAdmin for user ${user.uid}', tag: 'Firestore');
         }
       }
 
@@ -59,7 +59,7 @@ class FirestoreUserDataSource {
         SetOptions(merge: true),
       );
 
-      debugPrint('✅ [FirestoreUserDataSource] User updated with admin preserve: ${user.uid}');
+      AppLogger.i('User updated with admin preserve: ${user.uid}', tag: 'Firestore');
     } catch (e) {
       throw Exception('Failed to create/update user with admin preserve: $e');
     }
@@ -74,15 +74,15 @@ class FirestoreUserDataSource {
           .get();
 
       if (!doc.exists) {
-        debugPrint('⚠️ [FirestoreUserDataSource] User not found: $uid');
+        AppLogger.w('User not found: $uid', tag: 'Firestore');
         return null;
       }
 
       final userModel = UserModel.fromFirestore(doc);
-      debugPrint('✅ [FirestoreUserDataSource] User loaded: $uid, isAdmin: ${userModel.isAdmin}');
+      AppLogger.i('User loaded: $uid, isAdmin: ${userModel.isAdmin}', tag: 'Firestore');
       return userModel;
     } catch (e) {
-      debugPrint('❌ [FirestoreUserDataSource] Failed to get user: $e');
+      AppLogger.e('Failed to get user: $e', tag: 'Firestore');
       throw Exception('Failed to get user: $e');
     }
   }
@@ -94,7 +94,7 @@ class FirestoreUserDataSource {
           .collection(_usersCollection)
           .doc(uid)
           .delete();
-      debugPrint('✅ [FirestoreUserDataSource] User deleted: $uid');
+      AppLogger.i('User deleted: $uid', tag: 'Firestore');
     } catch (e) {
       throw Exception('Failed to delete user: $e');
     }
@@ -110,7 +110,7 @@ class FirestoreUserDataSource {
           .map((doc) {
         if (!doc.exists) return null;
         final userModel = UserModel.fromFirestore(doc);
-        debugPrint('📡 [FirestoreUserDataSource] User stream update: $uid, isAdmin: ${userModel.isAdmin}');
+        AppLogger.d('User stream update: $uid, isAdmin: ${userModel.isAdmin}', tag: 'Firestore');
         return userModel;
       });
     } catch (e) {

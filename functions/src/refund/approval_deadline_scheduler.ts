@@ -2,6 +2,7 @@
 
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
+import { getAdminUserIds } from "../config/admin";
 
 const db = admin.firestore();
 
@@ -179,7 +180,7 @@ async function sendNotification(params: {
 
 /**
  * 관리자에게 알림 발송
- * TODO: 실제 관리자 UID로 교체 필요
+ * Firebase config에서 관리자 UID 목록을 가져옵니다.
  */
 async function sendAdminNotification(params: {
   type: string;
@@ -188,10 +189,12 @@ async function sendAdminNotification(params: {
   relatedOrderId?: string;
   relatedRefundId?: string;
 }) {
-  // TODO: 환경 변수에서 관리자 UID 가져오기
-  const adminUserIds = process.env.ADMIN_USER_IDS?.split(",") || [
-    "ADMIN_UID_1",
-  ];
+  const adminUserIds = getAdminUserIds();
+
+  if (adminUserIds.length === 0) {
+    console.warn("[sendAdminNotification] 관리자 UID가 설정되지 않아 알림을 발송하지 않습니다.");
+    return;
+  }
 
   const promises = adminUserIds.map((adminId) =>
     sendNotification({

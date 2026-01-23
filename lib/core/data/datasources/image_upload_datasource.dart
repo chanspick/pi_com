@@ -2,6 +2,7 @@
 
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../../utils/app_logger.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
@@ -120,7 +121,7 @@ class ImageUploadDataSource {
         final ref = _storage.refFromURL(url);
         await ref.delete();
       } catch (e) {
-        print('이미지 삭제 실패: $url, 에러: $e');
+        AppLogger.e('이미지 삭제 실패: $url, 에러: $e', tag: 'ImageUpload');
       }
     }).toList();
 

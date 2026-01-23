@@ -1,0 +1,9 @@
+project:
+  name: pi_com
+  description: ''
+  type: ''
+  locale: '{{LOCALE}}'
+  created_at: '2026-01-22T18:16:55.623788Z'
+  initialized: 'true'
+github:
+  profile_name: chanspick

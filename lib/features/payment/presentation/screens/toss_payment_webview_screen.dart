@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:pi_com/features/payment/presentation/providers/payment_provider.dart';
+import 'package:pi_com/core/utils/app_logger.dart';
 
 /// 토스페이먼츠 WebView 결제 화면
 /// 결제위젯을 WebView로 로드하여 다양한 결제수단 제공
@@ -364,7 +365,7 @@ class _TossPaymentWebViewScreenState
       ..setBackgroundColor(const Color(0xFFF5F5F5))
       ..setOnConsoleMessage((JavaScriptConsoleMessage message) {
         // JavaScript 콘솔 메시지 출력 (디버깅용)
-        print('🌐 JS [${message.level.name}]: ${message.message}');
+        AppLogger.d('JS [${message.level.name}]: ${message.message}', tag: 'TossPaymentWebView');
       })
       ..setNavigationDelegate(
         NavigationDelegate(
@@ -464,7 +465,7 @@ class _TossPaymentWebViewScreenState
 
   Future<void> _handleDeepLink(String url) async {
     try {
-      print('🔗 Handling deep link: $url');
+      AppLogger.d('Handling deep link: $url', tag: 'TossPaymentWebView');
 
       // intent:// 스킴의 경우 Android에서 앱 실행
       if (url.startsWith('intent://')) {
@@ -473,7 +474,7 @@ class _TossPaymentWebViewScreenState
 
         if (packageMatch != null) {
           final package = packageMatch.group(1);
-          print('📦 Intent package: $package');
+          AppLogger.d('Intent package: $package', tag: 'TossPaymentWebView');
 
           // 먼저 intent URL을 직접 실행 시도
           try {
@@ -483,7 +484,7 @@ class _TossPaymentWebViewScreenState
               return;
             }
           } catch (e) {
-            print('Intent URL launch failed: $e');
+            AppLogger.w('Intent URL launch failed: $e', tag: 'TossPaymentWebView');
           }
 
           // 실패 시 플레이 스토어로 이동
@@ -502,10 +503,10 @@ class _TossPaymentWebViewScreenState
       // 일반 딥링크 (카드사 앱, 은행 앱 등)
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
-        print('🚀 Launching URL: $url');
+        AppLogger.d('Launching URL: $url', tag: 'TossPaymentWebView');
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
-        print('⚠️ Cannot launch URL: $url');
+        AppLogger.w('Cannot launch URL: $url', tag: 'TossPaymentWebView');
         // 앱이 설치되지 않은 경우 안내
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -517,7 +518,7 @@ class _TossPaymentWebViewScreenState
         }
       }
     } catch (e) {
-      print('❌ 딥링크 처리 오류: $e');
+      AppLogger.e('딥링크 처리 오류: $e', tag: 'TossPaymentWebView');
     }
   }
 

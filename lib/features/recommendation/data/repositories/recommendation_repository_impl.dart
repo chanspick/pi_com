@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pi_com/core/utils/app_logger.dart';
 import 'package:pi_com/core/repositories/base_part_repository.dart';
 import 'package:pi_com/features/recommendation/data/datasources/recommendation_local_datasource.dart';
 import 'package:pi_com/features/recommendation/data/models/estimate_sample_model.dart';
@@ -49,15 +50,7 @@ class RecommendationRepositoryImpl implements RecommendationRepository {
     );
 
     // 4. 재고 체크 (디버깅 정보 포함)
-    print('🔍 [DEBUG] 재고 확인:');
-    print('  - CPU: ${availableParts['cpu']?.length ?? 0}개');
-    print('  - GPU: ${availableParts['gpu']?.length ?? 0}개');
-    print('  - Mainboard: ${availableParts['mainboard']?.length ?? 0}개');
-    print('  - RAM: ${availableParts['ram']?.length ?? 0}개');
-    print('  - SSD: ${availableParts['ssd']?.length ?? 0}개');
-    print('  - PSU: ${availableParts['psu']?.length ?? 0}개');
-    print('  - Cooler: ${availableParts['cooler']?.length ?? 0}개');
-    print('  - Case: ${availableParts['case']?.length ?? 0}개');
+    AppLogger.d('재고 확인: CPU=${availableParts['cpu']?.length ?? 0}, GPU=${availableParts['gpu']?.length ?? 0}, Mainboard=${availableParts['mainboard']?.length ?? 0}, RAM=${availableParts['ram']?.length ?? 0}, SSD=${availableParts['ssd']?.length ?? 0}, PSU=${availableParts['psu']?.length ?? 0}, Cooler=${availableParts['cooler']?.length ?? 0}, Case=${availableParts['case']?.length ?? 0}', tag: 'RecommendationRepository');
 
     // 필수 부품 재고 확인 (SSD/PSU/쿨러/케이스는 가상 상품이므로 제외)
     final List<String> missingParts = [];

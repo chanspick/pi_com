@@ -157,3 +157,122 @@ tasks/
 # CORS 설정 (Firebase Storage)
 # ==========================================
 cors.json
+.moai-backups/
+# Build Tools & Frameworks
+.DocumentRevisions-V100
+*.backup
+.Spotlight-V100
+*.p12
+.Trashes
+# Credential patterns in environment files
+.claude/skills/*/*/*token*
+.TemporaryItems
+# Python Cache & Bytecode
+.pytest_cache/
+# Deployment & CI/CD
+*.jks
+*.egg-info/
+*-secret.*
+# Claude Code Configuration
+*.rdb
+__pycache__/
+*-api-key.*
+.turbo/
+.next/
+[Dd]esktop.ini
+*_token=*
+# ============================================
+.VolumeIcon.icns
+# Build Artifacts & Distribution
+private-key*
+.aws/config
+.aws/credentials
+*.sublime-workspace
+# Private keys (specific patterns to avoid false positives)
+.venv/
+# Certificate files
+*.pem
+# Version: 0.33.0
+dist-ssr/
+.LSOverride
+.env/
+*.db
+.ruff_cache/
+# IDE & Editors
+*.pyd
+.mypy_cache/
+# ===========================================
+api-key-*
+# Skill-specific credentials
+!.env.example
+venv/
+.claude/skills/*/*/*key*
+.netlify/
+# Node.js (for docs/Nextra)
+.coverage
+*.key.*
+build/
+secret-key-*
+*~
+.directory
+.claude/skills/*/secrets/
+dist/
+.fseventsd
+.uv_cache/
+*.backup/
+# Purpose: Essential patterns for user projects
+.claude/skills/*/*/*secret*
+*.sqlite3
+.vscode/
+# MoAI-ADK Package Distribution .gitignore
+*.egg
+.claude/local/
+# Backups
+*-backup/
+*.bak
+# Logs & Temporary Files
+Thumbs.db
+# Secrets and Credentials (CRITICAL)
+coverage.json
+*_backup_*/
+*.tsbuildinfo
+*_key.*
+# Updated: 2026-01-10
+.claude/.env.local*
+.claude/settings.local.*.json
+# Virtual Environments
+# Linux
+.uv-cache/
+*-key.*
+.env.*
+# OS Files
+.cursor/
+*.sqlite
+env/
+ehthumbs.db
+*.swo
+*_secret=*
+*.dbm
+# Test Coverage
+*.pyo
+out/
+.#*
+.tscache/
+.AppleDouble
+logs/
+htmlcov/
+# Cloud provider credentials
+.nuxt/
+*-secret-key.*
+.vercel/
+*.sublime-project
+.claude/skills/*/.env*
+# Windows
+*.secret.*
+*.temp
+secret-*.*
+# Mac
+# FIXED: Issue #237 - Replaced overly broad *key* and *secret* patterns
+*.pfx
+*_secret.*
+# Environment files

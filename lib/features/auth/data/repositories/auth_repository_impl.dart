@@ -2,6 +2,7 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:pi_com/core/utils/app_logger.dart';
 import '../../../../core/models/user_model.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/kakao_auth_datasource.dart';
@@ -39,7 +40,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // ✅ Cloud Functions에서 이미 사용자를 생성/업데이트했으므로
       // Firestore에서 사용자 정보를 읽기만 함
-      debugPrint('🔍 [AuthRepository] Getting user from Firestore: ${user.uid}');
+      AppLogger.d('[AuthRepository] Getting user from Firestore: ${user.uid}', tag: 'Auth');
 
       // 약간의 지연을 주어 Cloud Functions가 완료될 시간을 확보
       await Future.delayed(const Duration(milliseconds: 500));
@@ -48,7 +49,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       if (userModel == null) {
         // Cloud Functions가 아직 처리 중일 수 있으므로 재시도
-        debugPrint('⚠️ [AuthRepository] User not found, retrying...');
+        AppLogger.w('[AuthRepository] User not found, retrying...', tag: 'Auth');
         await Future.delayed(const Duration(seconds: 1));
 
         final retryUserModel = await _firestoreUser.getUser(user.uid);
@@ -58,11 +59,11 @@ class AuthRepositoryImpl implements AuthRepository {
         return retryUserModel;
       }
 
-      debugPrint('✅ [AuthRepository] User loaded from Firestore: ${userModel.toString()}');
+      AppLogger.i('[AuthRepository] User loaded from Firestore: ${userModel.toString()}', tag: 'Auth');
       return userModel;
 
     } catch (e) {
-      debugPrint('❌ [AuthRepository] Failed to sign in with Kakao: $e');
+      AppLogger.e('[AuthRepository] Failed to sign in with Kakao: $e', tag: 'Auth');
       throw Exception('Failed to sign in with Kakao: $e');
     }
   }
@@ -106,7 +107,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       // ✅ Cloud Functions에서 이미 사용자를 생성/업데이트했으므로
       // Firestore에서 사용자 정보를 읽기만 함
-      debugPrint('🔍 [AuthRepository] Getting user from Firestore: ${user.uid}');
+      AppLogger.d('[AuthRepository] Getting user from Firestore: ${user.uid}', tag: 'Auth');
 
       // 약간의 지연을 주어 Cloud Functions가 완료될 시간을 확보
       await Future.delayed(const Duration(milliseconds: 500));
@@ -115,7 +116,7 @@ class AuthRepositoryImpl implements AuthRepository {
 
       if (userModel == null) {
         // Cloud Functions가 아직 처리 중일 수 있으므로 재시도
-        debugPrint('⚠️ [AuthRepository] User not found, retrying...');
+        AppLogger.w('[AuthRepository] User not found, retrying...', tag: 'Auth');
         await Future.delayed(const Duration(seconds: 1));
 
         final retryUserModel = await _firestoreUser.getUser(user.uid);
@@ -125,11 +126,11 @@ class AuthRepositoryImpl implements AuthRepository {
         return retryUserModel;
       }
 
-      debugPrint('✅ [AuthRepository] User loaded from Firestore: ${userModel.toString()}');
+      AppLogger.i('[AuthRepository] User loaded from Firestore: ${userModel.toString()}', tag: 'Auth');
       return userModel;
 
     } catch (e) {
-      debugPrint('❌ [AuthRepository] Failed to sign in with Kakao code: $e');
+      AppLogger.e('[AuthRepository] Failed to sign in with Kakao code: $e', tag: 'Auth');
       throw Exception('Failed to sign in with Kakao code: $e');
     }
   }

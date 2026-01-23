@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
+import '../../../../core/utils/app_logger.dart';
 
 import '../../data/repositories/refund_repository_impl.dart';
 import '../../data/models/refund_request_model.dart';
@@ -105,7 +106,7 @@ class _RefundRequestScreenState extends ConsumerState<RefundRequestScreen> {
         final url = await ref.getDownloadURL();
         urls.add(url);
       } catch (e) {
-        print('이미지 업로드 실패: $e');
+        AppLogger.e('이미지 업로드 실패: $e', tag: 'Refund');
       }
     }
 

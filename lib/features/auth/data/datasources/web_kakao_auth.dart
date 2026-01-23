@@ -6,6 +6,7 @@ library;
 import 'dart:async';
 import 'package:js/js.dart';
 import 'dart:js_util' as js_util;
+import '../../../../core/utils/app_logger.dart';
 
 /// JavaScript window.kakaoExchangeCodeForToken() 함수
 /// 인가 코드를 액세스 토큰으로 교환
@@ -70,7 +71,7 @@ class WebKakaoAuth {
 
       return map;
     } catch (e) {
-      print('❌ Failed to convert JS object to Map: $e');
+      AppLogger.e('Failed to convert JS object to Map: $e', tag: 'KakaoAuth');
       return null;
     }
   }
@@ -78,20 +79,20 @@ class WebKakaoAuth {
   /// 인가 코드를 액세스 토큰으로 교환
   static Future<KakaoLoginResult?> exchangeCodeForToken(String code) async {
     try {
-      print('🔍 [Web] Exchanging code for token...');
+      AppLogger.d('[Web] Exchanging code for token...', tag: 'KakaoAuth');
 
       // JavaScript Promise를 Dart Future로 변환
       final promise = _kakaoExchangeCodeForToken(code);
       final result = await js_util.promiseToFuture(promise);
 
       if (result == null) {
-        print('❌ No result received from code exchange');
+        AppLogger.e('No result received from code exchange', tag: 'KakaoAuth');
         return null;
       }
 
       // 결과가 문자열인 경우 (토큰만)
       if (result is String) {
-        print('✅ Token exchange success - Token only: ${result.substring(0, 20)}...');
+        AppLogger.i('Token exchange success - Token only', tag: 'KakaoAuth');
         return KakaoLoginResult(accessToken: result);
       }
 
@@ -111,9 +112,9 @@ class WebKakaoAuth {
       }
 
       if (accessToken != null) {
-        print('✅ Token exchange success - Token: ${accessToken.substring(0, 20)}...');
+        AppLogger.i('Token exchange success', tag: 'KakaoAuth');
         if (userInfo != null) {
-          print('✅ User info received: ID=${userInfo['id']}');
+          AppLogger.d('User info received: ID=${userInfo['id']}', tag: 'KakaoAuth');
         }
         return KakaoLoginResult(
           accessToken: accessToken,
@@ -121,11 +122,11 @@ class WebKakaoAuth {
         );
       }
 
-      print('❌ Invalid result structure');
+      AppLogger.e('Invalid result structure', tag: 'KakaoAuth');
       return null;
 
     } catch (e) {
-      print('❌ Code exchange exception: $e');
+      AppLogger.e('Code exchange exception: $e', tag: 'KakaoAuth');
       return null;
     }
   }
