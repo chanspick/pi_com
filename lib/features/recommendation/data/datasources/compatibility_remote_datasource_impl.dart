@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:pi_com/core/utils/app_logger.dart';
 import 'package:pi_com/core/models/base_part_model.dart';
 import 'package:pi_com/features/listing/domain/entities/listing_entity.dart';
 import 'package:pi_com/features/listing/data/models/listing_model.dart';
@@ -55,11 +56,11 @@ class CompatibilityRemoteDataSourceImpl implements CompatibilityRemoteDataSource
           .map((doc) => ListingModel.fromFirestore(doc).toEntity())
           .toList();
 
-      print('📦 [DEBUG] Found ${listings.length} available listings for basePartId=$basePartId');
+      AppLogger.d('Found ${listings.length} available listings for basePartId=$basePartId', tag: 'CompatibilityDataSource');
       return listings;
     } catch (e) {
       // 에러 발생 시 빈 리스트 반환
-      print('❌ [ERROR] getAvailableListings failed for basePartId=$basePartId: $e');
+      AppLogger.e('getAvailableListings failed for basePartId=$basePartId: $e', tag: 'CompatibilityDataSource');
       return [];
     }
   }
@@ -77,7 +78,7 @@ class CompatibilityRemoteDataSourceImpl implements CompatibilityRemoteDataSource
           .map((doc) => BasePart.fromFirestore(doc))
           .toList();
 
-      print('📦 [DEBUG] Found ${parts.length} base_parts for category=$category');
+      AppLogger.d('Found ${parts.length} base_parts for category=$category', tag: 'CompatibilityDataSource');
       return parts;
     } catch (e) {
       // wattage 인덱스가 없을 수 있으므로 orderBy 없이 재시도
@@ -91,10 +92,10 @@ class CompatibilityRemoteDataSourceImpl implements CompatibilityRemoteDataSource
             .map((doc) => BasePart.fromFirestore(doc))
             .toList();
 
-        print('📦 [DEBUG] Found ${parts.length} base_parts for category=$category (no orderBy)');
+        AppLogger.d('Found ${parts.length} base_parts for category=$category (no orderBy)', tag: 'CompatibilityDataSource');
         return parts;
       } catch (e2) {
-        print('❌ [ERROR] getAvailableBaseParts failed for category=$category: $e2');
+        AppLogger.e('getAvailableBaseParts failed for category=$category: $e2', tag: 'CompatibilityDataSource');
         return [];
       }
     }

@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:pi_com/core/models/base_part_model.dart';
+import 'package:pi_com/core/utils/app_logger.dart';
 
 /// BasePart 데이터 조회를 위한 Repository
 class BasePartRepository {
@@ -19,8 +20,8 @@ class BasePartRepository {
     int minListingCount = 0,
   }) async {
     try {
-      print('🔍 [BasePartRepository] Querying category="$category", minListingCount=$minListingCount');
-      print('🌐 [BasePartRepository] Force fetching from SERVER (no cache)');
+      AppLogger.d('Querying category="$category", minListingCount=$minListingCount', tag: 'BasePartRepository');
+      AppLogger.d('Force fetching from SERVER (no cache)', tag: 'BasePartRepository');
 
       final querySnapshot = await _firestore
           .collection('base_parts')
@@ -32,14 +33,14 @@ class BasePartRepository {
           .map((doc) => BasePart.fromFirestore(doc))
           .toList();
 
-      print('✅ [BasePartRepository] Found ${parts.length} parts for category="$category"');
+      AppLogger.i('Found ${parts.length} parts for category="$category"', tag: 'BasePartRepository');
       if (parts.isNotEmpty) {
-        print('   Sample: ${parts.first.modelName} (${parts.first.listingCount} listings)');
+        AppLogger.d('Sample: ${parts.first.modelName} (${parts.first.listingCount} listings)', tag: 'BasePartRepository');
       }
 
       return parts;
     } catch (e) {
-      print('❌ Error fetching base parts for category $category: $e');
+      AppLogger.e('Error fetching base parts for category $category: $e', tag: 'BasePartRepository');
       return [];
     }
   }
@@ -98,7 +99,7 @@ class BasePartRepository {
           .map((doc) => BasePart.fromFirestore(doc))
           .toList();
     } catch (e) {
-      print('Error fetching parts by spec: $e');
+      AppLogger.e('Error fetching parts by spec: $e', tag: 'BasePartRepository');
       return [];
     }
   }
@@ -131,7 +132,7 @@ class BasePartRepository {
           .map((doc) => BasePart.fromFirestore(doc))
           .toList();
     } catch (e) {
-      print('Error fetching parts by capacity: $e');
+      AppLogger.e('Error fetching parts by capacity: $e', tag: 'BasePartRepository');
       return [];
     }
   }
@@ -154,7 +155,7 @@ class BasePartRepository {
           .map((doc) => BasePart.fromFirestore(doc))
           .toList();
     } catch (e) {
-      print('Error fetching parts by socket: $e');
+      AppLogger.e('Error fetching parts by socket: $e', tag: 'BasePartRepository');
       return [];
     }
   }
@@ -182,7 +183,7 @@ class BasePartRepository {
           .map((doc) => BasePart.fromFirestore(doc))
           .toList();
     } catch (e) {
-      print('Error fetching PSU by wattage: $e');
+      AppLogger.e('Error fetching PSU by wattage: $e', tag: 'BasePartRepository');
       return [];
     }
   }
@@ -199,7 +200,7 @@ class BasePartRepository {
 
       return BasePart.fromFirestore(doc);
     } catch (e) {
-      print('Error fetching base part by ID: $e');
+      AppLogger.e('Error fetching base part by ID: $e', tag: 'BasePartRepository');
       return null;
     }
   }

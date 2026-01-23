@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart' as kakao;
 import 'package:dio/dio.dart';
+import 'package:pi_com/core/constants/app_constants.dart';
+import 'package:pi_com/core/utils/app_logger.dart';
 import 'web_kakao_auth.dart' if (dart.library.io) 'web_kakao_auth_stub.dart';
 
 class KakaoAuthDataSource {
@@ -21,42 +23,42 @@ class KakaoAuthDataSource {
   /// 모바일 카카오 로그인 (공식 문서 권장 방식)
   Future<User?> _signInMobile() async {
     try {
-      debugPrint('🔍 [Mobile] Starting Kakao Sign-In...');
+      AppLogger.d('[Mobile] Starting Kakao Sign-In...', tag: 'KakaoAuth');
 
       kakao.OAuthToken token;
 
       // 카카오톡 설치 여부 확인 후 최적의 로그인 방식 선택
       if (await kakao.isKakaoTalkInstalled()) {
-        debugPrint('📱 Kakao Talk is installed, trying Kakao Talk login');
+        AppLogger.d('Kakao Talk is installed, trying Kakao Talk login', tag: 'KakaoAuth');
         try {
           // 카카오톡으로 로그인
           token = await kakao.UserApi.instance.loginWithKakaoTalk();
-          debugPrint('✅ Kakao Talk login success');
+          AppLogger.i('Kakao Talk login success', tag: 'KakaoAuth');
         } catch (error) {
-          debugPrint('⚠️ Kakao Talk login failed, fallback to Kakao Account: $error');
+          AppLogger.w('Kakao Talk login failed, fallback to Kakao Account: $error', tag: 'KakaoAuth');
 
           // 사용자가 카카오톡 로그인을 취소한 경우 등 예외 처리
           // 카카오계정으로 로그인 시도
           token = await kakao.UserApi.instance.loginWithKakaoAccount();
-          debugPrint('✅ Kakao Account login success (fallback)');
+          AppLogger.i('Kakao Account login success (fallback)', tag: 'KakaoAuth');
         }
       } else {
-        debugPrint('🌐 Kakao Talk not installed, using Kakao Account login');
+        AppLogger.d('Kakao Talk not installed, using Kakao Account login', tag: 'KakaoAuth');
         // 카카오계정으로 로그인
         token = await kakao.UserApi.instance.loginWithKakaoAccount();
-        debugPrint('✅ Kakao Account login success');
+        AppLogger.i('Kakao Account login success', tag: 'KakaoAuth');
       }
 
-      debugPrint('✅ Kakao OAuth Token obtained: ${token.accessToken.substring(0, 20)}...');
+      AppLogger.i('Kakao OAuth Token obtained: ${token.accessToken.substring(0, 20)}...', tag: 'KakaoAuth');
 
       // 카카오 사용자 정보 가져오기
-      debugPrint('🔍 Getting Kakao user info...');
+      AppLogger.d('Getting Kakao user info...', tag: 'KakaoAuth');
       kakao.User kakaoUser = await kakao.UserApi.instance.me();
 
-      debugPrint('✅ Kakao user info obtained - ID: ${kakaoUser.id}, Email: ${kakaoUser.kakaoAccount?.email}');
+      AppLogger.i('Kakao user info obtained - ID: ${kakaoUser.id}, Email: ${kakaoUser.kakaoAccount?.email}', tag: 'KakaoAuth');
 
       // Cloud Function에 카카오 토큰 전송하여 Firebase Custom Token 받기
-      debugPrint('🔍 Requesting Firebase Custom Token from Cloud Function...');
+      AppLogger.d('Requesting Firebase Custom Token from Cloud Function...', tag: 'KakaoAuth');
 
       final customToken = await _getCustomTokenFromServer(token.accessToken);
 
@@ -64,19 +66,19 @@ class KakaoAuthDataSource {
         throw Exception('Failed to get custom token from server');
       }
 
-      debugPrint('✅ Custom Token received: ${customToken.substring(0, 20)}...');
+      AppLogger.i('Custom Token received: ${customToken.substring(0, 20)}...', tag: 'KakaoAuth');
 
       // Firebase에 Custom Token으로 로그인
-      debugPrint('🔍 Signing in to Firebase with Custom Token...');
+      AppLogger.d('Signing in to Firebase with Custom Token...', tag: 'KakaoAuth');
       final UserCredential userCredential = await _auth.signInWithCustomToken(customToken);
 
-      debugPrint('✅ Kakao Sign-In Success: UID=${userCredential.user?.uid}, Email=${kakaoUser.kakaoAccount?.email}');
+      AppLogger.i('Kakao Sign-In Success: UID=${userCredential.user?.uid}, Email=${kakaoUser.kakaoAccount?.email}', tag: 'KakaoAuth');
 
       return userCredential.user;
 
     } catch (e, stackTrace) {
-      debugPrint('❌ Kakao Sign-In failed: $e');
-      debugPrint('❌ StackTrace: $stackTrace');
+      AppLogger.e('Kakao Sign-In failed: $e', tag: 'KakaoAuth');
+      AppLogger.e('StackTrace: $stackTrace', tag: 'KakaoAuth');
       rethrow;
     }
   }
@@ -87,9 +89,12 @@ class KakaoAuthDataSource {
       // Firebase Cloud Functions API 엔드포인트
       const String cloudFunctionUrl = 'https://asia-northeast3-picom-team.cloudfunctions.net/api/auth/kakao';
 
-      debugPrint('📡 Sending request to Cloud Function: $cloudFunctionUrl');
+      AppLogger.d('Sending request to Cloud Function: $cloudFunctionUrl', tag: 'KakaoAuth');
 
-      final dio = Dio();
+      final dio = Dio(BaseOptions(
+        connectTimeout: AppConstants.httpConnectTimeout,
+        receiveTimeout: AppConstants.httpReceiveTimeout,
+      ));
       final response = await dio.post(
         cloudFunctionUrl,
         data: {'kakaoAccessToken': kakaoAccessToken},
@@ -98,8 +103,8 @@ class KakaoAuthDataSource {
         ),
       );
 
-      debugPrint('✅ Server response: ${response.statusCode}');
-      debugPrint('📦 Response data: ${response.data}');
+      AppLogger.i('Server response: ${response.statusCode}', tag: 'KakaoAuth');
+      AppLogger.d('Response data: ${response.data}', tag: 'KakaoAuth');
 
       if (response.statusCode == 200 && response.data is Map) {
         final data = response.data as Map<String, dynamic>;
@@ -108,16 +113,16 @@ class KakaoAuthDataSource {
         }
       }
 
-      debugPrint('❌ Invalid response from server: ${response.data}');
+      AppLogger.e('Invalid response from server: ${response.data}', tag: 'KakaoAuth');
       return null;
     } catch (e) {
-      debugPrint('❌ Failed to get custom token: $e');
+      AppLogger.e('Failed to get custom token: $e', tag: 'KakaoAuth');
 
       // DioException의 경우 더 자세한 정보 출력
       if (e is DioException) {
-        debugPrint('❌ Response status: ${e.response?.statusCode}');
-        debugPrint('❌ Response data: ${e.response?.data}');
-        debugPrint('❌ Response headers: ${e.response?.headers}');
+        AppLogger.e('Response status: ${e.response?.statusCode}', tag: 'KakaoAuth');
+        AppLogger.e('Response data: ${e.response?.data}', tag: 'KakaoAuth');
+        AppLogger.e('Response headers: ${e.response?.headers}', tag: 'KakaoAuth');
       }
 
       return null;
@@ -129,11 +134,11 @@ class KakaoAuthDataSource {
 
   /// 웹 카카오 로그인 (공식 Flutter SDK 방식 - 리다이렉트)
   Future<User?> _signInWeb() async {
-    debugPrint('🔍 [Web] Starting Kakao Sign-In with AuthCodeClient...');
+    AppLogger.d('[Web] Starting Kakao Sign-In with AuthCodeClient...', tag: 'KakaoAuth');
 
     // 카카오 공식 방식: AuthCodeClient로 인가 코드 요청 (리다이렉트)
     final redirectUri = '${Uri.base.origin}/oauth/callback.html';
-    debugPrint('📍 Redirect URI: $redirectUri');
+    AppLogger.d('Redirect URI: $redirectUri', tag: 'KakaoAuth');
 
     // 카카오 인증 화면으로 리다이렉트
     // 이 메서드는 페이지를 리다이렉트하므로 반환되지 않음
@@ -158,24 +163,24 @@ class KakaoAuthDataSource {
         // 모바일: 카카오 토큰 폐기
         try {
           await kakao.UserApi.instance.logout();
-          debugPrint('✅ Kakao logout success - tokens revoked');
+          AppLogger.i('Kakao logout success - tokens revoked', tag: 'KakaoAuth');
         } catch (error) {
           // 이미 로그아웃 상태이거나 토큰이 없는 경우
-          debugPrint('⚠️ Kakao logout warning (already logged out?): $error');
+          AppLogger.w('Kakao logout warning (already logged out?): $error', tag: 'KakaoAuth');
         }
       } else {
         // 웹: 카카오 SDK 로그아웃 없이 Firebase만 로그아웃
         // (AuthCodeClient는 로그아웃 메서드를 제공하지 않음)
         // 웹 사용자 정보 초기화
         _webKakaoUserInfo = null;
-        debugPrint('✅ Web Kakao user info cleared');
+        AppLogger.i('Web Kakao user info cleared', tag: 'KakaoAuth');
       }
 
       // Firebase 로그아웃
       await _auth.signOut();
-      debugPrint('✅ Firebase sign-out success');
+      AppLogger.i('Firebase sign-out success', tag: 'KakaoAuth');
     } catch (e) {
-      debugPrint('❌ Sign-Out failed: $e');
+      AppLogger.e('Sign-Out failed: $e', tag: 'KakaoAuth');
       rethrow;
     }
   }
@@ -191,7 +196,7 @@ class KakaoAuthDataSource {
     try {
       return await kakao.UserApi.instance.me();
     } catch (e) {
-      debugPrint('❌ Failed to get Kakao user: $e');
+      AppLogger.e('Failed to get Kakao user: $e', tag: 'KakaoAuth');
       return null;
     }
   }
@@ -211,24 +216,24 @@ class KakaoAuthDataSource {
     try {
       // 토큰 존재 여부 확인
       if (await kakao.AuthApi.instance.hasToken()) {
-        debugPrint('🔍 Token exists, validating...');
+        AppLogger.d('Token exists, validating...', tag: 'KakaoAuth');
 
         try {
           // 토큰 유효성 검증
           kakao.AccessTokenInfo tokenInfo =
               await kakao.UserApi.instance.accessTokenInfo();
-          debugPrint('✅ Token is valid - expires in ${tokenInfo.expiresIn} seconds');
+          AppLogger.i('Token is valid - expires in ${tokenInfo.expiresIn} seconds', tag: 'KakaoAuth');
           return true;
         } catch (error) {
-          debugPrint('⚠️ Token validation failed (expired or invalid): $error');
+          AppLogger.w('Token validation failed (expired or invalid): $error', tag: 'KakaoAuth');
           return false;
         }
       } else {
-        debugPrint('ℹ️ No token found');
+        AppLogger.i('No token found', tag: 'KakaoAuth');
         return false;
       }
     } catch (error) {
-      debugPrint('❌ Token check failed: $error');
+      AppLogger.e('Token check failed: $error', tag: 'KakaoAuth');
       return false;
     }
   }
@@ -240,7 +245,7 @@ class KakaoAuthDataSource {
     }
 
     try {
-      debugPrint('🔍 [Web] Starting Kakao Sign-In with code...');
+      AppLogger.d('[Web] Starting Kakao Sign-In with code...', tag: 'KakaoAuth');
 
       // 코드를 토큰으로 교환
       final loginResult = await WebKakaoAuth.exchangeCodeForToken(code);
@@ -249,35 +254,35 @@ class KakaoAuthDataSource {
         throw Exception('Failed to exchange code for token');
       }
 
-      debugPrint('✅ [Web] Token obtained: ${loginResult.accessToken.substring(0, 20)}...');
+      AppLogger.i('[Web] Token obtained: ${loginResult.accessToken.substring(0, 20)}...', tag: 'KakaoAuth');
 
       // 사용자 정보 저장
       if (loginResult.userInfo != null) {
         _webKakaoUserInfo = loginResult.userInfo;
-        debugPrint('✅ [Web] User info stored: $_webKakaoUserInfo');
+        AppLogger.i('[Web] User info stored: $_webKakaoUserInfo', tag: 'KakaoAuth');
       }
 
       // Cloud Function에 카카오 토큰 전송하여 Firebase Custom Token 받기
-      debugPrint('🔍 [Web] Requesting Firebase Custom Token from Cloud Function...');
+      AppLogger.d('[Web] Requesting Firebase Custom Token from Cloud Function...', tag: 'KakaoAuth');
       final customToken = await _getCustomTokenFromServer(loginResult.accessToken);
 
       if (customToken == null) {
         throw Exception('Failed to get custom token from server');
       }
 
-      debugPrint('✅ [Web] Custom Token received: ${customToken.substring(0, 20)}...');
+      AppLogger.i('[Web] Custom Token received: ${customToken.substring(0, 20)}...', tag: 'KakaoAuth');
 
       // Firebase에 Custom Token으로 로그인
-      debugPrint('🔍 [Web] Signing in to Firebase with Custom Token...');
+      AppLogger.d('[Web] Signing in to Firebase with Custom Token...', tag: 'KakaoAuth');
       final UserCredential userCredential = await _auth.signInWithCustomToken(customToken);
 
-      debugPrint('✅ [Web] Kakao Sign-In Success: UID=${userCredential.user?.uid}');
+      AppLogger.i('[Web] Kakao Sign-In Success: UID=${userCredential.user?.uid}', tag: 'KakaoAuth');
 
       return userCredential.user;
 
     } catch (e, stackTrace) {
-      debugPrint('❌ Web Kakao Sign-In with code failed: $e');
-      debugPrint('❌ StackTrace: $stackTrace');
+      AppLogger.e('Web Kakao Sign-In with code failed: $e', tag: 'KakaoAuth');
+      AppLogger.e('StackTrace: $stackTrace', tag: 'KakaoAuth');
       rethrow;
     }
   }

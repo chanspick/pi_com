@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/utils/app_logger.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 
 /// 알림 설정 Provider
@@ -118,7 +119,7 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
         state = state.copyWith(isLoading: false);
       }
     } catch (e) {
-      print('알림 설정 로드 실패: $e');
+      AppLogger.e('알림 설정 로드 실패: $e', tag: 'NotificationSettings');
       state = state.copyWith(isLoading: false);
     }
   }
@@ -135,7 +136,7 @@ class NotificationSettingsNotifier extends StateNotifier<NotificationSettings> {
           .doc('notifications')
           .set(state.toMap(), SetOptions(merge: true));
     } catch (e) {
-      print('알림 설정 저장 실패: $e');
+      AppLogger.e('알림 설정 저장 실패: $e', tag: 'NotificationSettings');
     }
   }
 

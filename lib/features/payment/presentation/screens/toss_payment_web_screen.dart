@@ -7,6 +7,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pi_com/features/payment/presentation/providers/payment_provider.dart';
+import 'package:pi_com/core/utils/app_logger.dart';
 
 /// 토스페이먼츠 v2 웹 결제 화면 (Flutter Web 전용)
 ///
@@ -65,17 +66,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
   }
 
   void _logPaymentInfo() {
-    print('');
-    print('========================================');
-    print('🔵 [TossPaymentWeb] 결제 정보 (새 창 방식)');
-    print('========================================');
-    print('  orderId: ${widget.orderId}');
-    print('  userId: ${widget.userId}');
-    print('  orderName: ${widget.orderName}');
-    print('  amount (총액): ${widget.amount}');
-    print('  productAmount (상품금액): ${widget.productAmount}');
-    print('  shippingFee (배송비): ${widget.shippingFee}');
-    print('========================================');
+    AppLogger.i('결제 정보 (새 창 방식) - orderId: ${widget.orderId}, userId: ${widget.userId}, orderName: ${widget.orderName}, amount: ${widget.amount}, productAmount: ${widget.productAmount}, shippingFee: ${widget.shippingFee}', tag: 'TossPaymentWeb');
   }
 
   @override
@@ -97,7 +88,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
   /// Firestore에서 결제 상태를 실시간으로 감시
   /// 서버에서 결제 승인 완료 시 toss_payments 컬렉션에 저장됨
   void _setupFirestoreListener() {
-    print('🔔 [TossPaymentWeb] Setting up Firestore listener for orderId: ${widget.orderId}');
+    AppLogger.d('Setting up Firestore listener for orderId: ${widget.orderId}', tag: 'TossPaymentWeb');
 
     _paymentListener = FirebaseFirestore.instance
         .collection('toss_payments')
@@ -114,14 +105,14 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
             if (data == null) continue;
 
             final status = data['status'] as String?;
-            print('📋 [TossPaymentWeb] Payment status from Firestore: $status');
+            AppLogger.d('Payment status from Firestore: $status', tag: 'TossPaymentWeb');
 
             if (status == 'DONE' || status == 'approved' || status == 'COMPLETED') {
               _isNavigating = true;
               final paymentKey = data['paymentKey'] as String? ?? '';
               final amount = data['totalAmount'] as int? ?? widget.amount;
 
-              print('✅ [TossPaymentWeb] Payment DONE via Firestore');
+              AppLogger.i('Payment DONE via Firestore', tag: 'TossPaymentWeb');
 
               // 결제 창 닫기
               _closePaymentWindow();
@@ -131,12 +122,12 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
               final code = data['errorCode'] as String? ?? 'PAYMENT_FAILED';
               final message = data['errorMessage'] as String? ?? '결제가 실패했습니다';
 
-              print('❌ [TossPaymentWeb] Payment FAILED via Firestore');
+              AppLogger.e('Payment FAILED via Firestore', tag: 'TossPaymentWeb');
               _closePaymentWindow();
               _handleFail(code, message);
             } else if (status == 'CANCELED' || status == 'canceled') {
               _isNavigating = true;
-              print('🚫 [TossPaymentWeb] Payment CANCELED via Firestore');
+              AppLogger.w('Payment CANCELED via Firestore', tag: 'TossPaymentWeb');
               _closePaymentWindow();
               _handleCancel();
             }
@@ -144,7 +135,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
         }
       },
       onError: (error) {
-        print('❌ [TossPaymentWeb] Firestore listener error: $error');
+        AppLogger.e('Firestore listener error: $error', tag: 'TossPaymentWeb');
       },
     );
   }
@@ -185,7 +176,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
       }
 
       final type = data['type'];
-      print('📩 [TossPaymentWeb] Message Type: $type');
+      AppLogger.d('Message Type: $type', tag: 'TossPaymentWeb');
 
       switch (type) {
         case 'TOSS_PAYMENT_SUCCESS':
@@ -193,7 +184,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
           final paymentKey = data['paymentKey'] as String? ?? '';
           final orderId = data['orderId'] as String? ?? widget.orderId;
           final amount = _parseAmount(data['amount']);
-          print('✅ [TossPaymentWeb] Payment SUCCESS via postMessage');
+          AppLogger.i('Payment SUCCESS via postMessage', tag: 'TossPaymentWeb');
           _closePaymentWindow();
           _handleSuccess(paymentKey, orderId, amount);
           break;
@@ -202,14 +193,14 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
           _isNavigating = true;
           final code = data['code'] as String? ?? 'UNKNOWN';
           final message = data['message'] as String? ?? '알 수 없는 오류';
-          print('❌ [TossPaymentWeb] Payment FAIL: $code - $message');
+          AppLogger.e('Payment FAIL: $code - $message', tag: 'TossPaymentWeb');
           _closePaymentWindow();
           _handleFail(code, message);
           break;
 
         case 'TOSS_PAYMENT_CANCEL':
           _isNavigating = true;
-          print('🚫 [TossPaymentWeb] Payment CANCEL');
+          AppLogger.w('Payment CANCEL', tag: 'TossPaymentWeb');
           _closePaymentWindow();
           _handleCancel();
           break;
@@ -217,7 +208,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
     };
 
     html.window.addEventListener('message', _messageListener);
-    print('👂 [TossPaymentWeb] Message listener attached');
+    AppLogger.d('Message listener attached', tag: 'TossPaymentWeb');
   }
 
   /// 새 창에서 결제 페이지 열기
@@ -243,7 +234,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
       },
     ).toString();
 
-    print('🌐 [TossPaymentWeb] Opening payment window: $paymentUrl');
+    AppLogger.d('Opening payment window: $paymentUrl', tag: 'TossPaymentWeb');
 
     // 새 창 열기 (popup)
     _paymentWindow = html.window.open(
@@ -261,7 +252,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
           timer.cancel();
           if (!_isNavigating && mounted) {
             // 창이 닫혔는데 결과가 없으면 사용자가 수동으로 닫은 것
-            print('⚠️ [TossPaymentWeb] Payment window closed by user');
+            AppLogger.w('Payment window closed by user', tag: 'TossPaymentWeb');
             setState(() => _isWaitingForPayment = false);
           }
         }
@@ -297,7 +288,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
     int amount,
     Map<String, dynamic> paymentData,
   ) {
-    print('🎉 [TossPaymentWeb] Payment already approved, returning result');
+    AppLogger.i('Payment already approved, returning result', tag: 'TossPaymentWeb');
 
     if (mounted) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -339,7 +330,7 @@ class _TossPaymentWebScreenState extends ConsumerState<TossPaymentWebScreen> {
       }
     } catch (e) {
       ref.read(isApprovingPaymentProvider.notifier).state = false;
-      print('❌ [TossPaymentWeb] Approval error: $e');
+      AppLogger.e('Approval error: $e', tag: 'TossPaymentWeb');
       _showError('결제 승인 실패: $e');
     }
   }

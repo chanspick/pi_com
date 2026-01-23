@@ -1,5 +1,6 @@
 // lib/features/admin/data/admin_auth_repository.dart
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../../../core/utils/app_logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../../core/models/user_model.dart';
 
@@ -53,22 +54,20 @@ class AdminAuthRepository {
   /// Firestore에서 User 조회 + Admin 체크 (내부 메서드)
   Future<(UserModel?, String)> _checkAdminAndGetUser(String uid) async {
     try {
-      print('🔍 [DEBUG] Checking admin for UID: $uid');
+      AppLogger.d('Checking admin for UID: $uid', tag: 'AdminAuth');
       final doc = await _firestore.collection('users').doc(uid).get();
 
-      print('🔍 [DEBUG] Document exists: ${doc.exists}');
+      AppLogger.d('Document exists: ${doc.exists}', tag: 'AdminAuth');
       if (!doc.exists) {
         await _auth.signOut();
         return (null, '사용자 정보를 찾을 수 없습니다. UID: $uid');
       }
 
       final data = doc.data();
-      print('🔍 [DEBUG] Document data: $data');
-      print('🔍 [DEBUG] isAdmin value: ${data?['isAdmin']}');
-      print('🔍 [DEBUG] isAdmin type: ${data?['isAdmin'].runtimeType}');
+      AppLogger.d('isAdmin value: ${data?['isAdmin']}, type: ${data?['isAdmin'].runtimeType}', tag: 'AdminAuth');
 
       final userModel = UserModel.fromFirestore(doc);
-      print('🔍 [DEBUG] UserModel created - isAdmin: ${userModel.isAdmin}');
+      AppLogger.d('UserModel created - isAdmin: ${userModel.isAdmin}', tag: 'AdminAuth');
 
       if (!userModel.isAdmin) {
         await _auth.signOut();
@@ -81,11 +80,11 @@ class AdminAuthRepository {
           .doc(uid)
           .update({'lastLoginAt': FieldValue.serverTimestamp()});
 
-      print('✅ [DEBUG] Admin check passed!');
+      AppLogger.i('Admin check passed!', tag: 'AdminAuth');
       return (userModel, '');
     } catch (e, stackTrace) {
-      print('❌ [DEBUG] Error: $e');
-      print('❌ [DEBUG] StackTrace: $stackTrace');
+      AppLogger.e('Error: $e', tag: 'AdminAuth');
+      AppLogger.d('StackTrace: $stackTrace', tag: 'AdminAuth');
       await _auth.signOut();
       return (null, '권한 확인 실패: $e');
     }

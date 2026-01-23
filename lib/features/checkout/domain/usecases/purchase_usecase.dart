@@ -9,6 +9,8 @@ import 'package:pi_com/features/order/domain/repositories/order_repository.dart'
 import 'package:pi_com/features/listing/domain/entities/listing_entity.dart';
 import 'package:pi_com/features/price_history/data/repositories/price_history_repository.dart';
 import 'package:pi_com/core/utils/notification_helper.dart';
+import 'package:pi_com/core/constants/app_constants.dart';
+import 'package:pi_com/core/utils/app_logger.dart';
 
 class PurchaseUseCase {
   final OrderRepository _orderRepository;
@@ -31,7 +33,7 @@ class PurchaseUseCase {
     required List<CartItemEntity> items,
     required String shippingAddress,
   }) async {
-    print('🔍 [PurchaseUseCase] 시작 - userId: $userId, items: ${items.length}개');
+    AppLogger.d('시작 - userId: $userId, items: ${items.length}개', tag: 'PurchaseUseCase');
 
     // 판매자별로 아이템 그룹화
     final Map<String, List<CartItemEntity>> itemsBySeller = {};
@@ -42,7 +44,7 @@ class PurchaseUseCase {
       itemsBySeller[item.sellerId]!.add(item);
     }
 
-    print('🔍 [PurchaseUseCase] 판매자 수: ${itemsBySeller.length}');
+    AppLogger.d('판매자 수: ${itemsBySeller.length}', tag: 'PurchaseUseCase');
 
     final timestamp = DateTime.now().millisecondsSinceEpoch;
 
@@ -54,7 +56,7 @@ class PurchaseUseCase {
       final sellerName = sellerItems.first.sellerName;
 
       final totalPrice = sellerItems.fold(0.0, (sum, item) => sum + item.price * item.quantity);
-      final shippingFee = 3000.0; // 판매자당 3000원
+      final shippingFee = AppConstants.defaultShippingFee.toDouble(); // 기본 배송비 상수 사용
 
       final order = OrderEntity(
         orderId: '${timestamp}_$orderIndex', // 판매자별로 고유한 주문 ID
@@ -69,30 +71,20 @@ class PurchaseUseCase {
         shippingAddress: shippingAddress,
       );
 
-      // 🔍 디버깅: 주문 데이터 확인
-      print('═══════════════════════════════════════════════════════');
-      print('📝 [PurchaseUseCase] 주문 생성 시도');
-      print('   orderId: ${order.orderId}');
-      print('   userId: ${order.userId}');
-      print('   sellerId: ${order.sellerId}');
-      print('   sellerName: ${order.sellerName}');
-      print('   totalPrice: ${order.totalPrice}');
-      print('   shippingFee: ${order.shippingFee}');
-      print('   items: ${order.items.length}개');
-      print('═══════════════════════════════════════════════════════');
+      // 디버깅: 주문 데이터 확인
+      AppLogger.d('주문 생성 시도 - orderId: ${order.orderId}, userId: ${order.userId}, sellerId: ${order.sellerId}, sellerName: ${order.sellerName}, totalPrice: ${order.totalPrice}, shippingFee: ${order.shippingFee}, items: ${order.items.length}개', tag: 'PurchaseUseCase');
 
       // 1. 판매자별 주문 생성
       try {
         await _orderRepository.createOrder(order);
-        print('✅ [PurchaseUseCase] 주문 생성 성공: ${order.orderId}');
+        AppLogger.i('주문 생성 성공: ${order.orderId}', tag: 'PurchaseUseCase');
       } catch (e) {
-        print('❌ [PurchaseUseCase] 주문 생성 실패: ${order.orderId}');
-        print('   에러: $e');
+        AppLogger.e('주문 생성 실패: ${order.orderId}, 에러: $e', tag: 'PurchaseUseCase');
         rethrow;
       }
 
-      // ✅ 구매자에게 결제 완료 알림 발송
-      print('📢 [PurchaseUseCase] 구매자 알림 발송 시도...');
+      // 구매자에게 결제 완료 알림 발송
+      AppLogger.d('구매자 알림 발송 시도...', tag: 'PurchaseUseCase');
       try {
         await _notificationHelper.notifyPaymentCompleted(
           buyerId: userId,
@@ -103,25 +95,25 @@ class PurchaseUseCase {
               : '${sellerItems.first.partName} 외 ${sellerItems.length - 1}건',
           totalAmount: (totalPrice + shippingFee).toInt(),
         );
-        print('✅ [PurchaseUseCase] 구매자 알림 발송 성공');
+        AppLogger.i('구매자 알림 발송 성공', tag: 'PurchaseUseCase');
       } catch (e) {
-        print('❌ [PurchaseUseCase] 구매자 알림 발송 실패: $e');
+        AppLogger.e('구매자 알림 발송 실패: $e', tag: 'PurchaseUseCase');
         rethrow;
       }
 
       // 2. 해당 판매자의 listing 상태 업데이트 + 가격 스냅샷 생성
       for (final item in sellerItems) {
-        print('📦 [PurchaseUseCase] listing 상태 업데이트 시도: ${item.listingId}');
+        AppLogger.d('listing 상태 업데이트 시도: ${item.listingId}', tag: 'PurchaseUseCase');
         try {
           await _listingRepository.updateListingStatus(item.listingId, ListingStatus.sold);
-          print('✅ [PurchaseUseCase] listing 상태 업데이트 성공: ${item.listingId}');
+          AppLogger.i('listing 상태 업데이트 성공: ${item.listingId}', tag: 'PurchaseUseCase');
         } catch (e) {
-          print('❌ [PurchaseUseCase] listing 상태 업데이트 실패: ${item.listingId}, 에러: $e');
+          AppLogger.e('listing 상태 업데이트 실패: ${item.listingId}, 에러: $e', tag: 'PurchaseUseCase');
           rethrow;
         }
 
-        // ✅ 판매자에게 매물 판매 완료 알림 발송
-        print('📢 [PurchaseUseCase] 판매자 알림 발송 시도...');
+        // 판매자에게 매물 판매 완료 알림 발송
+        AppLogger.d('판매자 알림 발송 시도...', tag: 'PurchaseUseCase');
         try {
           await _notificationHelper.notifyListingSold(
             sellerId: sellerId,
@@ -129,9 +121,9 @@ class PurchaseUseCase {
             partName: item.partName,
             soldPrice: (item.price * item.quantity).toInt(),
           );
-          print('✅ [PurchaseUseCase] 판매자 알림 발송 성공');
+          AppLogger.i('판매자 알림 발송 성공', tag: 'PurchaseUseCase');
         } catch (e) {
-          print('❌ [PurchaseUseCase] 판매자 알림 발송 실패: $e');
+          AppLogger.e('판매자 알림 발송 실패: $e', tag: 'PurchaseUseCase');
           rethrow;
         }
 

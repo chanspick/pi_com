@@ -1,6 +1,7 @@
 // lib/features/my_page/presentation/screens/profile_edit_screen.dart
 
 import 'package:flutter/material.dart';
+import '../../../../core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -93,7 +94,7 @@ class _ProfileEditScreenState extends ConsumerState<ProfileEditScreen> {
       final downloadUrl = await ref.getDownloadURL();
       return downloadUrl;
     } catch (e) {
-      print('프로필 이미지 업로드 실패: $e');
+      AppLogger.e('프로필 이미지 업로드 실패: $e', tag: 'ProfileEdit');
       return null;
     }
   }

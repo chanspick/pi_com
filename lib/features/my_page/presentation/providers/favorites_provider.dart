@@ -1,6 +1,7 @@
 // lib/features/my_page/presentation/providers/favorites_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/utils/app_logger.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/repositories/favorites_repository.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -48,7 +49,7 @@ final favoritesListingsProvider = FutureProvider.autoDispose<List<Listing>>((ref
     return [];
   }
 
-  print('🔍 [FavoritesProvider] Fetching ${favoritesIds.length} favorite listings');
+  AppLogger.d('Fetching ${favoritesIds.length} favorite listings', tag: 'Favorites');
 
   // Firestore 제한: in 쿼리는 최대 10개까지
   // 10개씩 끊어서 조회
@@ -69,7 +70,7 @@ final favoritesListingsProvider = FutureProvider.autoDispose<List<Listing>>((ref
     // 조회되지 않은 listing ID 추적
     final notFoundIds = batch.where((id) => !foundIds.contains(id)).toList();
     if (notFoundIds.isNotEmpty) {
-      print('⚠️ [FavoritesProvider] Missing listings: $notFoundIds');
+      AppLogger.w('Missing listings: $notFoundIds', tag: 'Favorites');
       missingListingIds.addAll(notFoundIds);
     }
 
@@ -80,20 +81,20 @@ final favoritesListingsProvider = FutureProvider.autoDispose<List<Listing>>((ref
     allListings.addAll(listings);
   }
 
-  // 🔥 자동 정리: 존재하지 않는 listings를 favorites에서 제거
+  // 자동 정리: 존재하지 않는 listings를 favorites에서 제거
   if (missingListingIds.isNotEmpty) {
-    print('🧹 [FavoritesProvider] Auto-cleaning ${missingListingIds.length} missing listings from favorites');
+    AppLogger.d('Auto-cleaning ${missingListingIds.length} missing listings from favorites', tag: 'Favorites');
     for (final listingId in missingListingIds) {
       try {
         await repository.removeFavorite(currentUser.uid, listingId);
-        print('  ✅ Removed $listingId from favorites');
+        AppLogger.d('Removed $listingId from favorites', tag: 'Favorites');
       } catch (e) {
-        print('  ❌ Failed to remove $listingId: $e');
+        AppLogger.e('Failed to remove $listingId: $e', tag: 'Favorites');
       }
     }
   }
 
-  print('✅ [FavoritesProvider] Returning ${allListings.length} valid listings');
+  AppLogger.d('Returning ${allListings.length} valid listings', tag: 'Favorites');
   return allListings;
 });
 

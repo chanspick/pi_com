@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '../utils/app_logger.dart';
 
 /// 다크모드 상태 관리 Provider
 class ThemeNotifier extends StateNotifier<ThemeMode> {
@@ -26,7 +27,7 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
         );
       }
     } catch (e) {
-      debugPrint('테마 모드 로드 실패: $e');
+      AppLogger.e('테마 모드 로드 실패: $e', tag: 'Theme');
     }
   }
 
@@ -44,7 +45,7 @@ class ThemeNotifier extends StateNotifier<ThemeMode> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_themeModeKey, mode.toString());
     } catch (e) {
-      debugPrint('테마 모드 저장 실패: $e');
+      AppLogger.e('테마 모드 저장 실패: $e', tag: 'Theme');
     }
   }
 

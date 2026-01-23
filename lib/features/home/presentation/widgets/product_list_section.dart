@@ -1,6 +1,7 @@
 // lib/features/home/presentation/widgets/product_list_section.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/utils/app_logger.dart';
 import '../../../listing/presentation/providers/listing_provider.dart';
 import '../../../listing/presentation/widgets/listing_card.dart';
 import '../../../../core/constants/routes.dart';
@@ -50,9 +51,9 @@ class ProductListSection extends ConsumerWidget {
           listingsAsync.when(
             data: (listings) {
               // 🔍 디버그: Home 화면에 표시되는 listings 확인
-              print('🏠 [Home] Loaded ${listings.length} listings:');
+              AppLogger.d('Loaded ${listings.length} listings', tag: 'Home');
               for (var listing in listings) {
-                print('   - ${listing.listingId}: ${listing.brand} ${listing.modelName}');
+                AppLogger.d('- ${listing.listingId}: ${listing.brand} ${listing.modelName}', tag: 'Home');
               }
 
               if (listings.isEmpty) {

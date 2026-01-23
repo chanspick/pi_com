@@ -4,6 +4,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:pi_com/features/cart/data/models/cart_item_model.dart';
+import 'package:pi_com/core/utils/app_logger.dart';
 import 'cart_remote_datasource.dart';
 
 class CartRemoteDataSourceImpl implements CartRemoteDataSource {
@@ -38,16 +39,16 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
       if (_userId == null) {
         throw Exception('로그인이 필요합니다');
       }
-      print('장바구니 조회 중... userId: $_userId');
+      AppLogger.d('장바구니 조회 중... userId: $_userId', tag: 'Cart');
       return _cartCollection().snapshots().map((snapshot) {
-        print('장바구니 아이템 개수: ${snapshot.docs.length}');
+        AppLogger.d('장바구니 아이템 개수: ${snapshot.docs.length}', tag: 'Cart');
         return snapshot.docs.map((doc) => CartItemModel.fromFirestore(doc.data())).toList();
       }).handleError((error) {
-        print('장바구니 조회 에러: $error');
+        AppLogger.e('장바구니 조회 에러: $error', tag: 'Cart');
         throw error;
       });
     } catch (e) {
-      print('장바구니 조회 실패: $e');
+      AppLogger.e('장바구니 조회 실패: $e', tag: 'Cart');
       rethrow;
     }
   }
@@ -99,13 +100,13 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
 
         // listing이 없거나 sold 상태인 경우 장바구니에서 제거
         if (!listingDoc.exists) {
-          print('⚠️ [Cart] Listing not found, removing from cart: $listingId');
+          AppLogger.w('Listing not found, removing from cart: $listingId', tag: 'Cart');
           await removeFromCart(listingId);
           removedItems.add(cartItem);
         } else {
           final status = listingDoc.data()?['status'] as String?;
           if (status != 'available') {
-            print('⚠️ [Cart] Listing is $status, removing from cart: $listingId');
+            AppLogger.w('Listing is $status, removing from cart: $listingId', tag: 'Cart');
             await removeFromCart(listingId);
             removedItems.add(cartItem);
           }
@@ -113,12 +114,12 @@ class CartRemoteDataSourceImpl implements CartRemoteDataSource {
       }
 
       if (removedItems.isNotEmpty) {
-        print('🛒 [Cart] Removed ${removedItems.length} sold items from cart');
+        AppLogger.i('Removed ${removedItems.length} sold items from cart', tag: 'Cart');
       }
 
       return removedItems;
     } catch (e) {
-      print('❌ [Cart] Error removing sold items: $e');
+      AppLogger.e('Error removing sold items: $e', tag: 'Cart');
       rethrow;
     }
   }

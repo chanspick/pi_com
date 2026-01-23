@@ -1,6 +1,7 @@
 // lib/features/cart/presentation/providers/cart_provider.dart
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:pi_com/core/constants/app_constants.dart';
 import 'package:pi_com/features/cart/data/datasources/cart_remote_datasource.dart';
 import 'package:pi_com/features/cart/data/datasources/cart_remote_datasource_impl.dart';
 import 'package:pi_com/features/cart/data/repositories/cart_repository_impl.dart';
@@ -125,15 +126,15 @@ final sellerTotalPriceProvider = Provider.family<int, String>((ref, sellerId) {
   return sellerItems.fold(0, (sum, item) => sum + item.totalPrice);
 });
 
-/// 판매자별 배송비 (판매자당 3000원)
+/// 판매자별 배송비 (판매자당 기본 배송비)
 final sellerShippingFeeProvider = Provider.family<int, String>((ref, sellerId) {
   final groupedItems = ref.watch(cartItemsBySellerProvider);
   final sellerItems = groupedItems[sellerId] ?? [];
-  return sellerItems.isEmpty ? 0 : 3000;
+  return sellerItems.isEmpty ? 0 : AppConstants.defaultShippingFee;
 });
 
 /// 총 배송비 (모든 판매자)
 final totalShippingFeeProvider = Provider<int>((ref) {
   final groupedItems = ref.watch(cartItemsBySellerProvider);
-  return groupedItems.keys.length * 3000;
+  return groupedItems.keys.length * AppConstants.defaultShippingFee;
 });

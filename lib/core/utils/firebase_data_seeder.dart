@@ -2,6 +2,7 @@
 // Flutter 앱 내에서 Firebase에 RAM/SSD 데이터를 추가하는 유틸리티
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'app_logger.dart';
 import 'dart:math';
 
 class FirebaseDataSeeder {
@@ -10,40 +11,36 @@ class FirebaseDataSeeder {
 
   // ==================== 메인 실행 함수 ====================
   Future<void> seedRamAndSsdData() async {
-    print('🚀 Firebase RAM/SSD 데이터 추가 시작...\n');
+    AppLogger.i('Firebase RAM/SSD 데이터 추가 시작...', tag: 'DataSeeder');
 
     try {
       // 1. BaseParts - RAM 추가
-      print('📦 BaseParts - RAM 추가 중...');
+      AppLogger.d('BaseParts - RAM 추가 중...', tag: 'DataSeeder');
       final basePartsRam = _generateBasePartsRam();
       await _addBaseParts(basePartsRam);
-      print('✓ BaseParts RAM ${basePartsRam.length}개 추가 완료\n');
+      AppLogger.i('BaseParts RAM ${basePartsRam.length}개 추가 완료', tag: 'DataSeeder');
 
       // 2. BaseParts - SSD 추가
-      print('📦 BaseParts - SSD 추가 중...');
+      AppLogger.d('BaseParts - SSD 추가 중...', tag: 'DataSeeder');
       final basePartsSsd = _generateBasePartsSsd();
       await _addBaseParts(basePartsSsd);
-      print('✓ BaseParts SSD ${basePartsSsd.length}개 추가 완료\n');
+      AppLogger.i('BaseParts SSD ${basePartsSsd.length}개 추가 완료', tag: 'DataSeeder');
 
       // 3. Parts - RAM 샘플 추가
-      print('📦 Parts - RAM 샘플 추가 중...');
+      AppLogger.d('Parts - RAM 샘플 추가 중...', tag: 'DataSeeder');
       final partsRam = _generatePartsRam(basePartsRam);
       await _addParts(partsRam);
-      print('✓ Parts RAM ${partsRam.length}개 추가 완료\n');
+      AppLogger.i('Parts RAM ${partsRam.length}개 추가 완료', tag: 'DataSeeder');
 
       // 4. Parts - SSD 샘플 추가
-      print('📦 Parts - SSD 샘플 추가 중...');
+      AppLogger.d('Parts - SSD 샘플 추가 중...', tag: 'DataSeeder');
       final partsSsd = _generatePartsSsd(basePartsSsd);
       await _addParts(partsSsd);
-      print('✓ Parts SSD ${partsSsd.length}개 추가 완료\n');
+      AppLogger.i('Parts SSD ${partsSsd.length}개 추가 완료', tag: 'DataSeeder');
 
-      print('✅ 모든 데이터 추가 완료!');
-      print('   - BaseParts RAM: ${basePartsRam.length}개');
-      print('   - BaseParts SSD: ${basePartsSsd.length}개');
-      print('   - Parts RAM: ${partsRam.length}개');
-      print('   - Parts SSD: ${partsSsd.length}개');
+      AppLogger.i('모든 데이터 추가 완료! BaseParts RAM: ${basePartsRam.length}, BaseParts SSD: ${basePartsSsd.length}, Parts RAM: ${partsRam.length}, Parts SSD: ${partsSsd.length}', tag: 'DataSeeder');
     } catch (error) {
-      print('❌ 오류 발생: $error');
+      AppLogger.e('오류 발생: $error', tag: 'DataSeeder');
       rethrow;
     }
   }
@@ -61,7 +58,7 @@ class FirebaseDataSeeder {
       // Firestore batch는 최대 500개 제한
       if (count % 500 == 0) {
         await batch.commit();
-        print('  - $count개 배치 커밋 완료');
+        AppLogger.d('$count개 배치 커밋 완료', tag: 'DataSeeder');
       }
     }
 
@@ -83,7 +80,7 @@ class FirebaseDataSeeder {
       // Firestore batch는 최대 500개 제한
       if (count % 500 == 0) {
         await batch.commit();
-        print('  - $count개 배치 커밋 완료');
+        AppLogger.d('$count개 배치 커밋 완료', tag: 'DataSeeder');
       }
     }
 

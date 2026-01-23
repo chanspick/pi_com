@@ -1,14 +1,15 @@
 // lib/main.dart
 
-import 'dart:async';  // ✅ TimeoutException을 위해 추가
+import 'dart:async';  // TimeoutException을 위해 추가
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';  // ✅ 추가
-import 'package:flutter_dotenv/flutter_dotenv.dart';  // ✅ 추가
-import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';  // ✅ 카카오 SDK
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:kakao_flutter_sdk_common/kakao_flutter_sdk_common.dart';
+import 'package:pi_com/core/utils/app_logger.dart';
 
 import 'firebase_options.dart';
 import 'app.dart';
@@ -23,26 +24,26 @@ void main() async {
       await dotenv.load(fileName: ".env").timeout(
         const Duration(seconds: 5),
         onTimeout: () {
-          debugPrint('⚠️ .env file loading timed out');
+          AppLogger.w('.env file loading timed out', tag: 'Main');
         },
       );
-      debugPrint('✅ .env file loaded');
+      AppLogger.i('.env file loaded', tag: 'Main');
     } catch (e) {
-      debugPrint('⚠️ .env file not found: $e');
+      AppLogger.w('.env file not found: $e', tag: 'Main');
     }
   } else {
-    debugPrint('ℹ️ .env loading skipped on web');
+    AppLogger.i('.env loading skipped on web', tag: 'Main');
   }
 
   // ===== 카카오 SDK 초기화 =====
   try {
     KakaoSdk.init(
-      nativeAppKey: '8e75eecf0338c9b84861f8000b664336',
-      javaScriptAppKey: 'aabc80253972e0504d05951a66373200',
+      nativeAppKey: dotenv.env['KAKAO_NATIVE_KEY'] ?? '',
+      javaScriptAppKey: dotenv.env['KAKAO_JS_KEY'] ?? '',
     );
-    debugPrint('✅ Kakao SDK initialized');
+    AppLogger.i('Kakao SDK initialized', tag: 'Main');
   } catch (e) {
-    debugPrint('⚠️ Kakao SDK initialization failed: $e');
+    AppLogger.w('Kakao SDK initialization failed: $e', tag: 'Main');
   }
 
   // ===== Firebase 초기화 =====
@@ -55,9 +56,9 @@ void main() async {
         throw TimeoutException('Firebase initialization timed out');
       },
     );
-    debugPrint('✅ Firebase initialized');
+    AppLogger.i('Firebase initialized', tag: 'Main');
   } catch (e) {
-    debugPrint('❌ Firebase initialization failed: $e');
+    AppLogger.e('Firebase initialization failed: $e', tag: 'Main');
     // Firebase 실패는 치명적이므로 에러 표시하고 계속 진행
   }
 
@@ -68,18 +69,18 @@ void main() async {
       if (kIsWeb) {
         // 웹에서는 reCAPTCHA 키가 유효한 경우에만 활성화
         // 개발 중에는 비활성화
-        debugPrint('⚠️ App Check skipped on web (configure reCAPTCHA key in production)');
+        AppLogger.w('App Check skipped on web (configure reCAPTCHA key in production)', tag: 'Main');
       } else {
         await FirebaseAppCheck.instance.activate().timeout(
           const Duration(seconds: 5),
         );
-        debugPrint('✅ Firebase App Check activated (Android)');
+        AppLogger.i('Firebase App Check activated (Android)', tag: 'Main');
       }
     } catch (e) {
-      debugPrint('⚠️ Firebase App Check activation failed: $e');
+      AppLogger.w('Firebase App Check activation failed: $e', tag: 'Main');
     }
   } else {
-    debugPrint('⚠️ Firebase App Check disabled (Debug mode)');
+    AppLogger.w('Firebase App Check disabled (Debug mode)', tag: 'Main');
   }
 
   // ===== Firestore 설정 =====
@@ -90,26 +91,26 @@ void main() async {
         persistenceEnabled: false,  // 로컬 캐시 완전 비활성화
         cacheSizeBytes: 1048576,    // 최소 캐시 (1MB)
       );
-      debugPrint('✅ Firestore settings applied');
+      AppLogger.i('Firestore settings applied', tag: 'Main');
     } else {
-      debugPrint('ℹ️ Firestore persistence settings skipped on web');
+      AppLogger.i('Firestore persistence settings skipped on web', tag: 'Main');
     }
 
-    // 🔥 기존 캐시 삭제 - 웹에서는 작동하지 않으므로 스킵
+    // 기존 캐시 삭제 - 웹에서는 작동하지 않으므로 스킵
     if (!kIsWeb) {
       try {
         await FirebaseFirestore.instance.clearPersistence().timeout(
           const Duration(seconds: 3),
         );
-        debugPrint('✅ Firestore cache cleared');
+        AppLogger.i('Firestore cache cleared', tag: 'Main');
       } catch (e) {
-        debugPrint('⚠️ Failed to clear cache: $e');
+        AppLogger.w('Failed to clear cache: $e', tag: 'Main');
       }
     } else {
-      debugPrint('ℹ️ Firestore cache clearing skipped on web');
+      AppLogger.i('Firestore cache clearing skipped on web', tag: 'Main');
     }
   } catch (e) {
-    debugPrint('⚠️ Firestore configuration failed: $e');
+    AppLogger.w('Firestore configuration failed: $e', tag: 'Main');
   }
 
   // ✅ ProviderScope 추가

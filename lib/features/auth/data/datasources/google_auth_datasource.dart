@@ -3,6 +3,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:pi_com/core/utils/app_logger.dart' show AppLogger;
 
 class GoogleAuthDataSource {
   // ✅ 6.2.1 버전에서는 이렇게만 해도 충분
@@ -24,56 +25,56 @@ class GoogleAuthDataSource {
 
   Future<User?> signIn() async {
     if (kIsWeb) {
-      debugPrint('⚠️ Web: Using popup instead of GoogleSignIn');
+      AppLogger.w('Web: Using popup instead of GoogleSignIn', tag: 'GoogleAuth');
       try {
         GoogleAuthProvider googleProvider = GoogleAuthProvider();
         final UserCredential userCredential =
         await _auth.signInWithPopup(googleProvider);
-        debugPrint('✅ Web Sign-In Success: ${userCredential.user?.email}');
+        AppLogger.i('Web Sign-In Success: ${userCredential.user?.email}', tag: 'GoogleAuth');
         return userCredential.user;
       } catch (e) {
-        debugPrint('❌ Web Sign-In failed: $e');
+        AppLogger.e('Web Sign-In failed: $e', tag: 'GoogleAuth');
         rethrow;
       }
     }
 
     // 모바일 로그인
     try {
-      debugPrint('🔍 [1/5] Starting Google Sign-In...');
+      AppLogger.d('[1/5] Starting Google Sign-In...', tag: 'GoogleAuth');
 
       // ✅ 중요: 기존 로그인 상태 확인
       await _googleSignIn.signOut(); // 이전 세션 정리
 
-      debugPrint('🔍 [2/5] Calling _googleSignIn.signIn()...');
+      AppLogger.d('[2/5] Calling _googleSignIn.signIn()...', tag: 'GoogleAuth');
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) {
-        debugPrint('⚠️ [3/5] User canceled sign-in');
+        AppLogger.w('[3/5] User canceled sign-in', tag: 'GoogleAuth');
         return null;
       }
-      debugPrint('✅ [3/5] GoogleSignInAccount obtained: ${googleUser.email}');
+      AppLogger.i('[3/5] GoogleSignInAccount obtained: ${googleUser.email}', tag: 'GoogleAuth');
 
-      debugPrint('🔍 [4/5] Getting authentication...');
+      AppLogger.d('[4/5] Getting authentication...', tag: 'GoogleAuth');
       final GoogleSignInAuthentication googleAuth =
       await googleUser.authentication;
 
-      debugPrint('🔍 accessToken: ${googleAuth.accessToken != null ? "exists" : "null"}');
-      debugPrint('🔍 idToken: ${googleAuth.idToken != null ? "exists" : "null"}');
+      AppLogger.d('accessToken: ${googleAuth.accessToken != null ? "exists" : "null"}', tag: 'GoogleAuth');
+      AppLogger.d('idToken: ${googleAuth.idToken != null ? "exists" : "null"}', tag: 'GoogleAuth');
 
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      debugPrint('🔍 [5/5] Signing in with credential...');
+      AppLogger.d('[5/5] Signing in with credential...', tag: 'GoogleAuth');
       final UserCredential userCredential =
       await _auth.signInWithCredential(credential);
 
-      debugPrint('✅ Google Sign-In Success: ${userCredential.user?.email}');
+      AppLogger.i('Google Sign-In Success: ${userCredential.user?.email}', tag: 'GoogleAuth');
       return userCredential.user;
     } catch (e, stackTrace) {
-      debugPrint('❌ Google Sign-In failed: $e');
-      debugPrint('❌ StackTrace: $stackTrace');
+      AppLogger.e('Google Sign-In failed: $e', tag: 'GoogleAuth');
+      AppLogger.e('StackTrace: $stackTrace', tag: 'GoogleAuth');
       rethrow;
     }
   }
@@ -84,9 +85,9 @@ class GoogleAuthDataSource {
       if (!kIsWeb) {
         await _googleSignIn.signOut();
       }
-      debugPrint('✅ Sign-Out Success');
+      AppLogger.i('Sign-Out Success', tag: 'GoogleAuth');
     } catch (e) {
-      debugPrint('❌ Sign-Out failed: $e');
+      AppLogger.e('Sign-Out failed: $e', tag: 'GoogleAuth');
       rethrow;
     }
   }

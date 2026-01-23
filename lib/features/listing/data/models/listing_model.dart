@@ -1,6 +1,7 @@
 // lib/features/listing/data/models/listing_model.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/utils/app_logger.dart';
 import '../../domain/entities/listing_entity.dart';
 
 class ListingModel {
@@ -41,7 +42,7 @@ class ListingModel {
   });
 
   factory ListingModel.fromFirestore(DocumentSnapshot doc) {
-    print('🔍 [ListingModel] Creating from Firestore doc ID: ${doc.id}');
+    AppLogger.d('Creating from Firestore doc ID: ${doc.id}', tag: 'ListingModel');
     try {
       // 문서 데이터 확인
       if (!doc.exists) {
@@ -55,8 +56,8 @@ class ListingModel {
         throw Exception('Document data is null: ${doc.id}');
       }
 
-      print('🔍 [ListingModel] Parsing document: ${doc.id}');
-      print('📋 [ListingModel] Data fields: ${data.keys.toList()}');
+      AppLogger.d('Parsing document: ${doc.id}', tag: 'ListingModel');
+      AppLogger.d('Data fields: ${data.keys.toList()}', tag: 'ListingModel');
 
       // imageUrls 안전하게 파싱
       final imageUrlsRaw = data['imageUrls'];
@@ -65,7 +66,7 @@ class ListingModel {
         imageUrls = imageUrlsRaw.map((e) => e.toString()).toList();
       } else {
         imageUrls = [];
-        print('⚠️ [ListingModel] No imageUrls found, using empty list');
+        AppLogger.w('No imageUrls found, using empty list', tag: 'ListingModel');
       }
 
       // 필수 필드 검증
@@ -94,13 +95,13 @@ class ListingModel {
         sourceUrl: data['sourceUrl'],  // 추가
       );
 
-      print('✅ [ListingModel] Successfully created model for: ${model.listingId}');
+      AppLogger.d('Successfully created model for: ${model.listingId}', tag: 'ListingModel');
       return model;
 
     } catch (e, stackTrace) {
-      print('❌ [ListingModel] Failed to parse document: ${doc.id}');
-      print('Error: $e');
-      print('StackTrace: $stackTrace');
+      AppLogger.e('Failed to parse document: ${doc.id}', tag: 'ListingModel');
+      AppLogger.e('Error: $e', tag: 'ListingModel');
+      AppLogger.d('StackTrace: $stackTrace', tag: 'ListingModel');
       rethrow;
     }
   }

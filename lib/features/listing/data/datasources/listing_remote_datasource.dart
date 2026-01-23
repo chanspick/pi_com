@@ -1,6 +1,7 @@
 // lib/features/listing/data/datasources/listing_remote_datasource.dart
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../../../core/utils/app_logger.dart';
 import '../models/listing_model.dart';
 import '../../domain/entities/listing_entity.dart';
 
@@ -54,8 +55,8 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
   @override
   Stream<ListingModel> getListing(String listingId) {
     // 로깅 추가: 조회하는 listingId 확인 + 호출 스택
-    print('🔍 [ListingDataSource] Fetching listing with ID: $listingId');
-    print('📞 [ListingDataSource] Called from:\n${StackTrace.current.toString().split('\n').take(5).join('\n')}');
+    AppLogger.d('Fetching listing with ID: $listingId', tag: 'ListingDataSource');
+    AppLogger.d('Called from:\n${StackTrace.current.toString().split('\n').take(5).join('\n')}', tag: 'ListingDataSource');
 
     return _firestore
         .collection('listings')
@@ -64,25 +65,25 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
         .map((doc) {
       // 문서 존재 여부 확인
       if (!doc.exists) {
-        print('❌ [ListingDataSource] Document not found: $listingId');
-        print('💡 Tip: Firebase Console에서 listings/$listingId 경로를 확인하세요');
+        AppLogger.e('Document not found: $listingId', tag: 'ListingDataSource');
+        AppLogger.d('Tip: Firebase Console에서 listings/$listingId 경로를 확인하세요', tag: 'ListingDataSource');
         throw Exception('Listing not found: $listingId');
       }
 
       // 문서 데이터 확인
-      print('✅ [ListingDataSource] Document found: $listingId');
+      AppLogger.d('Document found: $listingId', tag: 'ListingDataSource');
 
       try {
         // 데이터 파싱 시도
         final model = ListingModel.fromFirestore(doc);
-        print('✅ [ListingDataSource] Successfully parsed listing: ${model.listingId}');
+        AppLogger.d('Successfully parsed listing: ${model.listingId}', tag: 'ListingDataSource');
         return model;
       } catch (e, stackTrace) {
         // 파싱 에러 상세 로그
-        print('❌ [ListingDataSource] Parse error for listing $listingId');
-        print('Error: $e');
-        print('Data: ${doc.data()}');
-        print('StackTrace: $stackTrace');
+        AppLogger.e('Parse error for listing $listingId', tag: 'ListingDataSource');
+        AppLogger.e('Error: $e', tag: 'ListingDataSource');
+        AppLogger.d('Data: ${doc.data()}', tag: 'ListingDataSource');
+        AppLogger.d('StackTrace: $stackTrace', tag: 'ListingDataSource');
         throw Exception('Failed to parse listing $listingId: $e');
       }
     });
@@ -97,7 +98,7 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
     String? searchQuery,
     bool includeAllStatuses = false,
   }) async {
-    print('⚠️ [DEPRECATED] getListings() called - use getListingsPaginated() instead');
+    AppLogger.w('[DEPRECATED] getListings() called - use getListingsPaginated() instead', tag: 'ListingDataSource');
 
     // 🎯 Admin용: includeAllStatuses면 더 많이 가져오기
     final limit = includeAllStatuses ? 500 : 20;
@@ -126,9 +127,9 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
     DocumentSnapshot? lastDocument,
     bool useCache = true,
   }) async {
-    print('🔍 [ListingDataSource] Fetching listings (paginated)');
-    print('   Category: $category, Sort: $sortBy, Search: $searchQuery');
-    print('   Limit: $limit, UseCache: $useCache, HasLastDoc: ${lastDocument != null}');
+    AppLogger.d('Fetching listings (paginated)', tag: 'ListingDataSource');
+    AppLogger.d('Category: $category, Sort: $sortBy, Search: $searchQuery', tag: 'ListingDataSource');
+    AppLogger.d('Limit: $limit, UseCache: $useCache, HasLastDoc: ${lastDocument != null}', tag: 'ListingDataSource');
 
     // 쿼리 빌더 시작
     Query query = _firestore.collection('listings');
@@ -166,7 +167,7 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
     final source = useCache ? Source.serverAndCache : Source.server;
     final snapshot = await query.get(GetOptions(source: source));
 
-    print('📊 [ListingDataSource] Fetched ${snapshot.docs.length} documents from ${source.name}');
+    AppLogger.d('Fetched ${snapshot.docs.length} documents from ${source.name}', tag: 'ListingDataSource');
 
     // 7️⃣ hasMore 체크
     final hasMore = snapshot.docs.length > limit;
@@ -177,7 +178,7 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
       try {
         return ListingModel.fromFirestore(doc);
       } catch (e) {
-        print('❌ [ListingDataSource] Failed to parse listing ${doc.id}: $e');
+        AppLogger.e('Failed to parse listing ${doc.id}: $e', tag: 'ListingDataSource');
         rethrow;
       }
     }).toList();
@@ -195,10 +196,10 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
                brandLower.contains(query) ||
                combinedName.contains(query);
       }).toList();
-      print('🔍 [ListingDataSource] Filtered to ${listings.length} listings matching: $searchQuery');
+      AppLogger.d('Filtered to ${listings.length} listings matching: $searchQuery', tag: 'ListingDataSource');
     }
 
-    print('✅ [ListingDataSource] Returning ${listings.length} listings, hasMore: $hasMore');
+    AppLogger.d('Returning ${listings.length} listings, hasMore: $hasMore', tag: 'ListingDataSource');
 
     return ListingPaginationResult(
       listings: listings,
@@ -252,12 +253,12 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
     // 🔍 디버깅: 현재 listing 상태 확인
     final currentStatus = listingData['status'];
     final sellerId = listingData['sellerId'];
-    print('═══════════════════════════════════════════════════════');
-    print('🔍 [updateListingStatus] listingId: $listingId');
-    print('📊 현재 status: $currentStatus');
-    print('👤 sellerId: $sellerId');
-    print('🎯 변경하려는 status: ${status.name}');
-    print('═══════════════════════════════════════════════════════');
+    AppLogger.d('═══════════════════════════════════════════════════════', tag: 'ListingDataSource');
+    AppLogger.d('updateListingStatus listingId: $listingId', tag: 'ListingDataSource');
+    AppLogger.d('현재 status: $currentStatus', tag: 'ListingDataSource');
+    AppLogger.d('sellerId: $sellerId', tag: 'ListingDataSource');
+    AppLogger.d('변경하려는 status: ${status.name}', tag: 'ListingDataSource');
+    AppLogger.d('═══════════════════════════════════════════════════════', tag: 'ListingDataSource');
 
     // Listing 상태 업데이트
     try {
@@ -265,9 +266,9 @@ class ListingRemoteDataSourceImpl implements ListingRemoteDataSource {
         'status': status.name,
         if (status == ListingStatus.sold) 'soldAt': FieldValue.serverTimestamp(),
       });
-      print('✅ [updateListingStatus] Firestore 업데이트 성공');
+      AppLogger.i('Firestore 업데이트 성공 for listingId: $listingId', tag: 'ListingDataSource');
     } catch (e) {
-      print('❌ [updateListingStatus] Firestore 업데이트 실패: $e');
+      AppLogger.e('Firestore 업데이트 실패: $e', tag: 'ListingDataSource');
       rethrow;
     }
 

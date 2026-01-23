@@ -1,6 +1,7 @@
 // lib/features/listing/presentation/screens/listing_detail_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import '../../../../core/utils/app_logger.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/listing_provider.dart';
@@ -538,13 +539,13 @@ class ListingDetailScreen extends ConsumerWidget {
 
     // "listing not found" 에러인 경우에만 자동 제거
     if (errorStr.contains('listing not found') || errorStr.contains('document not found')) {
-      print('🧹 [ListingDetailScreen] Auto-removing missing listing from favorites: $listingId');
+      AppLogger.i('Auto-removing missing listing from favorites: $listingId', tag: 'ListingDetail');
 
       final actions = ref.read(favoritesActionsProvider);
       if (actions != null) {
         // 비동기 처리 (에러 무시)
         actions.removeFavorite(listingId).catchError((e) {
-          print('  ❌ Failed to remove from favorites: $e');
+          AppLogger.e('Failed to remove from favorites: $e', tag: 'ListingDetail');
         });
       }
     }

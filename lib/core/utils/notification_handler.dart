@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/notification_model.dart';
+import 'app_logger.dart';
 import '../constants/routes.dart';
 
 /// 알림 탭 처리 핸들러
@@ -31,7 +32,7 @@ class NotificationHandler {
         'readAt': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      debugPrint('Failed to mark notification as read: $e');
+      AppLogger.e('Failed to mark notification as read: $e', tag: 'Notification');
     }
   }
 
