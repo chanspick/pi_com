@@ -5,6 +5,23 @@ import * as admin from "firebase-admin";
 
 const db = admin.firestore();
 
+// 배치 처리 제한 - 한 번에 처리할 최대 문서 수
+export const BATCH_SIZE = 100;
+
+/**
+ * 배송완료 주문 쿼리 함수 (테스트 가능)
+ * 배치 limit이 적용된 쿼리 실행
+ */
+export async function queryDeliveredOrdersWithLimit() {
+  const snapshot = await db
+    .collection("orders")
+    .where("status", "==", "delivered")
+    .limit(BATCH_SIZE)
+    .get();
+  console.log(`Processing ${snapshot.size} documents (batch size: ${BATCH_SIZE})`);
+  return snapshot;
+}
+
 /**
  * 정산 및 구매확정 알림 스케줄러
  * 매일 10:00 (KST) 실행하여 구매확정/정산 관련 알림 발송
@@ -20,13 +37,10 @@ export const checkSettlementNotifications = functions
     today.setHours(0, 0, 0, 0);
 
     try {
-      // Orders 컬렉션에서 배송완료 상태인 주문 조회
-      const ordersSnapshot = await db
-        .collection("orders")
-        .where("status", "==", "delivered")
-        .get();
+      // Orders 컬렉션에서 배송완료 상태인 주문 조회 (배치 limit 적용)
+      const ordersSnapshot = await queryDeliveredOrdersWithLimit();
 
-      console.log(`Found ${ordersSnapshot.size} delivered orders`);
+      console.log(`Found ${ordersSnapshot.size} delivered orders (batch size: ${BATCH_SIZE})`);
 
       const notifications: Promise<any>[] = [];
       const autoConfirmUpdates: Promise<any>[] = [];

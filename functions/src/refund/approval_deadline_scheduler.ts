@@ -5,6 +5,23 @@ import * as admin from "firebase-admin";
 
 const db = admin.firestore();
 
+// 배치 처리 제한 - 한 번에 처리할 최대 문서 수
+export const BATCH_SIZE = 100;
+
+/**
+ * 대기 중인 환불 요청 쿼리 함수 (테스트 가능)
+ * 배치 limit이 적용된 쿼리 실행
+ */
+export async function queryPendingRefundsWithLimit() {
+  const snapshot = await db
+    .collection("refundRequests")
+    .where("status", "==", "pending")
+    .limit(BATCH_SIZE)
+    .get();
+  console.log(`Processing ${snapshot.size} documents (batch size: ${BATCH_SIZE})`);
+  return snapshot;
+}
+
 /**
  * 환불 승인 기한 알림 스케줄러
  * 매일 09:00 (KST) 실행하여 승인 기한이 임박하거나 경과한 환불에 대해 알림
@@ -22,13 +39,10 @@ export const notifyRefundApprovalDeadline = functions
     today.setHours(0, 0, 0, 0);
 
     try {
-      // 승인 대기 중인 환불 조회
-      const refundsSnapshot = await db
-        .collection("refundRequests")
-        .where("status", "==", "pending")
-        .get();
+      // 승인 대기 중인 환불 조회 (배치 limit 적용)
+      const refundsSnapshot = await queryPendingRefundsWithLimit();
 
-      console.log(`승인 대기 중인 환불 ${refundsSnapshot.size}건 발견`);
+      console.log(`승인 대기 중인 환불 ${refundsSnapshot.size}건 발견 (batch size: ${BATCH_SIZE})`);
 
       const notifications: Promise<any>[] = [];
 
