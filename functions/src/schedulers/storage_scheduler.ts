@@ -5,6 +5,23 @@ import * as admin from "firebase-admin";
 
 const db = admin.firestore();
 
+// 배치 처리 제한 - 한 번에 처리할 최대 문서 수
+export const BATCH_SIZE = 100;
+
+/**
+ * DragonBalls 쿼리 함수 (테스트 가능)
+ * 배치 limit이 적용된 쿼리 실행
+ */
+export async function queryDragonBallsWithLimit() {
+  const snapshot = await db
+    .collection("dragonBalls")
+    .where("status", "in", ["active", "rental"])
+    .limit(BATCH_SIZE)
+    .get();
+  console.log(`Processing ${snapshot.size} documents (batch size: ${BATCH_SIZE})`);
+  return snapshot;
+}
+
 /**
  * 보관 서비스 알림 스케줄러
  * 매일 09:00 (KST) 실행하여 보관 기간별 알림 발송
@@ -20,13 +37,10 @@ export const checkStorageNotifications = functions
     today.setHours(0, 0, 0, 0);
 
     try {
-      // DragonBall 컬렉션에서 active 상태인 보관 아이템 조회
-      const dragonBallsSnapshot = await db
-        .collection("dragonBalls")
-        .where("status", "in", ["active", "rental"])
-        .get();
+      // DragonBall 컬렉션에서 active 상태인 보관 아이템 조회 (배치 limit 적용)
+      const dragonBallsSnapshot = await queryDragonBallsWithLimit();
 
-      console.log(`Found ${dragonBallsSnapshot.size} active storage items`);
+      console.log(`Found ${dragonBallsSnapshot.size} active storage items (batch size: ${BATCH_SIZE})`);
 
       const notifications: Promise<any>[] = [];
 
