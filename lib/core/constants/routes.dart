@@ -6,6 +6,8 @@ class Routes {
 
   // Auth
   static const String auth = '/auth';
+  static const String consent = '/consent';
+  static const String accountDelete = '/settings/account-delete';
 
   // Home
   static const String home = '/';

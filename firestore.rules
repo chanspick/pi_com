@@ -58,6 +58,14 @@ service cloud.firestore {
         allow read: if isOwner(userId);
         allow write: if isOwner(userId);
       }
+
+      // Consents 서브컬렉션 - 사용자 동의 정보 (Play Store 정책 준수)
+      match /consents/{consentId} {
+        allow read: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId);
+        allow update: if isOwner(userId);
+        allow delete: if isOwner(userId); // 계정 삭제 시 함께 삭제
+      }
     }
 
     // ============================================
@@ -218,6 +226,44 @@ service cloud.firestore {
       allow create: if false; // 서버(Firebase Functions)에서만 생성
       allow update: if false; // 서버(Firebase Functions)에서만 수정
       allow delete: if false; // 결제 정보는 삭제 불가 (감사 로그)
+    }
+
+    // ============================================
+    // Invoices 컬렉션 (송장/세금계산서)
+    // ============================================
+    match /invoices/{invoiceId} {
+      // 읽기: 인증된 사용자 (본인 주문건 확인용)
+      // 추후 orderId 기반 필터링 로직은 클라이언트에서 처리
+      allow read: if isAuthenticated();
+      // 생성/수정: 서버(Firebase Functions)에서만 가능
+      allow create: if false;
+      allow update: if isAdmin(); // 관리자만 무효화 가능
+      // 삭제: 불가 (감사 로그)
+      allow delete: if false;
+    }
+
+    // ============================================
+    // Account Deletions 컬렉션 (계정 삭제 로그)
+    // Play Store 정책 준수를 위한 계정 삭제 기록
+    // ============================================
+    match /account_deletions/{deletionId} {
+      // 읽기: 관리자만 가능 (통계 및 분석용)
+      allow read: if isAdmin();
+      // 생성: 인증된 사용자가 본인 계정 삭제 시 로그 생성
+      allow create: if isAuthenticated();
+      // 수정/삭제 불가 (감사 로그)
+      allow update, delete: if false;
+    }
+
+    // ============================================
+    // Settlements 컬렉션 (정산)
+    // ============================================
+    match /settlements/{settlementId} {
+      allow read: if isAuthenticated() &&
+                     (resource.data.sellerId == request.auth.uid || isAdmin());
+      allow create: if false; // 서버에서만 생성
+      allow update: if isAdmin(); // 관리자만 수정 가능
+      allow delete: if false; // 삭제 불가
     }
 
     // 기본적으로 모든 접근 거부

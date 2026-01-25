@@ -44,14 +44,14 @@ import 'features/dragon_ball/presentation/screens/batch_shipment_request_screen.
 import 'features/dragon_ball/presentation/screens/batch_shipment_history_screen.dart';
 import 'features/address/presentation/screens/address_list_screen.dart';
 import 'features/price_alert/presentation/screens/price_alerts_screen.dart';
-import 'features/notification/presentations/screens/notification_list_screen.dart';
+import 'features/notification/presentation/screens/notification_list_screen.dart';
 import 'features/auth/presentation/screens/auth_screen.dart';
+import 'features/auth/presentation/screens/consent_screen.dart';
+import 'features/my_page/presentation/screens/account_delete_screen.dart';
 
 // ✅ 관리자 페이지 (GoRouter 사용)
 import 'features/admin/presentation/screens/admin_login_page.dart';
 import 'features/admin/presentation/screens/admin_dashboard.dart';
-import 'features/admin/presentation/screens/user_list_page.dart';
-import 'features/admin/presentation/screens/listing_list_page.dart';
 import 'features/admin/presentation/screens/admin_sell_request_list_page.dart';
 import 'features/admin/presentation/screens/user_list_page_improved.dart';
 import 'features/admin/presentation/screens/listing_list_page_improved.dart';
@@ -239,6 +239,19 @@ class MyApp extends ConsumerWidget {
         builder: (context, state) => const SettingsScreen(),
       ),
       GoRoute(
+        path: '/settings/account-delete',
+        builder: (context, state) => const AccountDeleteScreen(),
+      ),
+      GoRoute(
+        path: '/consent',
+        builder: (context, state) => ConsentScreen(
+          onConsentComplete: () {
+            // 동의 완료 후 홈으로 이동
+            GoRouter.of(context).go('/');
+          },
+        ),
+      ),
+      GoRoute(
         path: '/notifications',
         builder: (context, state) => const NotificationListScreen(),
       ),
@@ -266,23 +279,15 @@ class MyApp extends ConsumerWidget {
       ),
       GoRoute(
         path: '/admin/users',
-        builder: (context, state) => const UserListPage(),
+        builder: (context, state) => const UserListPageImproved(),
       ),
       GoRoute(
         path: '/admin/listings',
-        builder: (context, state) => const ListingListPage(),
+        builder: (context, state) => const ListingListPageImproved(),
       ),
       GoRoute(
         path: '/admin/sell-requests',
         builder: (context, state) => const AdminSellRequestListPage(),
-      ),
-      GoRoute(
-        path: '/admin/users-improved',
-        builder: (context, state) => const UserListPageImproved(),
-      ),
-      GoRoute(
-        path: '/admin/listings-improved',
-        builder: (context, state) => const ListingListPageImproved(),
       ),
       GoRoute(
         path: '/admin/statistics',

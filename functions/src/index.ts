@@ -23,6 +23,27 @@ import {
 } from "./refund/process_refund";
 import {notifyRefundApprovalDeadline} from "./refund/approval_deadline_scheduler";
 
+// ============================================================================
+// Invoice Functions Import
+// ============================================================================
+import {
+  generateInvoiceFromOrder,
+  regenerateInvoice,
+} from "./invoice/invoice_generator";
+import {
+  onPaymentCompleted,
+  onTossPaymentCompleted,
+  onKakaoPaymentApproved,
+} from "./invoice/invoice_trigger";
+
+// ============================================================================
+// Admin Bulk Operations Import
+// ============================================================================
+import {
+  bulkGenerateInvoices,
+  bulkUpdateStatus,
+} from "./admin/bulk_operations";
+
 // Export schedulers
 export {
   checkStorageNotifications,
@@ -36,6 +57,19 @@ export {
   autoApproveRefundInspection,
   notifyPendingInspections,
   notifyRefundApprovalDeadline,
+};
+
+// Export invoice functions
+export {
+  onPaymentCompleted,
+  onTossPaymentCompleted,
+  onKakaoPaymentApproved,
+};
+
+// Export admin bulk operations
+export {
+  bulkGenerateInvoices,
+  bulkUpdateStatus,
 };
 
 // Express 앱 생성
@@ -967,6 +1001,143 @@ app.get("/toss-payment-redirect/web-fail", (req, res) => {
 </body>
 </html>
   `);
+});
+
+// ============================================================================
+// 송장 API
+// ============================================================================
+
+/**
+ * 송장 생성 API
+ * POST /invoice/generate
+ *
+ * Body: { orderId: string }
+ * Response: { invoiceId, invoiceNumber, invoiceUrl, generatedAt }
+ */
+app.post("/invoice/generate", async (req, res) => {
+  try {
+    const {orderId} = req.body;
+
+    if (!orderId) {
+      res.status(400).json({
+        error: "Missing required parameter",
+        required: ["orderId"],
+      });
+      return;
+    }
+
+    const result = await generateInvoiceFromOrder(orderId);
+
+    console.log(`Invoice generated via API: ${result.invoiceNumber} for order ${orderId}`);
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    console.error("Invoice generation error:", error.message);
+    res.status(error.message?.includes("not found") ? 404 : 500).json({
+      error: "Invoice generation failed",
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * 송장 조회/다운로드 API
+ * GET /invoice/:orderId
+ *
+ * Response: Invoice document with download URL
+ */
+app.get("/invoice/:orderId", async (req, res) => {
+  try {
+    const {orderId} = req.params;
+
+    if (!orderId) {
+      res.status(400).json({error: "Missing orderId"});
+      return;
+    }
+
+    const db = admin.firestore();
+
+    // 주문에서 invoiceId 조회
+    const orderDoc = await db.collection("orders").doc(orderId).get();
+
+    if (!orderDoc.exists) {
+      res.status(404).json({error: "Order not found"});
+      return;
+    }
+
+    const order = orderDoc.data()!;
+
+    if (!order.invoiceId) {
+      res.status(404).json({
+        error: "Invoice not found",
+        message: "No invoice has been generated for this order",
+      });
+      return;
+    }
+
+    // 송장 정보 조회
+    const invoiceDoc = await db.collection("invoices").doc(order.invoiceId).get();
+
+    if (!invoiceDoc.exists) {
+      res.status(404).json({error: "Invoice document not found"});
+      return;
+    }
+
+    const invoice = invoiceDoc.data()!;
+
+    res.status(200).json({
+      invoiceId: invoice.invoiceId,
+      invoiceNumber: invoice.invoiceNumber,
+      invoiceUrl: invoice.invoiceUrl,
+      orderId: invoice.orderId,
+      buyerName: invoice.buyerName,
+      sellerName: invoice.sellerName,
+      totalAmount: invoice.totalAmount,
+      itemCount: invoice.itemCount,
+      issueDate: invoice.issueDate?.toDate?.() || invoice.issueDate,
+      generatedAt: invoice.generatedAt?.toDate?.() || invoice.generatedAt,
+      status: invoice.status,
+    });
+  } catch (error: any) {
+    console.error("Invoice query error:", error.message);
+    res.status(500).json({
+      error: "Invoice query failed",
+      message: error.message,
+    });
+  }
+});
+
+/**
+ * 송장 재발행 API
+ * POST /invoice/regenerate
+ *
+ * Body: { orderId: string, reason: string }
+ * Response: { invoiceId, invoiceNumber, invoiceUrl, generatedAt }
+ */
+app.post("/invoice/regenerate", async (req, res) => {
+  try {
+    const {orderId, reason} = req.body;
+
+    if (!orderId || !reason) {
+      res.status(400).json({
+        error: "Missing required parameters",
+        required: ["orderId", "reason"],
+      });
+      return;
+    }
+
+    const result = await regenerateInvoice(orderId, reason);
+
+    console.log(`Invoice regenerated via API: ${result.invoiceNumber} for order ${orderId}`);
+
+    res.status(200).json(result);
+  } catch (error: any) {
+    console.error("Invoice regeneration error:", error.message);
+    res.status(error.message?.includes("not found") ? 404 : 500).json({
+      error: "Invoice regeneration failed",
+      message: error.message,
+    });
+  }
 });
 
 // Express 앱을 Firebase Function으로 export

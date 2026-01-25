@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:pi_com/features/payment/domain/entities/payment_entity.dart';
+import 'package:pi_com/core/constants/routes.dart';
 
 /// 결제 성공 화면
 class PaymentSuccessScreen extends ConsumerWidget {
@@ -120,8 +123,12 @@ class PaymentSuccessScreen extends ConsumerWidget {
                       child: ElevatedButton(
                         onPressed: () {
                           // 주문 내역으로 이동
-                          Navigator.of(context).popUntil((route) => route.isFirst);
-                          // TODO: 주문 내역 화면으로 이동
+                          if (kIsWeb) {
+                            context.go(Routes.purchaseHistory);
+                          } else {
+                            Navigator.of(context).popUntil((route) => route.isFirst);
+                            Navigator.of(context).pushNamed(Routes.purchaseHistory);
+                          }
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue,

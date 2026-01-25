@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';  // ✅ Riverpod import
 import '../../../auth/presentation/providers/auth_provider.dart';  // ✅ Provider import
-import '../../../notification/presentations/widgets/notification_badge_icon.dart';
+import '../../../notification/presentation/widgets/notification_badge_icon.dart';
 import '../../../../core/constants/routes.dart';  // ✅ Routes import
 
 class HomeAppBarActions extends ConsumerWidget {  // ✅ ConsumerWidget으로 변경

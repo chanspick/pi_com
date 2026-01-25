@@ -46,6 +46,11 @@ class OrderEntity {
   final DateTime? refundCompletedAt; // 환불 완료 시각
   final int? refundAmount;           // 환불 금액
 
+  // ✅ 추가: 송장 관련 필드
+  final String? invoiceId;           // 송장 ID
+  final String? invoiceUrl;          // 송장 PDF 다운로드 URL
+  final DateTime? invoiceGeneratedAt; // 송장 생성 시각
+
   OrderEntity({
     required this.orderId,
     required this.userId,
@@ -64,6 +69,9 @@ class OrderEntity {
     this.refundRequestedAt,
     this.refundCompletedAt,
     this.refundAmount,
+    this.invoiceId,
+    this.invoiceUrl,
+    this.invoiceGeneratedAt,
   });
 
   double get finalTotal => totalPrice + shippingFee;

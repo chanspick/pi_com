@@ -40,8 +40,8 @@ android {
         // ⭐️ Google Play 요구사항
         targetSdk = 36  // Android 15
 
-        versionCode = 8
-        versionName = "1.0.7"
+        versionCode = 9
+        versionName = "2.0.0"
 
         // ⭐️ MultiDex 지원
         multiDexEnabled = true

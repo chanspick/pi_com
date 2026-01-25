@@ -1,7 +1,7 @@
 // lib/core/router/app_router.dart
 import 'package:flutter/material.dart';
 import '../constants/routes.dart';
-import '../../features/notification/presentations/screens/notification_list_screen.dart';
+import '../../features/notification/presentation/screens/notification_list_screen.dart';
 import '../../features/sell_request/presentation/screens/sell_request_screen.dart';
 import '../../features/sell_request/presentation/screens/finished_pc_sell_screen.dart';
 import '../../features/sell_request/presentation/screens/sell_request_detail_view_screen.dart'; // ✅ 추가
@@ -42,6 +42,10 @@ import '../../features/parts_price/presentation/screens/base_part_search_screen.
 
 // ✅ 새로 추가: Settings 피처 imports
 import '../../features/my_page/presentation/screens/settings_screen.dart';
+import '../../features/my_page/presentation/screens/account_delete_screen.dart';
+
+// ✅ 새로 추가: Auth 피처 imports (Consent)
+import '../../features/auth/presentation/screens/consent_screen.dart';
 
 // ✅ 새로 추가: Address 피처 imports
 import '../../features/address/presentation/screens/address_list_screen.dart';
@@ -217,6 +221,22 @@ class AppRouter {
       case Routes.settings:
         return MaterialPageRoute(
           builder: (_) => const SettingsScreen(),
+          settings: settings,
+        );
+
+      case Routes.accountDelete:
+        return MaterialPageRoute(
+          builder: (_) => const AccountDeleteScreen(),
+          settings: settings,
+        );
+
+      case Routes.consent:
+        return MaterialPageRoute(
+          builder: (context) => ConsentScreen(
+            onConsentComplete: () {
+              Navigator.of(context).pushReplacementNamed('/');
+            },
+          ),
           settings: settings,
         );
 

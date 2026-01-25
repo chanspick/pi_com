@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// 결제 실패 화면
 class PaymentFailureScreen extends StatelessWidget {
@@ -209,14 +210,22 @@ class PaymentFailureScreen extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton(
-                        onPressed: () {
-                          // TODO: 고객센터 화면으로 이동
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('고객센터: 1234-5678'),
-                              duration: Duration(seconds: 3),
-                            ),
-                          );
+                        onPressed: () async {
+                          // 고객센터 전화 연결
+                          const phoneNumber = 'tel:1234-5678';
+                          final uri = Uri.parse(phoneNumber);
+                          if (await canLaunchUrl(uri)) {
+                            await launchUrl(uri);
+                          } else {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('고객센터: 1234-5678'),
+                                  duration: Duration(seconds: 3),
+                                ),
+                              );
+                            }
+                          }
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),

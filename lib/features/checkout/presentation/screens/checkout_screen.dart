@@ -1,7 +1,7 @@
 // lib/features/checkout/presentation/screens/checkout_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
@@ -27,6 +27,7 @@ import 'package:pi_com/features/address/presentation/screens/address_list_screen
 import '../../../../core/utils/responsive_helper.dart';
 import '../../../../core/models/dragon_ball_model.dart';
 import '../../../../core/constants/routes.dart';
+import '../../../../core/constants/shipping_constants.dart';
 import '../../../../shared/utils/app_notification.dart';
 import '../../../web_public/presentation/widgets/web_navbar_v2.dart';
 
@@ -262,7 +263,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               // 결제 금액 요약
               _PaymentSummary(
                 cartItems: cartItems,
-                shippingFee: _selectedShippingMethod == ShippingMethod.immediate ? 4500 : 0,
+                shippingFee: _selectedShippingMethod == ShippingMethod.immediate ? ShippingConstants.defaultShippingFee : 0,
               ),
               const SizedBox(height: 24),
 
@@ -328,8 +329,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         }
       }
     } catch (e) {
-      print('⚠️ [Checkout] Error checking sold items: $e');
       // 검증 실패해도 결제 진행 (Firestore 규칙에서 최종 검증)
+      debugPrint('⚠️ [Checkout] Error checking sold items: $e');
     }
 
     // 바로구매 모드 또는 장바구니 모드에 따라 상품 목록 가져오기
@@ -458,7 +459,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               }
             } catch (cancelError) {
               // 결제 취소도 실패한 경우 - 관리자 개입 필요
-              print('⚠️ 결제 취소 실패 (수동 처리 필요) - TID: ${approvedPayment.tid}, 에러: $cancelError');
+              debugPrint('⚠️ 결제 취소 실패 (수동 처리 필요) - TID: ${approvedPayment.tid}, 에러: $cancelError');
               if (mounted) {
                 AppNotification.showError(
                   context,
@@ -530,7 +531,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
       // 2. 결제 금액 계산 (상품금액, 배송비 분리)
       final productAmount = _calculateProductAmount(cartItems);
-      final shippingFee = _selectedShippingMethod == ShippingMethod.immediate ? 4500 : 0;
+      final shippingFee = _selectedShippingMethod == ShippingMethod.immediate ? ShippingConstants.defaultShippingFee : 0;
       final totalAmount = productAmount + shippingFee;
 
       // 3. 상품명 생성
@@ -548,18 +549,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
       // 6. 토스페이먼츠 결제 화면 열기 (웹/모바일 분기)
       if (!mounted) return;
-
-      // 디버깅: 결제 화면으로 전달할 값 확인
-      print('💰 [Checkout] === 토스페이먼츠 결제 시작 ===');
-      print('💰 [Checkout] orderId: $orderId');
-      print('💰 [Checkout] userId: $userId');
-      print('💰 [Checkout] orderName: $itemName');
-      print('💰 [Checkout] productAmount (상품금액): $productAmount');
-      print('💰 [Checkout] shippingFee (배송비): $shippingFee');
-      print('💰 [Checkout] totalAmount (총액): $totalAmount');
-      print('💰 [Checkout] customerName: $customerName');
-      print('💰 [Checkout] customerEmail: $customerEmail');
-      print('💰 [Checkout] customerPhone: $customerPhone');
 
       final Map<String, dynamic>? paymentResult;
 
@@ -641,7 +630,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 );
               }
             } catch (cancelError) {
-              print('⚠️ 결제 취소 실패 (수동 처리 필요) - PaymentKey: $paymentKey, 에러: $cancelError');
+              debugPrint('⚠️ 결제 취소 실패 (수동 처리 필요) - PaymentKey: $paymentKey, 에러: $cancelError');
               if (mounted) {
                 AppNotification.showError(
                   context,
@@ -729,32 +718,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     String orderId,
   ) async {
     try {
-      // 🔍 디버깅: 주문 생성 전 상태 확인
-      final currentUser = ref.read(currentUserProvider);
-      print('═══════════════════════════════════════════════════════');
-      print('🛒 주문 생성 시작');
-      print('📋 Order ID: $orderId');
-      print('👤 userId (파라미터): $userId');
-      print('👤 currentUser?.uid: ${currentUser?.uid}');
-      print('🔐 인증 상태: ${currentUser != null ? "로그인됨" : "로그아웃됨"}');
-      print('📍 배송지: $shippingAddress');
-      print('📦 장바구니 아이템 수: ${cartItems.length}');
-      for (int i = 0; i < cartItems.length; i++) {
-        final item = cartItems[i];
-        print('  [$i] ${item.partName}');
-        print('      - listingId: ${item.listingId}');
-        print('      - sellerId: ${item.sellerId}');
-        print('      - sellerName: ${item.sellerName}');
-        print('      - price: ${item.price}');
-        print('      - quantity: ${item.quantity}');
-      }
-      print('═══════════════════════════════════════════════════════');
-
-      // userId 불일치 체크
-      if (currentUser?.uid != userId) {
-        print('⚠️ 경고: userId 불일치! 파라미터($userId) != currentUser(${currentUser?.uid})');
-      }
-
       // 1. 주문 생성 (가장 중요 - 실패 시 결제 취소 필요)
       await ref.read(purchaseUseCaseProvider).call(
         userId: userId,
@@ -783,7 +746,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           } catch (dragonBallError) {
             // 드래곤볼 생성 실패는 로그만 남기고 계속 진행
             // (주문은 이미 생성되었으므로 나중에 수동 처리 가능)
-            print('드래곤볼 생성 실패 (orderId: $orderId): $dragonBallError');
+            debugPrint('드래곤볼 생성 실패 (orderId: $orderId): $dragonBallError');
           }
         }
       }
@@ -794,7 +757,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           await ref.read(clearCartProvider).call();
         } catch (clearCartError) {
           // 장바구니 비우기 실패는 무시 (중요하지 않음)
-          print('장바구니 비우기 실패: $clearCartError');
+          debugPrint('장바구니 비우기 실패: $clearCartError');
         }
       }
 
@@ -815,7 +778,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       }
     } catch (orderError) {
       // 주문 생성 실패 시 에러를 상위로 전파 (결제 취소 필요)
-      print('주문 생성 실패 (orderId: $orderId): $orderError');
+      debugPrint('주문 생성 실패 (orderId: $orderId): $orderError');
       rethrow;
     }
   }
@@ -833,7 +796,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   int _calculateTotalAmount(List<CartItemEntity> cartItems) {
     final productAmount = _calculateProductAmount(cartItems);
     // 배송비 추가 (즉시 배송 시 4,500원, PC 보관함은 합배송 시 부과)
-    final shippingFee = _selectedShippingMethod == ShippingMethod.immediate ? 4500 : 0;
+    final shippingFee = _selectedShippingMethod == ShippingMethod.immediate ? ShippingConstants.defaultShippingFee : 0;
     return productAmount + shippingFee;
   }
 
@@ -1067,30 +1030,32 @@ class _PaymentMethodSelector extends StatelessWidget {
         ),
         const SizedBox(height: 8),
 
-        // 안내 메시지
-        Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Colors.grey[50],
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Colors.grey[300]!),
-          ),
-          child: Row(
-            children: [
-              Icon(Icons.info_outline, color: Colors.grey[600], size: 18),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  '현재는 결제가 바로 완료됩니다. (테스트 모드)',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[700],
+        // 테스트 모드 안내 메시지 (개발 모드에서만 표시)
+        if (kDebugMode)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange[50],
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.orange[300]!),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.warning_amber_outlined, color: Colors.orange[700], size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '테스트 모드: 결제가 바로 완료됩니다.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.orange[800],
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
       ],
     );
   }

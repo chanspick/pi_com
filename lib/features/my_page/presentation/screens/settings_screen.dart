@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/providers/theme_provider.dart';
 
 /// 설정 화면
@@ -59,11 +60,11 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const Divider(),
 
-          // 웹 정보 및 버전 섹션
-          _buildSectionHeader(context, '웹 정보 및 버전'),
+          // 앱 정보 및 버전 섹션
+          _buildSectionHeader(context, '앱 정보'),
           ListTile(
             leading: const Icon(Icons.info_outline),
-            title: const Text('웹 버전'),
+            title: const Text('앱 버전'),
             subtitle: const Text('1.0.0'),
           ),
           ListTile(
@@ -71,7 +72,7 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('이용약관'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
-              Navigator.of(context).pushNamed('/terms');
+              context.push('/terms');
             },
           ),
           ListTile(
@@ -79,9 +80,23 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('개인정보 처리방침'),
             trailing: const Icon(Icons.arrow_forward_ios, size: 16),
             onTap: () {
-              Navigator.of(context).pushNamed('/privacy');
+              context.push('/privacy');
             },
           ),
+          const Divider(),
+
+          // 계정 관리 섹션
+          _buildSectionHeader(context, '계정 관리'),
+          ListTile(
+            leading: const Icon(Icons.person_remove_outlined, color: Colors.red),
+            title: const Text('계정 삭제', style: TextStyle(color: Colors.red)),
+            subtitle: const Text('계정 및 모든 데이터를 삭제합니다'),
+            trailing: const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.red),
+            onTap: () {
+              context.push('/settings/account-delete');
+            },
+          ),
+          const SizedBox(height: 32),
         ],
       ),
     );

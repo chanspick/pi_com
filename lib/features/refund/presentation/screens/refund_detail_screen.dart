@@ -494,7 +494,6 @@ class _RefundDetailScreenState extends State<RefundDetailScreen> {
             height: 50,
             child: ElevatedButton(
               onPressed: () {
-                // TODO: 재발송 주소 입력 다이얼로그
                 _showReturnAddressDialog();
               },
               style: ElevatedButton.styleFrom(
@@ -672,7 +671,6 @@ class _RefundDetailScreenState extends State<RefundDetailScreen> {
             TextButton(
               onPressed: () async {
                 Navigator.pop(context);
-                // TODO: 환불 취소 처리
                 await _refundRepository.cancelRefund(widget.refundId);
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(

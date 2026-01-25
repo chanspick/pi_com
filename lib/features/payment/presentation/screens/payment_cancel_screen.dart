@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:go_router/go_router.dart';
+import 'package:pi_com/core/constants/routes.dart';
 
 /// 결제 취소 화면
 class PaymentCancelScreen extends StatelessWidget {
@@ -158,8 +161,13 @@ class PaymentCancelScreen extends StatelessWidget {
                       width: double.infinity,
                       child: OutlinedButton(
                         onPressed: () {
-                          Navigator.of(context).popUntil((route) => route.isFirst);
-                          // TODO: 장바구니 화면으로 이동
+                          // 장바구니로 이동
+                          if (kIsWeb) {
+                            context.go(Routes.cart);
+                          } else {
+                            Navigator.of(context).popUntil((route) => route.isFirst);
+                            Navigator.of(context).pushNamed(Routes.cart);
+                          }
                         },
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),

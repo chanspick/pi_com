@@ -28,6 +28,11 @@ class OrderModel {
   final Timestamp? refundCompletedAt; // 환불 완료 시각
   final int? refundAmount;            // 환불 금액
 
+  // ✅ 추가: 송장 관련 필드
+  final String? invoiceId;            // 송장 ID
+  final String? invoiceUrl;           // 송장 PDF 다운로드 URL
+  final Timestamp? invoiceGeneratedAt; // 송장 생성 시각
+
   OrderModel({
     required this.orderId,
     required this.userId,
@@ -46,6 +51,9 @@ class OrderModel {
     this.refundRequestedAt,
     this.refundCompletedAt,
     this.refundAmount,
+    this.invoiceId,
+    this.invoiceUrl,
+    this.invoiceGeneratedAt,
   });
 
   factory OrderModel.fromFirestore(DocumentSnapshot doc) {
@@ -68,6 +76,9 @@ class OrderModel {
       refundRequestedAt: data['refundRequestedAt'],
       refundCompletedAt: data['refundCompletedAt'],
       refundAmount: data['refundAmount'],
+      invoiceId: data['invoiceId'],
+      invoiceUrl: data['invoiceUrl'],
+      invoiceGeneratedAt: data['invoiceGeneratedAt'],
     );
   }
 
@@ -89,6 +100,9 @@ class OrderModel {
       'refundRequestedAt': refundRequestedAt,
       'refundCompletedAt': refundCompletedAt,
       'refundAmount': refundAmount,
+      'invoiceId': invoiceId,
+      'invoiceUrl': invoiceUrl,
+      'invoiceGeneratedAt': invoiceGeneratedAt,
     };
   }
 
@@ -111,6 +125,9 @@ class OrderModel {
       refundRequestedAt: refundRequestedAt?.toDate(),
       refundCompletedAt: refundCompletedAt?.toDate(),
       refundAmount: refundAmount,
+      invoiceId: invoiceId,
+      invoiceUrl: invoiceUrl,
+      invoiceGeneratedAt: invoiceGeneratedAt?.toDate(),
     );
   }
 
@@ -133,6 +150,9 @@ class OrderModel {
       refundRequestedAt: entity.refundRequestedAt != null ? Timestamp.fromDate(entity.refundRequestedAt!) : null,
       refundCompletedAt: entity.refundCompletedAt != null ? Timestamp.fromDate(entity.refundCompletedAt!) : null,
       refundAmount: entity.refundAmount,
+      invoiceId: entity.invoiceId,
+      invoiceUrl: entity.invoiceUrl,
+      invoiceGeneratedAt: entity.invoiceGeneratedAt != null ? Timestamp.fromDate(entity.invoiceGeneratedAt!) : null,
     );
   }
 }
