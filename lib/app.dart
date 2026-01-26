@@ -58,6 +58,10 @@ import 'features/admin/presentation/screens/listing_list_page_improved.dart';
 import 'features/admin/presentation/screens/statistics_dashboard_page.dart';
 import 'features/admin/presentation/screens/shipping_management_page.dart';
 
+// ✅ 보증(Warranty) 관리 페이지
+import 'features/warranty/presentation/screens/b2b_transaction_list_screen.dart';
+import 'features/warranty/presentation/screens/service_request_management_screen.dart';
+
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
@@ -296,6 +300,16 @@ class MyApp extends ConsumerWidget {
       GoRoute(
         path: '/admin/shipping',
         builder: (context, state) => const ShippingManagementPage(),
+      ),
+
+      // === B2B/Warranty 관리 페이지 ===
+      GoRoute(
+        path: '/admin/b2b/list',
+        builder: (context, state) => const B2BTransactionListScreen(),
+      ),
+      GoRoute(
+        path: '/admin/service-requests',
+        builder: (context, state) => const ServiceRequestManagementScreen(),
       ),
     ],
   );

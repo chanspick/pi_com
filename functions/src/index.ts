@@ -44,6 +44,11 @@ import {
   bulkUpdateStatus,
 } from "./admin/bulk_operations";
 
+// ============================================================================
+// Warranty Functions Import
+// ============================================================================
+import warrantyRouter from "./warranty";
+
 // Export schedulers
 export {
   checkStorageNotifications,
@@ -76,6 +81,9 @@ export {
 const app = express();
 app.use(cors({origin: true}));
 app.use(express.json());
+
+// Warranty API 라우트
+app.use("/warranty", warrantyRouter);
 
 // ============================================================================
 // 카카오 로그인 Custom Token 생성

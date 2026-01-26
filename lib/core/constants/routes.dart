@@ -79,4 +79,10 @@ class Routes {
   static const String refundRequest = '/refund-request';
   static const String refundDetail = '/refund-detail';
   static const String refundReturnShipping = '/refund-return-shipping';
+
+  // ✅ B2B 보증 관리 (Admin)
+  static const String adminB2BList = '/admin/b2b/list';
+  static const String adminB2BRegister = '/admin/b2b/register';
+  static const String adminB2BDetail = '/admin/b2b/detail';
+  static const String adminServiceRequests = '/admin/service-requests';
 }
