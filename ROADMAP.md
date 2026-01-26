@@ -1,8 +1,9 @@
 # PiCom 개발 로드맵 및 필수 구현 사항
 
 > 작성일: 2025-11-13
-> 버전: 1.0.0
+> 버전: 2.0.0
 > 작성자: Claude Code
+> 최종 업데이트: 2026-01-26
 
 ---
 
@@ -12,6 +13,7 @@
 2. [추천 시스템 고도화 및 ML 이식](#2-추천-시스템-고도화-및-ml-이식)
 3. [Admin 페이지 자동화](#3-admin-페이지-자동화)
 4. [엑셀 기반 판매 요청 자동 생성](#4-엑셀-기반-판매-요청-자동-생성)
+5. [QR 기반 AS 보증 시스템](#5-qr-기반-as-보증-시스템) ✅ **완료**
 
 ---
 
@@ -1784,5 +1786,76 @@ class BulkUploadProgressScreen extends ConsumerWidget {
 
 ---
 
-> **마지막 업데이트**: 2025-11-13
-> **다음 검토 예정**: 2025-12-01
+---
+
+## 5. QR 기반 AS 보증 시스템 ✅ 완료
+
+### 📋 구현 상태
+- **완료일**: 2026-01-26
+- **상태**: Phase 2 M1~M4 완료 (87.5% 테스트 통과)
+
+### 🎯 목표
+B2B 영업 판매 시 검증 레포트(QR) 발행 → 웹에서 거래 확인 및 AS 보증 결제 시스템
+
+### 🔧 완료된 구현
+
+#### Cloud Functions API (`functions/src/warranty/`)
+| 파일 | 설명 | 상태 |
+|------|------|------|
+| `transaction.ts` | B2B 거래 등록 및 QR 관리 API | ✅ |
+| `payment.ts` | 보증 결제 API (카카오페이/토스페이) | ✅ |
+| `service.ts` | AS 요청 관리 API | ✅ |
+| `report-generator.ts` | PDF 검증 레포트 생성 | ✅ |
+| `qr-generator.ts` | QR 코드 이미지 생성 | ✅ |
+| `types.ts` | TypeScript 타입 정의 | ✅ |
+
+#### Next.js 웹앱 (`apps/web/`)
+| 페이지 | 경로 | 상태 |
+|--------|------|------|
+| QR 랜딩 페이지 | `/warranty/[qrCode]` | ✅ |
+| 보증 결제 페이지 | `/warranty/purchase/[qrCode]` | ✅ |
+| AS 신청 페이지 | `/warranty/service/[warrantyId]` | ✅ |
+| 결제 콜백 | `/warranty/payment/callback` | ✅ |
+
+**기술 스택**:
+- Next.js 16 (App Router) + Turbopack
+- TanStack Query v5
+- shadcn/ui + Tailwind CSS v4
+- Firebase Admin SDK
+
+#### Flutter Admin (`lib/features/warranty/`)
+| 화면 | 파일 | 상태 |
+|------|------|------|
+| B2B 거래 목록 | `b2b_transaction_list_screen.dart` | ✅ |
+| AS 요청 관리 | `service_request_management_screen.dart` | ✅ |
+
+**기술 스택**:
+- Riverpod 상태 관리
+- Dio HTTP 클라이언트
+- GoRouter 라우팅
+
+### 📊 테스트 결과 (87.5%)
+| 테스트 항목 | 상태 |
+|-------------|------|
+| API 거래 조회 | ✅ 통과 |
+| API 404 에러 처리 | ✅ 통과 |
+| 웹 홈페이지 | ✅ 통과 |
+| 웹 QR 랜딩 페이지 | ✅ 통과 |
+| 웹 결제 페이지 | ✅ 통과 |
+| 웹 AS 신청 페이지 | ✅ 통과 |
+| 결제 API (카카오페이) | ⚠️ 인증키 필요 |
+
+### 🔧 해결된 이슈
+1. **Tailwind CSS v4 호환성** - 커스텀 테마 색상 → 표준 색상 변환
+2. **Firestore undefined 에러** - `|| undefined` → `|| null` 변경
+3. **Firestore Timestamp 파싱** - `parseDate()` 함수 추가
+
+### 📝 남은 작업 (M5)
+- [ ] 카카오페이/토스페이 실제 인증키 설정
+- [ ] 프로덕션 배포 (Vercel/Firebase Hosting)
+- [ ] E2E 테스트 완성
+
+---
+
+> **마지막 업데이트**: 2026-01-26
+> **다음 검토 예정**: 2026-02-15
