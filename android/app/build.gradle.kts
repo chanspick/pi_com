@@ -19,7 +19,7 @@ if (keystorePropertiesFile.exists()) {
 }
 
 android {
-    namespace = "app.picom.team.pi_com"
+    namespace = "app.picomputer"
     compileSdk = 36  // ⭐️ 최신 Android 15
 
     compileOptions {
@@ -32,7 +32,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "app.picom.team.pi_com"
+        applicationId = "app.picomputer"
 
         // ⭐️ Firebase Auth 요구사항: 최소 SDK 23
         minSdk = flutter.minSdkVersion  // Android 6.0
