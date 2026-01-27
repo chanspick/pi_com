@@ -1148,6 +1148,131 @@ app.post("/invoice/regenerate", async (req, res) => {
   }
 });
 
+// ============================================================================
+// 카카오 웹 OAuth: authorization code → access_token 교환
+// ============================================================================
+
+app.post("/auth/kakao/token", async (req, res) => {
+  try {
+    const {code, redirectUri} = req.body;
+
+    if (!code || !redirectUri) {
+      res.status(400).json({
+        error: "Missing required parameters",
+        required: ["code", "redirectUri"],
+      });
+      return;
+    }
+
+    const clientId = process.env.KAKAO_REST_API_KEY || "";
+
+    if (!clientId) {
+      res.status(500).json({error: "Kakao REST API key not configured"});
+      return;
+    }
+
+    // 카카오 OAuth 토큰 교환
+    const tokenResponse = await axios.post(
+      "https://kauth.kakao.com/oauth/token",
+      new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        code,
+      }).toString(),
+      {
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
+        },
+      }
+    );
+
+    const {access_token} = tokenResponse.data;
+
+    if (!access_token) {
+      res.status(400).json({error: "Failed to get access token from Kakao"});
+      return;
+    }
+
+    // 카카오 사용자 정보 조회
+    const kakaoUser = await getKakaoUserInfo(access_token);
+
+    if (!kakaoUser || !kakaoUser.id) {
+      res.status(401).json({error: "Failed to get Kakao user info"});
+      return;
+    }
+
+    // 이메일 기반 계정 병합
+    const email = kakaoUser.kakao_account?.email;
+    let uid = `kakao_${kakaoUser.id}`;
+
+    if (email) {
+      try {
+        const existingUser = await admin.auth().getUserByEmail(email);
+        uid = existingUser.uid;
+      } catch (error: any) {
+        if (error.code !== "auth/user-not-found") {
+          console.error("Error checking existing user:", error);
+        }
+      }
+    }
+
+    // Firebase Custom Token 생성
+    const customToken = await admin.auth().createCustomToken(uid, {
+      provider: "kakao",
+      kakaoId: kakaoUser.id.toString(),
+    });
+
+    // Firestore에 사용자 정보 저장/업데이트
+    const userRef = admin.firestore().collection("users").doc(uid);
+    const userDoc = await userRef.get();
+
+    const userData = {
+      email: kakaoUser.kakao_account?.email || `kakao_${kakaoUser.id}@kakao.user`,
+      displayName: kakaoUser.kakao_account?.profile?.nickname || userDoc.data()?.displayName || "카카오 사용자",
+      photoURL: kakaoUser.kakao_account?.profile?.profile_image_url || userDoc.data()?.photoURL || null,
+      kakaoId: kakaoUser.id.toString(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      lastLoginAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    if (!userDoc.exists) {
+      await userRef.set({
+        uid,
+        ...userData,
+        provider: "kakao",
+        providers: ["kakao"],
+        isAdmin: false,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+    } else {
+      const existingData = userDoc.data();
+      const existingProviders = existingData?.providers || [existingData?.provider].filter(Boolean);
+      await userRef.update({
+        ...userData,
+        providers: Array.from(new Set([...existingProviders, "kakao"])),
+      });
+    }
+
+    res.status(200).json({
+      customToken,
+      user: {
+        uid,
+        email: userData.email,
+        displayName: userData.displayName,
+        photoURL: userData.photoURL,
+        provider: "kakao",
+      },
+    });
+  } catch (error: any) {
+    console.error("Kakao web token exchange error:", error.message);
+    res.status(error.response?.status || 500).json({
+      error: "Kakao authentication failed",
+      message: error.message,
+    });
+  }
+});
+
 // Express 앱을 Firebase Function으로 export
 export const api = functions.region("asia-northeast3").https.onRequest(app);
 

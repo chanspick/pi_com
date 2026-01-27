@@ -1,6 +1,13 @@
 /**
- * Warranty System Types
+ * Warranty System Types v2
  * QR 기반 AS 보증 시스템 타입 정의
+ *
+ * v2 변경사항:
+ * - 풀세트(조립PC) 지원: transactionType, items, bundleName
+ * - 벤치마크 기반 스코어: benchmarkScores, conditionGrade, conditionScore (1-100)
+ * - 스코어 기반 기본 AS: baseWarrantyMonths
+ * - 원가 관리: purchaseCost, profitMargin
+ * - 보증서 PDF: warrantyPdfUrl
  */
 
 import * as admin from "firebase-admin";
@@ -16,34 +23,79 @@ export type TransactionStatus =
   | "delivered"       // 고객에게 전달됨
   | "warrantyActive"; // 보증 활성화됨
 
+export type TransactionType = "single" | "bundle";
+
+export type ConditionGrade = "S" | "A" | "B" | "C" | "D";
+
+// 벤치마크 점수 구조
+export interface BenchmarkScores {
+  cpu?: number;        // PassMark 점수
+  gpu?: number;        // 3DMark 점수
+  storage?: number;    // 읽기/쓰기 속도 (MB/s)
+  memory?: number;     // 메모리 대역폭
+  overall?: number;    // 종합 점수 (자동 계산)
+}
+
+// 풀세트 내 개별 부품
+export interface TransactionItem {
+  itemId: string;
+  partCategory: string;
+  brand: string;
+  modelName: string;
+  serialNumber?: string | null;
+  benchmarkScore?: number;     // 해당 부품의 벤치마크 점수
+  conditionScore: number;      // 1-100
+  purchaseCost: number;        // 매입원가
+  photoUrls: string[];
+}
+
 export interface VerificationTransaction {
   transactionId: string;       // VTX-YYYYMMDD-XXXXX
   qrCode: string;              // UUID (QR 고유값)
 
-  // 부품 정보
-  partCategory: string;        // CPU, GPU, Mainboard 등
-  brand: string;
-  modelName: string;
+  // 🆕 거래 타입
+  transactionType: TransactionType;  // 'single' | 'bundle'
+
+  // 단일 부품용 (transactionType === 'single')
+  partCategory?: string | null;      // CPU, GPU, Mainboard 등
+  brand?: string | null;
+  modelName?: string | null;
   serialNumber?: string | null;
   photoUrls: string[];
+
+  // 🆕 풀세트용 (transactionType === 'bundle')
+  items?: TransactionItem[];
+  bundleName?: string | null;        // "게이밍 PC 세트" 등
 
   // 검수 정보
   inspectorId: string;
   inspectorName: string;
   inspectedAt: admin.firestore.Timestamp;
   inspectionNote: string;
-  conditionScore: number;      // 1-10
   inspectionPhotoUrls: string[];
+
+  // 🆕 벤치마크 기반 스코어
+  benchmarkScores?: BenchmarkScores;
+  conditionGrade: ConditionGrade;    // 자동 산정된 등급 (S/A/B/C/D)
+  conditionScore: number;            // 1-100 (자동 산정, 기존 1-10에서 변경)
+
+  // 🆕 가격 정보
+  purchaseCost: number;              // 매입원가
+  salePrice: number;                 // 판매가
+  profitMargin?: number;             // 마진율 (자동 계산)
+
+  // 🆕 기본 보증 (스코어 기반 자동 결정)
+  baseWarrantyMonths: number;        // 스코어에 따라 자동 결정
 
   // B2B 거래 정보
   buyerCompanyName?: string | null;
   buyerContactName?: string | null;
   buyerContactPhone?: string | null;
-  salePrice: number;
   saleDate: admin.firestore.Timestamp;
 
   // 문서 정보
   verificationReportUrl?: string | null;
+  warrantyPdfUrl?: string | null;    // 🆕 보증서 PDF
   qrCodeImageUrl?: string | null;
 
   // 상태
@@ -56,7 +108,7 @@ export interface VerificationTransaction {
 }
 
 // ============================================================================
-// Warranty (AS 보증)
+// Warranty (AS 보증) - v2
 // ============================================================================
 
 export type WarrantyPlan = "1year" | "2year";
@@ -73,15 +125,28 @@ export interface Warranty {
   transactionId: string;
   qrCode: string;
 
-  // 보증 정보
-  warrantyPlan: WarrantyPlan;
-  warrantyPeriodMonths: number; // 12 or 24
-  startDate: admin.firestore.Timestamp;
-  endDate: admin.firestore.Timestamp;
+  // 🆕 기본 보증 (스코어 기반 자동 결정)
+  baseWarrantyMonths: number;       // 스코어에 따라 자동 결정
+  baseWarrantyEndDate: admin.firestore.Timestamp;
 
-  // 결제 정보
-  warrantyPrice: number;       // salePrice * rate
-  warrantyRate: number;        // 0.1 or 0.2 (차후 알고리즘용)
+  // 🆕 추가 보증 (고객 결제)
+  additionalWarrantyMonths?: number;   // 추가 구매한 개월 수 (12 or 24)
+  additionalWarrantyPrice?: number;    // 추가 결제 금액
+  additionalWarrantyPaidAt?: admin.firestore.Timestamp;
+
+  // 최종 보증 정보
+  totalWarrantyMonths: number;         // 기본 + 추가
+  totalWarrantyEndDate: admin.firestore.Timestamp;
+
+  // 기존 보증 정보 (호환성 유지)
+  warrantyPlan?: WarrantyPlan;
+  warrantyPeriodMonths?: number; // deprecated, use totalWarrantyMonths
+  startDate: admin.firestore.Timestamp;
+  endDate: admin.firestore.Timestamp;  // alias for totalWarrantyEndDate
+
+  // 결제 정보 (추가 보증용)
+  warrantyPrice?: number;      // deprecated
+  warrantyRate?: number;       // deprecated
   paymentMethod?: string;      // kakaopay, tosspay
   paymentKey?: string;
   paidAt?: admin.firestore.Timestamp;
@@ -150,31 +215,72 @@ export interface ServiceRequest {
 }
 
 // ============================================================================
-// API Request/Response Types
+// API Request/Response Types - v2
 // ============================================================================
 
-export interface CreateTransactionRequest {
-  // 부품 정보
+// 풀세트 부품 아이템 요청
+export interface TransactionItemRequest {
   partCategory: string;
   brand: string;
   modelName: string;
   serialNumber?: string;
+  benchmarkScore?: number;
+  purchaseCost: number;
   photoUrls?: string[];
+}
+
+export interface CreateTransactionRequest {
+  // 🆕 거래 타입
+  transactionType: TransactionType;  // 'single' | 'bundle'
+
+  // 단일 부품용 (transactionType === 'single')
+  partCategory?: string;
+  brand?: string;
+  modelName?: string;
+  serialNumber?: string;
+  benchmarkScore?: number;     // 단일 부품의 벤치마크 점수
+  photoUrls?: string[];
+
+  // 🆕 풀세트용 (transactionType === 'bundle')
+  bundleName?: string;
+  items?: TransactionItemRequest[];
+
+  // 🆕 벤치마크 점수 (개별 입력)
+  benchmarkScores?: {
+    cpu?: number;
+    gpu?: number;
+    storage?: number;
+    memory?: number;
+  };
+
+  // 🆕 가격 정보
+  purchaseCost: number;        // 총 매입원가
+  salePrice: number;           // 판매가
 
   // 검수 정보
   inspectorId: string;
   inspectorName: string;
-  inspectionNote: string;
-  conditionScore: number;
+  inspectionNote?: string;
   inspectionPhotoUrls?: string[];
 
   // B2B 거래 정보
   buyerCompanyName?: string;
   buyerContactName?: string;
   buyerContactPhone?: string;
-  salePrice: number;
 }
 
+// 거래 등록 응답 (v2)
+export interface CreateTransactionResponse {
+  success: boolean;
+  transactionId: string;
+  qrCode: string;
+  conditionScore: number;      // 자동 산정 (1-100)
+  conditionGrade: ConditionGrade;  // 자동 산정 (S/A/B/C/D)
+  baseWarrantyMonths: number;  // 스코어 기반 자동 결정
+  message?: string;
+}
+
+// 기존 보증 결제 요청 (호환성 유지)
 export interface WarrantyPaymentRequest {
   qrCode: string;
   warrantyPlan: WarrantyPlan;
@@ -194,6 +300,29 @@ export interface WarrantyPaymentPrepareResponse {
   redirectUrl: string;
 }
 
+// 🆕 추가 보증 결제 요청 (v2)
+export interface AdditionalWarrantyPaymentRequest {
+  qrCode: string;
+  additionalMonths: 12 | 24;   // 추가 구매할 개월 수
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  paymentMethod: "kakaopay" | "tosspay";
+}
+
+// 🆕 추가 보증 결제 응답 (v2)
+export interface AdditionalWarrantyPaymentResponse {
+  warrantyId: string;
+  baseWarrantyMonths: number;
+  additionalWarrantyMonths: number;
+  totalWarrantyMonths: number;
+  additionalPrice: number;     // 판매가 * rate
+  // 결제 SDK 응답
+  tid?: string;
+  paymentKey?: string;
+  redirectUrl: string;
+}
+
 export interface ServiceRequestCreate {
   warrantyId: string;
   serviceType: ServiceType;
@@ -205,12 +334,56 @@ export interface ServiceRequestCreate {
 }
 
 // ============================================================================
-// Warranty Rate Configuration
+// Warranty Rate Configuration (v2)
 // ============================================================================
 
+// 기존 보증 요금 (호환성 유지)
 export const WARRANTY_RATES: Record<WarrantyPlan, { months: number; rate: number }> = {
   "1year": { months: 12, rate: 0.10 },
   "2year": { months: 24, rate: 0.20 },
+};
+
+// 🆕 추가 보증 요금률 (v2)
+export const ADDITIONAL_WARRANTY_RATES: Record<12 | 24, { months: number; rate: number }> = {
+  12: { months: 12, rate: 0.10 },  // +1년: 판매가의 10%
+  24: { months: 24, rate: 0.20 },  // +2년: 판매가의 20%
+};
+
+// ============================================================================
+// 등급별 기준 (conditionScore 1-100) - v2
+// ============================================================================
+
+export interface GradeConfig {
+  min: number;
+  max: number;
+  baseWarrantyMonths: number;
+  label: string;
+  labelKo: string;
+}
+
+export const GRADE_THRESHOLDS: Record<ConditionGrade, GradeConfig> = {
+  S: { min: 90, max: 100, baseWarrantyMonths: 24, label: "Excellent", labelKo: "최상급" },
+  A: { min: 80, max: 89, baseWarrantyMonths: 18, label: "Very Good", labelKo: "우수" },
+  B: { min: 70, max: 79, baseWarrantyMonths: 12, label: "Good", labelKo: "양호" },
+  C: { min: 60, max: 69, baseWarrantyMonths: 6, label: "Fair", labelKo: "보통" },
+  D: { min: 0, max: 59, baseWarrantyMonths: 3, label: "Poor", labelKo: "불량" },
+};
+
+// ============================================================================
+// 부품 카테고리별 벤치마크 기준 - v2
+// ============================================================================
+
+export interface BenchmarkConfig {
+  maxScore: number;       // 100점 기준 벤치마크
+  minScore: number;       // 50점 기준 벤치마크
+  unit: string;
+}
+
+export const BENCHMARK_CONFIG: Record<string, BenchmarkConfig> = {
+  cpu: { maxScore: 40000, minScore: 10000, unit: "PassMark" },
+  gpu: { maxScore: 20000, minScore: 5000, unit: "3DMark" },
+  storage: { maxScore: 7000, minScore: 500, unit: "MB/s" },
+  memory: { maxScore: 50000, minScore: 20000, unit: "MB/s" },
 };
 
 // ============================================================================

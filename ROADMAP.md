@@ -3,7 +3,7 @@
 > 작성일: 2025-11-13
 > 버전: 2.0.0
 > 작성자: Claude Code
-> 최종 업데이트: 2026-01-26
+> 최종 업데이트: 2026-01-27
 
 ---
 
@@ -1791,8 +1791,8 @@ class BulkUploadProgressScreen extends ConsumerWidget {
 ## 5. QR 기반 AS 보증 시스템 ✅ 완료
 
 ### 📋 구현 상태
-- **완료일**: 2026-01-26
-- **상태**: Phase 2 M1~M4 완료 (87.5% 테스트 통과)
+- **완료일**: 2026-01-26 (기본), 2026-01-27 (PDF + Auth 확장)
+- **상태**: Phase 2 M1~M4 완료 + PDF 자동생성 + 유저 로그인/보증 등록
 
 ### 🎯 목표
 B2B 영업 판매 시 검증 레포트(QR) 발행 → 웹에서 거래 확인 및 AS 보증 결제 시스템
@@ -1802,37 +1802,61 @@ B2B 영업 판매 시 검증 레포트(QR) 발행 → 웹에서 거래 확인 �
 #### Cloud Functions API (`functions/src/warranty/`)
 | 파일 | 설명 | 상태 |
 |------|------|------|
-| `transaction.ts` | B2B 거래 등록 및 QR 관리 API | ✅ |
+| `transaction.ts` | B2B 거래 등록 + QR/PDF 자동생성 | ✅ |
 | `payment.ts` | 보증 결제 API (카카오페이/토스페이) | ✅ |
 | `service.ts` | AS 요청 관리 API | ✅ |
-| `report-generator.ts` | PDF 검증 레포트 생성 | ✅ |
+| `report-generator.ts` | PDF 보증서 생성 (한글폰트 + 실제QR + 벤치마크) | ✅ |
 | `qr-generator.ts` | QR 코드 이미지 생성 | ✅ |
+| `qr-utils.ts` | QR PNG 버퍼 생성 유틸 | ✅ 신규 |
+| `score-calculator.ts` | 종합 스코어 계산 | ✅ 신규 |
+| `user-warranty.ts` | 유저-보증 연결 API (link/list) | ✅ 신규 |
 | `types.ts` | TypeScript 타입 정의 | ✅ |
 
 #### Next.js 웹앱 (`apps/web/`)
 | 페이지 | 경로 | 상태 |
 |--------|------|------|
-| QR 랜딩 페이지 | `/warranty/[qrCode]` | ✅ |
+| QR 랜딩 페이지 | `/warranty/[qrCode]` | ✅ (로그인/등록 통합) |
 | 보증 결제 페이지 | `/warranty/purchase/[qrCode]` | ✅ |
 | AS 신청 페이지 | `/warranty/service/[warrantyId]` | ✅ |
 | 결제 콜백 | `/warranty/payment/callback` | ✅ |
+| 내 보증 목록 | `/my` | ✅ 신규 |
+| 카카오 로그인 콜백 | `/auth/kakao/callback` | ✅ 신규 |
+| Admin 페이지 | `/admin/*` | ✅ 신규 |
+
+**인증 컴포넌트 (`apps/web/components/auth/`, `apps/web/lib/auth/`)**:
+| 파일 | 설명 | 상태 |
+|------|------|------|
+| `AuthContext.tsx` | Firebase Auth Context/Provider | ✅ 신규 |
+| `kakao.ts` | 카카오 OAuth 웹 로그인 | ✅ 신규 |
+| `phone.ts` | 전화번호 인증 (Firebase Phone Auth) | ✅ 신규 |
+| `LoginPrompt.tsx` | 로그인 프롬프트 (카카오/전화번호) | ✅ 신규 |
+| `PhoneLoginForm.tsx` | 전화번호 로그인 폼 | ✅ 신규 |
+
+**보증 컴포넌트 (`apps/web/components/warranty/`)**:
+| 파일 | 설명 | 상태 |
+|------|------|------|
+| `WarrantyCard.tsx` | 보증 카드 (상태/등급/PDF) | ✅ 신규 |
+| `GradeBadge.tsx` | 컨디션 등급 배지 | ✅ 신규 |
+| `BundleItemList.tsx` | 풀세트 부품 목록 | ✅ 신규 |
 
 **기술 스택**:
 - Next.js 16 (App Router) + Turbopack
 - TanStack Query v5
 - shadcn/ui + Tailwind CSS v4
+- Firebase Auth (카카오 OAuth + Phone Auth)
 - Firebase Admin SDK
 
-#### Flutter Admin (`lib/features/warranty/`)
-| 화면 | 파일 | 상태 |
-|------|------|------|
-| B2B 거래 목록 | `b2b_transaction_list_screen.dart` | ✅ |
-| AS 요청 관리 | `service_request_management_screen.dart` | ✅ |
+#### PDF 보증서 자동생성 (2026-01-27)
+- **한글 폰트**: Noto Sans KR OTF (`functions/assets/fonts/`)
+- **실제 QR 임베드**: `qrcode` → PNG 버퍼 → `doc.image()`
+- **레이아웃**: 헤더 → QR코드 → 등급배지+스코어바 → 벤치마크 2x2 → 제품정보 → 거래정보 → 푸터
+- **자동 생성**: 거래 등록 시 QR PNG + PDF 자동 생성 → Firebase Storage 업로드 → URL 기록
 
-**기술 스택**:
-- Riverpod 상태 관리
-- Dio HTTP 클라이언트
-- GoRouter 라우팅
+#### 유저 로그인 + 보증 등록 (2026-01-27)
+- **인증 방식**: 카카오 OAuth (code→customToken) + Firebase Phone Auth
+- **보증 연결**: `POST /warranty/link-user` (Bearer 토큰 인증, userId 연결)
+- **내 보증 목록**: `GET /warranty/my-warranties` (Bearer 토큰 인증)
+- **웹 UI**: Header 로그인 상태, `/my` 보증 목록, QR 페이지 내 계정 등록
 
 ### 📊 테스트 결과 (87.5%)
 | 테스트 항목 | 상태 |
@@ -1849,13 +1873,17 @@ B2B 영업 판매 시 검증 레포트(QR) 발행 → 웹에서 거래 확인 �
 1. **Tailwind CSS v4 호환성** - 커스텀 테마 색상 → 표준 색상 변환
 2. **Firestore undefined 에러** - `|| undefined` → `|| null` 변경
 3. **Firestore Timestamp 파싱** - `parseDate()` 함수 추가
+4. **PDFKit widthOfString 타입 에러** - font/fontSize를 별도 설정 후 호출
+5. **kakaoConfig 미사용 변수** - `/auth/kakao/token` 엔드포인트에서 불필요 변수 제거
 
 ### 📝 남은 작업 (M5)
 - [ ] 카카오페이/토스페이 실제 인증키 설정
+- [ ] 카카오 OAuth REST API KEY 설정
 - [ ] 프로덕션 배포 (Vercel/Firebase Hosting)
 - [ ] E2E 테스트 완성
+- [ ] 한글 폰트 파일 경량화 (서브셋)
 
 ---
 
-> **마지막 업데이트**: 2026-01-26
+> **마지막 업데이트**: 2026-01-27
 > **다음 검토 예정**: 2026-02-15

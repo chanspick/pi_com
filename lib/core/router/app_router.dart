@@ -68,6 +68,8 @@ import '../../features/refund/presentation/screens/refund_return_shipping_screen
 import '../../features/refund/presentation/screens/refund_detail_screen.dart';
 import '../../features/refund/presentation/screens/refund_list_screen.dart';
 
+// Warranty Admin은 Next.js 웹으로 이전됨 (/admin/*)
+
 /// 앱 내부용 Navigator Route Generator
 class AppRouter {
   static Route generateRoute(RouteSettings settings) {
@@ -361,6 +363,8 @@ class AppRouter {
           builder: (_) => const RefundListScreen(),
           settings: settings,
         );
+
+    // B2B 보증 관리는 Next.js 웹으로 이전됨 (/admin/*)
 
     // 기본: 404 에러
       default:

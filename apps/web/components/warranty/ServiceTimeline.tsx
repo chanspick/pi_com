@@ -85,7 +85,7 @@ function ServiceRequestCard({ request }: ServiceRequestCardProps) {
           </span>
         </div>
         <p className="text-sm text-gray-500">
-          신청일: {formatDate(request.requestedAt)}
+          신청일: {formatDate(request.createdAt || request.requestedAt || new Date().toISOString())}
         </p>
       </CardHeader>
       <CardContent>

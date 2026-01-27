@@ -10,7 +10,7 @@ import {
   ServiceType,
 } from "@/types/warranty";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://asia-northeast3-picom-app.cloudfunctions.net/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://asia-northeast3-picom-team.cloudfunctions.net/api";
 
 interface ApiResponse<T> {
   success?: boolean;
@@ -104,11 +104,30 @@ export async function approveWarrantyPayment(
 export interface WarrantyWithTransaction {
   warranty: Warranty;
   transaction: {
-    partCategory: string;
-    brand: string;
-    modelName: string;
+    transactionType?: "single" | "bundle";
+    partCategory?: string;
+    brand?: string;
+    modelName?: string;
+    bundleName?: string;
+    items?: Array<{
+      itemId: string;
+      partCategory: string;
+      brand: string;
+      modelName: string;
+      conditionScore: number;
+      benchmarkScore?: number;
+    }>;
     salePrice: number;
     conditionScore: number;
+    conditionGrade?: "S" | "A" | "B" | "C" | "D";
+    benchmarkScores?: {
+      cpu?: number;
+      gpu?: number;
+      storage?: number;
+      memory?: number;
+      overall?: number;
+    };
+    baseWarrantyMonths?: number;
     photoUrls: string[];
   } | null;
 }
@@ -117,6 +136,94 @@ export async function getWarranty(
   warrantyId: string
 ): Promise<WarrantyWithTransaction> {
   return fetchApi<WarrantyWithTransaction>(`/warranty/${warrantyId}`);
+}
+
+// ============================================================================
+// Warranty Activation API (v2)
+// ============================================================================
+
+export interface ActivateWarrantyRequest {
+  qrCode: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+}
+
+export interface ActivateWarrantyResponse {
+  success: boolean;
+  warrantyId: string;
+  baseWarrantyMonths: number;
+  totalWarrantyMonths: number;
+  baseWarrantyEndDate: string;
+  message?: string;
+}
+
+export async function activateWarranty(
+  data: ActivateWarrantyRequest
+): Promise<ActivateWarrantyResponse> {
+  return fetchApi<ActivateWarrantyResponse>("/warranty/activate", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+// ============================================================================
+// Additional Warranty API (v2)
+// ============================================================================
+
+export interface PrepareAdditionalWarrantyRequest {
+  qrCode: string;
+  additionalMonths: 12 | 24;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  paymentMethod: "kakaopay" | "tosspay";
+}
+
+export interface PrepareAdditionalWarrantyResponse {
+  warrantyId: string;
+  baseWarrantyMonths: number;
+  additionalWarrantyMonths: number;
+  totalWarrantyMonths: number;
+  additionalPrice: number;
+  tid?: string;
+  paymentKey?: string;
+  redirectUrl: string;
+}
+
+export async function prepareAdditionalWarrantyPayment(
+  data: PrepareAdditionalWarrantyRequest
+): Promise<PrepareAdditionalWarrantyResponse> {
+  return fetchApi<PrepareAdditionalWarrantyResponse>("/warranty/payment/additional", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export interface ApproveAdditionalPaymentRequest {
+  warrantyId: string;
+  pgToken?: string;
+  paymentKey?: string;
+  orderId?: string;
+  amount?: number;
+}
+
+export interface ApproveAdditionalPaymentResponse {
+  success: boolean;
+  warrantyId: string;
+  baseWarrantyMonths: number;
+  additionalWarrantyMonths: number;
+  totalWarrantyMonths: number;
+  totalWarrantyEndDate: string;
+}
+
+export async function approveAdditionalWarrantyPayment(
+  data: ApproveAdditionalPaymentRequest
+): Promise<ApproveAdditionalPaymentResponse> {
+  return fetchApi<ApproveAdditionalPaymentResponse>("/warranty/payment/additional/approve", {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
 }
 
 // ============================================================================
@@ -152,4 +259,60 @@ export async function getServiceHistory(
   warrantyId: string
 ): Promise<{ warrantyId: string; requests: ServiceRequest[]; count: number }> {
   return fetchApi(`/warranty/service-history/${warrantyId}`);
+}
+
+// ============================================================================
+// User-Warranty API (v3)
+// ============================================================================
+
+async function fetchApiWithAuth<T>(
+  endpoint: string,
+  idToken: string,
+  options?: RequestInit
+): Promise<T> {
+  return fetchApi<T>(endpoint, {
+    ...options,
+    headers: {
+      ...options?.headers,
+      Authorization: `Bearer ${idToken}`,
+    },
+  });
+}
+
+export async function linkUserToWarranty(
+  qrCode: string,
+  idToken: string
+): Promise<{ success: boolean; qrCode: string; transactionId: string; warrantyId: string | null }> {
+  return fetchApiWithAuth("/warranty/link-user", idToken, {
+    method: "POST",
+    body: JSON.stringify({ qrCode }),
+  });
+}
+
+export interface MyWarrantyItem {
+  transactionId: string;
+  qrCode: string;
+  transactionType: "single" | "bundle";
+  partCategory?: string;
+  brand?: string;
+  modelName?: string;
+  bundleName?: string;
+  items?: Array<{ partCategory: string; brand: string; modelName: string }>;
+  conditionScore: number;
+  conditionGrade?: string;
+  baseWarrantyMonths: number;
+  salePrice: number;
+  saleDate: string;
+  warrantyPdfUrl?: string;
+  qrCodeImageUrl?: string;
+  warrantyId: string | null;
+  warrantyStatus: string | null;
+  totalWarrantyMonths: number;
+  totalWarrantyEndDate: string | null;
+}
+
+export async function getMyWarranties(
+  idToken: string
+): Promise<{ warranties: MyWarrantyItem[]; count: number }> {
+  return fetchApiWithAuth("/warranty/my-warranties", idToken);
 }

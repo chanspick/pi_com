@@ -2,17 +2,17 @@
 
 import Image from "next/image";
 import { Card, CardContent } from "@/components/ui/card";
-import { VerificationTransaction } from "@/types/warranty";
-import { formatCurrency, formatDate, getConditionLabel, getConditionColor } from "@/lib/utils";
-import { Star, Calendar, User, FileText } from "lucide-react";
+import { VerificationTransaction, isBundle, getDisplayName } from "@/types/warranty";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import { Calendar, User, FileText, Package } from "lucide-react";
 
 interface PartInfoCardProps {
   transaction: VerificationTransaction;
 }
 
 export function PartInfoCard({ transaction }: PartInfoCardProps) {
-  const conditionLabel = getConditionLabel(transaction.conditionScore);
-  const conditionColor = getConditionColor(transaction.conditionScore);
+  const displayName = getDisplayName(transaction);
+  const isBundleType = isBundle(transaction);
 
   return (
     <Card>
@@ -22,7 +22,7 @@ export function PartInfoCard({ transaction }: PartInfoCardProps) {
           <div className="relative w-full h-48 mb-4 rounded-lg overflow-hidden bg-gray-100">
             <Image
               src={transaction.photoUrls[0]}
-              alt={transaction.modelName}
+              alt={displayName}
               fill
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 500px"
@@ -32,36 +32,23 @@ export function PartInfoCard({ transaction }: PartInfoCardProps) {
 
         {/* 부품 정보 */}
         <div className="space-y-3">
-          <div>
-            <h2 className="text-xl font-bold">{transaction.modelName}</h2>
-            <p className="text-sm text-gray-500">
-              {transaction.partCategory} / {transaction.brand}
+          <div className="flex items-center gap-3">
+            <Package className="h-5 w-5 text-gray-400" />
+            <div>
+              <h2 className="text-lg font-bold">{displayName}</h2>
+              <p className="text-sm text-gray-500">
+                {isBundleType
+                  ? `풀세트 (${transaction.items?.length || 0}개 부품)`
+                  : `${transaction.partCategory || ''} / ${transaction.brand || ''}`}
+              </p>
+            </div>
+          </div>
+
+          {transaction.salePrice && (
+            <p className="text-gray-600">
+              판매가: <strong>₩{transaction.salePrice.toLocaleString()}</strong>
             </p>
-          </div>
-
-          {/* 상태 점수 */}
-          <div className="flex items-center gap-2">
-            <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-            <span className={`font-semibold ${conditionColor}`}>
-              {conditionLabel} ({transaction.conditionScore}/10)
-            </span>
-          </div>
-
-          {/* 상태 바 */}
-          <div className="w-full bg-gray-100 rounded-full h-2">
-            <div
-              className={`h-2 rounded-full transition-all ${
-                transaction.conditionScore >= 8
-                  ? "bg-green-500"
-                  : transaction.conditionScore >= 6
-                  ? "bg-blue-500"
-                  : transaction.conditionScore >= 4
-                  ? "bg-yellow-500"
-                  : "bg-red-500"
-              }`}
-              style={{ width: `${transaction.conditionScore * 10}%` }}
-            />
-          </div>
+          )}
         </div>
       </CardContent>
     </Card>

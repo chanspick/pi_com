@@ -10,10 +10,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getTransactionByQR, prepareWarrantyPayment } from "@/lib/api/warranty";
-import { WarrantyPlan, WARRANTY_RATES } from "@/types/warranty";
+import {
+  getTransactionByQR,
+  prepareWarrantyPayment,
+  prepareAdditionalWarrantyPayment,
+  getWarranty,
+} from "@/lib/api/warranty";
+import {
+  WarrantyPlan,
+  WARRANTY_RATES,
+  ADDITIONAL_WARRANTY_RATES,
+  isBundle,
+  getDisplayName,
+  getGradeConfig,
+} from "@/types/warranty";
 import { formatCurrency } from "@/lib/utils";
-import { ArrowLeft, Package, Shield, AlertCircle, Loader2 } from "lucide-react";
+import { GradeBadge } from "@/components/warranty/GradeBadge";
+import { ArrowLeft, Package, Shield, AlertCircle, Loader2, Plus } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ qrCode: string }>;
@@ -33,9 +46,15 @@ export default function WarrantyPurchasePage({ params }: PageProps) {
   const { qrCode } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // 모드: "additional" = 추가 보증 구매, null = 기존 보증 구매 (레거시)
+  const mode = searchParams.get("mode");
+  const isAdditionalMode = mode === "additional";
+
   const planParam = searchParams.get("plan") as WarrantyPlan | null;
   const selectedPlan = planParam || "1year";
 
+  const [selectedAdditionalMonths, setSelectedAdditionalMonths] = useState<12 | 24>(12);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [paymentError, setPaymentError] = useState<string | null>(null);
 
@@ -81,8 +100,18 @@ export default function WarrantyPurchasePage({ params }: PageProps) {
     );
   }
 
+  const isBundleType = isBundle(transaction);
+  const displayName = getDisplayName(transaction);
+  const gradeConfig = getGradeConfig(transaction.conditionGrade);
+  const baseWarrantyMonths = transaction.baseWarrantyMonths || gradeConfig.baseWarrantyMonths;
+
+  // 가격 계산
   const rate = WARRANTY_RATES[selectedPlan];
   const warrantyPrice = Math.round(transaction.salePrice * rate.rate);
+
+  // 추가 보증 가격 계산
+  const additionalRate = ADDITIONAL_WARRANTY_RATES[selectedAdditionalMonths];
+  const additionalPrice = Math.round(transaction.salePrice * additionalRate.rate);
 
   const handlePayment = async (
     data: PurchaseFormData,
@@ -92,24 +121,42 @@ export default function WarrantyPurchasePage({ params }: PageProps) {
     setPaymentError(null);
 
     try {
-      const result = await prepareWarrantyPayment({
-        qrCode,
-        warrantyPlan: selectedPlan,
-        customerName: data.customerName,
-        customerPhone: data.customerPhone,
-        customerEmail: data.customerEmail || undefined,
-        paymentMethod: method,
-      });
+      if (isAdditionalMode) {
+        // 추가 보증 결제
+        const result = await prepareAdditionalWarrantyPayment({
+          qrCode,
+          additionalMonths: selectedAdditionalMonths,
+          customerName: data.customerName,
+          customerPhone: data.customerPhone,
+          customerEmail: data.customerEmail || undefined,
+          paymentMethod: method,
+        });
 
-      if (result.redirectUrl) {
-        // 결제 페이지로 리다이렉트
-        window.location.href = result.redirectUrl;
+        if (result.redirectUrl) {
+          window.location.href = result.redirectUrl;
+        } else {
+          router.push(
+            `/warranty/payment/callback?warrantyId=${result.warrantyId}&type=additional&method=${method}`
+          );
+        }
       } else {
-        // 토스페이먼츠는 클라이언트 SDK 사용
-        // 여기서는 간단히 처리
-        router.push(
-          `/warranty/payment/callback?warrantyId=${result.warrantyId}&method=${method}`
-        );
+        // 기존 보증 결제 (레거시)
+        const result = await prepareWarrantyPayment({
+          qrCode,
+          warrantyPlan: selectedPlan,
+          customerName: data.customerName,
+          customerPhone: data.customerPhone,
+          customerEmail: data.customerEmail || undefined,
+          paymentMethod: method,
+        });
+
+        if (result.redirectUrl) {
+          window.location.href = result.redirectUrl;
+        } else {
+          router.push(
+            `/warranty/payment/callback?warrantyId=${result.warrantyId}&method=${method}`
+          );
+        }
       }
     } catch (err: any) {
       setPaymentError(err.message || "결제 준비 중 오류가 발생했습니다");
@@ -129,7 +176,9 @@ export default function WarrantyPurchasePage({ params }: PageProps) {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-bold">AS 보증 결제</h1>
+        <h1 className="text-xl font-bold">
+          {isAdditionalMode ? "추가 보증 구매" : "AS 보증 결제"}
+        </h1>
       </div>
 
       {/* 주문 요약 */}
@@ -138,23 +187,92 @@ export default function WarrantyPurchasePage({ params }: PageProps) {
           <div className="flex items-start gap-3">
             <Package className="h-10 w-10 text-gray-500" />
             <div className="flex-1">
-              <h3 className="font-medium">{transaction.modelName}</h3>
+              <h3 className="font-medium">{displayName}</h3>
               <p className="text-sm text-gray-500">
-                {transaction.brand} / {transaction.partCategory}
+                {isBundleType
+                  ? `${transaction.items?.length || 0}개 부품 구성`
+                  : `${transaction.brand} / ${transaction.partCategory}`}
               </p>
             </div>
+            {transaction.conditionGrade && (
+              <GradeBadge grade={transaction.conditionGrade} size="sm" showLabel={false} />
+            )}
           </div>
-          <div className="mt-4 pt-4 border-t flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-blue-600" />
-              <span className="font-medium">
-                {selectedPlan === "1year" ? "1년" : "2년"} 보증
+
+          {/* 기본 보증 정보 (추가 보증 모드에서 표시) */}
+          {isAdditionalMode && (
+            <div className="mt-4 pt-4 border-t">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-500">현재 기본 보증</span>
+                <span className="font-medium text-green-600">{baseWarrantyMonths}개월</span>
+              </div>
+            </div>
+          )}
+
+          {/* 추가 보증 선택 */}
+          {isAdditionalMode ? (
+            <div className="mt-4 pt-4 border-t">
+              <p className="text-sm font-medium mb-3">추가 보증 기간 선택</p>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  className={`p-3 rounded-lg border-2 text-center transition-colors ${
+                    selectedAdditionalMonths === 12
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                  onClick={() => setSelectedAdditionalMonths(12)}
+                >
+                  <Plus className="h-4 w-4 mx-auto mb-1" />
+                  <p className="font-medium">+1년</p>
+                  <p className="text-sm text-gray-500">
+                    {formatCurrency(Math.round(transaction.salePrice * 0.1))}
+                  </p>
+                </button>
+                <button
+                  type="button"
+                  className={`p-3 rounded-lg border-2 text-center transition-colors ${
+                    selectedAdditionalMonths === 24
+                      ? "border-blue-500 bg-blue-50"
+                      : "border-gray-200 hover:border-gray-300"
+                  }`}
+                  onClick={() => setSelectedAdditionalMonths(24)}
+                >
+                  <Plus className="h-4 w-4 mx-auto mb-1" />
+                  <p className="font-medium">+2년</p>
+                  <p className="text-sm text-gray-500">
+                    {formatCurrency(Math.round(transaction.salePrice * 0.2))}
+                  </p>
+                </button>
+              </div>
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm">총 보증 기간</span>
+                  <span className="font-bold text-blue-600">
+                    {baseWarrantyMonths + selectedAdditionalMonths}개월
+                  </span>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-sm">추가 결제 금액</span>
+                  <span className="font-bold text-blue-600">
+                    {formatCurrency(additionalPrice)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4 pt-4 border-t flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-blue-600" />
+                <span className="font-medium">
+                  {selectedPlan === "1year" ? "1년" : "2년"} 보증
+                </span>
+              </div>
+              <span className="text-lg font-bold text-blue-600">
+                {formatCurrency(warrantyPrice)}
               </span>
             </div>
-            <span className="text-lg font-bold text-blue-600">
-              {formatCurrency(warrantyPrice)}
-            </span>
-          </div>
+          )}
         </CardContent>
       </Card>
 
