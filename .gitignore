@@ -157,3 +157,124 @@ tasks/
 # CORS 설정 (Firebase Storage)
 # ==========================================
 cors.json
+.turbo/
+*.backup
+.Spotlight-V100
+*.backup/
+out/
+!.env.example
+*.sublime-project
+*.jks
+.claude/skills/*/*/*secret*
+.claude/.env.local*
+*-api-key.*
+venv/
+*.egg
+# Cloud provider credentials
+*.sqlite3
+# ===========================================
+# Secrets and Credentials (CRITICAL)
+.vscode/
+.VolumeIcon.icns
+.claude/local/
+*.sqlite
+build/
+dist/
+.venv/
+.fseventsd
+*.pfx
+# Skill-specific credentials
+.uv-cache/
+*.rdb
+# Updated: 2026-01-10
+*.pyd
+.vercel/
+.claude/skills/*/.env*
+private-key*
+.directory
+.DocumentRevisions-V100
+# Purpose: Essential patterns for user projects
+*-backup/
+.#*
+# Claude Code Configuration
+*.temp
+.uv_cache/
+.pytest_cache/
+.TemporaryItems
+secret-key-*
+*.sublime-workspace
+# Linux
+.claude/skills/*/*/*key*
+# Backups
+.claude/skills/*/secrets/
+# Deployment & CI/CD
+.LSOverride
+*~
+.coverage
+coverage/
+# Mac
+.aws/credentials
+env/
+*.dbm
+# Private keys (specific patterns to avoid false positives)
+# Test Coverage
+*_key.*
+# ============================================
+api-key-*
+logs/
+.moai-backups/
+# Build Artifacts & Distribution
+.tscache/
+*.secret.*
+# MoAI-ADK Package Distribution .gitignore
+*_token=*
+# Version: 0.33.0
+*.tsbuildinfo
+*.db
+# Python Cache & Bytecode
+# Node.js (for docs/Nextra)
+.cursor/
+# Environment files
+.env.*
+*.egg-info/
+htmlcov/
+.AppleDouble
+*_secret=*
+.env/
+*-key.*
+*-secret.*
+*.p12
+*.pem
+# Build Tools & Frameworks
+Thumbs.db
+# FIXED: Issue #237 - Replaced overly broad *key* and *secret* patterns
+.Trashes
+*_secret.*
+*.pyo
+ehthumbs.db
+*-secret-key.*
+# Certificate files
+.ruff_cache/
+[Dd]esktop.ini
+# Windows
+# OS Files
+.aws/config
+*.bak
+# Credential patterns in environment files
+.netlify/
+# Logs & Temporary Files
+*.swo
+.claude/settings.local.*.json
+.next/
+# IDE & Editors
+*.key.*
+secret-*.*
+__pycache__/
+*_backup_*/
+.nuxt/
+dist-ssr/
+# Virtual Environments
+.mypy_cache/
+.claude/skills/*/*/*token*
+coverage.json
+.claude/plans/
