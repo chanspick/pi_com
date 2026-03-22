@@ -1,0 +1,191 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+  /* PiCom semantic colors */
+  --color-success: var(--success);
+  --color-success-light: var(--success-light);
+  --color-warning: var(--warning);
+  --color-warning-light: var(--warning-light);
+  --color-destructive-light: var(--destructive-light);
+  /* PiCom shadows */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+}
+
+:root {
+  /* -- Brand Primary -- */
+  --primary: 217 91% 60%;        /* #3B82F6 */
+  --primary-foreground: 0 0% 100%;
+  --primary-hover: 221 83% 53%;  /* #2563EB */
+
+  /* -- Background -- */
+  --background: 210 20% 98%;     /* #F8FAFC */
+  --foreground: 222 47% 11%;     /* #0F172A */
+  --card: 0 0% 100%;
+  --card-foreground: 222 47% 11%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 47% 11%;
+
+  /* -- Secondary -- */
+  --secondary: 210 40% 96%;      /* #F1F5F9 */
+  --secondary-foreground: 222 47% 11%;
+
+  /* -- Muted -- */
+  --muted: 210 40% 96%;          /* #F1F5F9 */
+  --muted-foreground: 215 16% 47%; /* #64748B */
+
+  /* -- Accent -- */
+  --accent: 210 40% 96%;
+  --accent-foreground: 222 47% 11%;
+
+  /* -- Border -- */
+  --border: 214 32% 91%;         /* #E2E8F0 */
+  --input: 214 32% 91%;
+  --ring: 217 91% 60%;
+
+  /* -- Semantic -- */
+  --success: 160 84% 39%;        /* #059669 */
+  --success-light: 152 81% 96%;
+  --warning: 32 95% 44%;         /* #D97706 */
+  --warning-light: 48 96% 89%;
+  --destructive: 0 72% 51%;      /* #DC2626 */
+  --destructive-light: 0 86% 97%;
+
+  /* -- Radius -- */
+  --radius: 0.625rem;            /* 10px */
+
+  /* -- Shadows -- */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+  --shadow-lg: 0 4px 6px rgba(0,0,0,0.04), 0 2px 4px rgba(0,0,0,0.02);
+
+  /* -- Charts -- */
+  --chart-1: 217 91% 60%;
+  --chart-2: 160 84% 39%;
+  --chart-3: 32 95% 44%;
+  --chart-4: 280 67% 60%;
+  --chart-5: 0 72% 51%;
+
+  /* -- Sidebar -- */
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 222 47% 11%;
+  --sidebar-primary: 217 91% 60%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 210 40% 96%;
+  --sidebar-accent-foreground: 222 47% 11%;
+  --sidebar-border: 214 32% 91%;
+  --sidebar-ring: 217 91% 60%;
+}
+
+.dark {
+  --primary: 217 91% 60%;
+  --primary-foreground: 0 0% 100%;
+  --primary-hover: 213 94% 68%;  /* #60A5FA */
+
+  --background: 222 47% 11%;     /* #0F172A */
+  --foreground: 210 20% 98%;     /* #F8FAFC */
+  --card: 217 33% 17%;           /* #1E293B */
+  --card-foreground: 210 20% 98%;
+  --popover: 217 33% 17%;
+  --popover-foreground: 210 20% 98%;
+
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 20% 98%;
+
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%;
+
+  --accent: 217 33% 17%;
+  --accent-foreground: 210 20% 98%;
+
+  --border: 217 33% 24%;         /* #334155 */
+  --input: 217 33% 24%;
+  --ring: 217 91% 60%;
+
+  --success: 160 84% 39%;
+  --success-light: 160 40% 15%;
+  --warning: 32 95% 44%;
+  --warning-light: 32 40% 15%;
+  --destructive: 0 63% 55%;
+  --destructive-light: 0 40% 15%;
+
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-md: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-lg: 0 4px 6px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
+
+  --chart-1: 217 91% 65%;
+  --chart-2: 160 84% 45%;
+  --chart-3: 32 95% 50%;
+  --chart-4: 280 67% 65%;
+  --chart-5: 0 72% 55%;
+
+  --sidebar: 222 47% 11%;
+  --sidebar-foreground: 210 20% 98%;
+  --sidebar-primary: 217 91% 60%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 217 33% 17%;
+  --sidebar-accent-foreground: 210 20% 98%;
+  --sidebar-border: 217 33% 24%;
+  --sidebar-ring: 217 91% 60%;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: 'ss01';
+  }
+  html {
+    @apply font-sans;
+  }
+}
