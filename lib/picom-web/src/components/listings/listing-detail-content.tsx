@@ -13,7 +13,12 @@ import {
   Shield,
   Eye,
   Clock,
+  Loader2,
 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useAddToCart } from "@/hooks/use-cart";
+import { useToggleFavorite } from "@/hooks/use-favorites";
+import { useRouter } from "next/navigation";
 
 const categoryLabels: Record<string, string> = {
   cpu: "CPU",
@@ -51,10 +56,42 @@ interface ListingDetailContentProps {
 }
 
 export function ListingDetailContent({ listing }: ListingDetailContentProps) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const addToCart = useAddToCart();
+  const toggleFavorite = useToggleFavorite();
+
   const partName = listing.base_parts?.name ?? listing.title;
   const brand = listing.base_parts?.brand;
   const model = listing.base_parts?.model;
   const specs = listing.specs as Record<string, string> | null;
+
+  const handleAddToCart = () => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    addToCart.mutate(
+      { userId: user.id, listingId: listing.id },
+      {
+        onSuccess: () => alert("장바구니에 담았습니다"),
+        onError: () => alert("장바구니 추가에 실패했습니다"),
+      }
+    );
+  };
+
+  const handleToggleFavorite = () => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+    toggleFavorite.mutate(
+      { userId: user.id, listingId: listing.id },
+      {
+        onError: () => alert("찜 처리에 실패했습니다"),
+      }
+    );
+  };
 
   return (
     <div className="container mx-auto max-w-7xl px-4 py-6">
@@ -134,14 +171,34 @@ export function ListingDetailContent({ listing }: ListingDetailContentProps) {
             <Button
               size="lg"
               className="flex-1 h-12 text-[15px] font-semibold bg-gradient-to-r from-[#2563EB] to-[#3B82F6] hover:from-[#1D4ED8] hover:to-[#2563EB] shadow-[0_1px_3px_rgba(37,99,235,0.3)]"
+              onClick={handleAddToCart}
+              disabled={addToCart.isPending}
             >
-              <ShoppingCart className="h-4 w-4 mr-2" />
+              {addToCart.isPending ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <ShoppingCart className="h-4 w-4 mr-2" />
+              )}
               장바구니에 담기
             </Button>
-            <Button variant="outline" size="lg" className="h-12 w-12 p-0">
-              <Heart className="h-5 w-5" />
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-12 w-12 p-0"
+              onClick={handleToggleFavorite}
+              disabled={toggleFavorite.isPending}
+            >
+              <Heart className={`h-5 w-5 ${toggleFavorite.isPending ? "animate-pulse" : ""}`} />
             </Button>
-            <Button variant="outline" size="lg" className="h-12 w-12 p-0">
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-12 w-12 p-0"
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                alert("링크가 복사되었습니다");
+              }}
+            >
               <Share2 className="h-5 w-5" />
             </Button>
           </div>

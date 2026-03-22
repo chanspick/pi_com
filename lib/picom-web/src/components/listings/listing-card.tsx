@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { Heart, Eye, ImageIcon } from "lucide-react";
+import { Heart, Eye, ImageIcon, ShoppingCart } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
+import { useAddToCart } from "@/hooks/use-cart";
+import { useToggleFavorite } from "@/hooks/use-favorites";
 import type { ListingWithBasePart } from "@/lib/supabase/queries";
 
 const categoryLabels: Record<string, string> = {
@@ -39,6 +44,9 @@ interface ListingCardProps {
 }
 
 export function ListingCard({ listing }: ListingCardProps) {
+  const { user } = useAuth();
+  const addToCart = useAddToCart();
+  const toggleFavorite = useToggleFavorite();
   const imageUrl = listing.images?.[0];
   const partName = listing.base_parts?.name ?? listing.title;
   const brand = listing.base_parts?.brand;
@@ -66,6 +74,38 @@ export function ListingCard({ listing }: ListingCardProps) {
           <Badge variant="secondary" className="text-[11px] font-semibold bg-white/90 backdrop-blur-sm border-0 shadow-sm">
             {categoryLabels[listing.category] ?? listing.category}
           </Badge>
+        </div>
+        {/* 호버 퀵 액션 */}
+        <div className="absolute top-2 right-2 flex flex-col gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            type="button"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white hover:scale-110 transition-all"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!user) { alert("로그인이 필요합니다."); return; }
+              toggleFavorite.mutate({ userId: user.id, listingId: listing.id });
+            }}
+            aria-label="찜하기"
+          >
+            <Heart className="h-4 w-4 text-rose-500" />
+          </button>
+          <button
+            type="button"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/90 backdrop-blur-sm shadow-sm hover:bg-white hover:scale-110 transition-all"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              if (!user) { alert("로그인이 필요합니다."); return; }
+              addToCart.mutate(
+                { userId: user.id, listingId: listing.id },
+                { onSuccess: () => alert("장바구니에 담았습니다.") }
+              );
+            }}
+            aria-label="장바구니에 담기"
+          >
+            <ShoppingCart className="h-4 w-4 text-primary" />
+          </button>
         </div>
       </div>
 

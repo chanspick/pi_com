@@ -4,14 +4,18 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { PriceHistoryChart } from "@/components/parts/price-history-chart";
 import { usePriceHistory } from "@/hooks/use-price-history";
 import { useListingsByBasePart } from "@/hooks/use-listings-by-part";
+import { useCreatePriceAlert } from "@/hooks/use-price-alerts";
+import { useAuth } from "@/hooks/use-auth";
 import { formatPrice, formatRelativeTime, getCategoryLabel } from "@/lib/utils";
 import {
   ArrowLeft,
+  Bell,
   TrendingUp,
   TrendingDown,
   Minus,
@@ -53,8 +57,10 @@ interface PartDetailContentProps {
 
 export function PartDetailContent({ part }: PartDetailContentProps) {
   const [sort, setSort] = useState("newest");
+  const { user } = useAuth();
   const { data: history, isLoading: historyLoading } = usePriceHistory(part.id, 90);
   const { data: listingsData, isLoading: listingsLoading } = useListingsByBasePart(part.id, sort);
+  const createAlert = useCreatePriceAlert();
   const specs = part.specs as Record<string, string> | null;
   const listings = listingsData?.listings ?? [];
 
@@ -153,6 +159,47 @@ export function PartDetailContent({ part }: PartDetailContentProps) {
                 </div>
               )}
             </div>
+
+            <Separator className="my-4" />
+
+            {/* 가격 알림 버튼 */}
+            <Button
+              variant="outline"
+              className="w-full gap-2"
+              onClick={() => {
+                if (!user) {
+                  alert("로그인이 필요합니다.");
+                  return;
+                }
+                const input = prompt(
+                  "알림 받을 목표 가격을 입력하세요 (원)",
+                  part.lowest_price > 0 ? String(part.lowest_price) : ""
+                );
+                if (!input) return;
+                const targetPrice = Number(input.replace(/[^0-9]/g, ""));
+                if (!targetPrice || targetPrice <= 0) {
+                  alert("올바른 가격을 입력해주세요.");
+                  return;
+                }
+                createAlert.mutate(
+                  {
+                    user_id: user.id,
+                    base_part_id: part.id,
+                    target_price: targetPrice,
+                    part_name: part.name,
+                    price_at_creation: part.lowest_price > 0 ? part.lowest_price : undefined,
+                  },
+                  {
+                    onSuccess: () => alert(`${formatPrice(targetPrice)} 이하일 때 알림을 받습니다.`),
+                    onError: () => alert("알림 설정에 실패했습니다."),
+                  }
+                );
+              }}
+              disabled={createAlert.isPending}
+            >
+              <Bell className="h-4 w-4" />
+              {createAlert.isPending ? "설정 중..." : "가격 알림 설정"}
+            </Button>
           </div>
           {/* Specs table */}
           {specs && Object.keys(specs).length > 0 && (

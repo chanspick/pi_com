@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { useAuth } from "@/hooks/use-auth";
+import { useProfile } from "@/hooks/use-profile";
+import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,8 +31,12 @@ import {
   Heart,
   LogOut,
   Package,
+  Bell,
+  Send,
+  Shield,
 } from "lucide-react";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 const navLinks = [
   { name: "매물", href: "/listings" },
@@ -62,7 +69,12 @@ function PiComLogo() {
 
 export function Navbar() {
   const { user, loading, signOut } = useAuth();
+  const { profile } = useProfile(user?.id);
+  const { items: cartItems } = useCart(user?.id);
   const [open, setOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
+  const cartCount = cartItems.length;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -97,6 +109,32 @@ export function Navbar() {
                   {cat.name}
                 </Link>
               ))}
+              <Separator className="my-2" />
+              <Link
+                href="/parts"
+                className="px-3 py-2 text-sm rounded-md hover:bg-accent"
+                onClick={() => setOpen(false)}
+              >
+                부품 시세
+              </Link>
+              {user && (
+                <>
+                  <Link
+                    href="/sell/new"
+                    className="px-3 py-2 text-sm font-medium rounded-md hover:bg-accent text-primary"
+                    onClick={() => setOpen(false)}
+                  >
+                    판매신청
+                  </Link>
+                  <Link
+                    href="/my/notifications"
+                    className="px-3 py-2 text-sm rounded-md hover:bg-accent"
+                    onClick={() => setOpen(false)}
+                  >
+                    알림
+                  </Link>
+                </>
+              )}
             </nav>
           </SheetContent>
         </Sheet>
@@ -118,15 +156,24 @@ export function Navbar() {
         </nav>
 
         {/* 검색 바 */}
-        <div className="hidden md:flex flex-1 max-w-sm ml-auto">
+        <form
+          className="hidden md:flex flex-1 max-w-sm ml-auto"
+          onSubmit={(e) => {
+            e.preventDefault();
+            const q = searchQuery.trim();
+            if (q) router.push(`/search?q=${encodeURIComponent(q)}`);
+          }}
+        >
           <div className="relative w-full">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="부품명, 모델명으로 검색"
               className="pl-9 h-10 rounded-lg border-[1.5px]"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-        </div>
+        </form>
 
         {/* 우측 메뉴 */}
         <div className="flex items-center gap-2 ml-auto md:ml-0">
@@ -136,11 +183,28 @@ export function Navbar() {
             <div className="h-8 w-8 rounded-full bg-muted animate-pulse" />
           ) : user ? (
             <>
-              <Link href="/cart">
+              <Link href="/sell/new">
+                <Button variant="ghost" size="icon" className="hidden md:inline-flex">
+                  <Send className="h-4 w-4" />
+                  <span className="sr-only">판매신청</span>
+                </Button>
+              </Link>
+              <Link href="/my/notifications">
+                <Button variant="ghost" size="icon">
+                  <Bell className="h-4 w-4" />
+                  <span className="sr-only">알림</span>
+                </Button>
+              </Link>
+              <Link href="/my/cart" className="relative">
                 <Button variant="ghost" size="icon">
                   <ShoppingCart className="h-4 w-4" />
                   <span className="sr-only">장바구니</span>
                 </Button>
+                {cartCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">
+                    {cartCount > 99 ? "99+" : cartCount}
+                  </span>
+                )}
               </Link>
 
               <DropdownMenu>
@@ -153,20 +217,28 @@ export function Navbar() {
                   </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
+                  {profile?.is_admin && (
+                    <DropdownMenuItem>
+                      <Link href="/admin" className="flex items-center gap-2">
+                        <Shield className="h-4 w-4" />
+                        관리자
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem>
-                    <Link href="/my-page" className="flex items-center gap-2">
+                    <Link href="/my" className="flex items-center gap-2">
                       <User className="h-4 w-4" />
                       마이페이지
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                    <Link href="/orders" className="flex items-center gap-2">
+                    <Link href="/my/orders" className="flex items-center gap-2">
                       <Package className="h-4 w-4" />
                       주문내역
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem>
-                    <Link href="/my-page/favorites" className="flex items-center gap-2">
+                    <Link href="/my/favorites" className="flex items-center gap-2">
                       <Heart className="h-4 w-4" />
                       즐겨찾기
                     </Link>

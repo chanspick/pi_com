@@ -39,6 +39,7 @@ export function Footer() {
               <Link href="/about" className="text-sm text-muted-foreground hover:text-foreground">회사 소개</Link>
               <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground">이용약관</Link>
               <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground">개인정보처리방침</Link>
+              <Link href="/refund-policy" className="text-sm text-muted-foreground hover:text-foreground">환불 정책</Link>
             </nav>
           </div>
 
@@ -46,10 +47,13 @@ export function Footer() {
           <div className="space-y-3">
             <h4 className="font-semibold text-[13px] text-foreground/80 uppercase tracking-wider">고객센터</h4>
             <p className="text-sm text-muted-foreground">
-              문의: support@picom.app
+              전화: 02-6402-0025
             </p>
             <p className="text-sm text-muted-foreground">
-              운영시간: 평일 10:00 - 18:00
+              이메일: wlsrb00g@gmail.com
+            </p>
+            <p className="text-sm text-muted-foreground">
+              운영시간: 평일 09:00 - 18:00
             </p>
           </div>
         </div>
