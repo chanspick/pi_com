@@ -10,9 +10,34 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PiCom - 중고 PC 부품 마켓플레이스",
+  title: {
+    default: "PiCom - 검증된 중고 PC 부품 마켓플레이스",
+    template: "%s | PiCom",
+  },
   description:
-    "믿을 수 있는 중고 PC 부품 마켓플레이스. 검증된 부품, 합리적인 가격.",
+    "PiCom은 검증된 중고 PC 부품을 안전하게 거래하는 마켓플레이스입니다. CPU, GPU, RAM, SSD 등 다양한 부품을 합리적인 가격에 만나보세요.",
+  keywords: [
+    "중고 PC 부품",
+    "중고 그래픽카드",
+    "중고 CPU",
+    "PC 부품 시세",
+    "검증된 중고 부품",
+  ],
+  openGraph: {
+    type: "website",
+    locale: "ko_KR",
+    url: "https://picom.team",
+    siteName: "PiCom",
+    title: "PiCom - 검증된 중고 PC 부품 마켓플레이스",
+    description:
+      "PiCom은 검증된 중고 PC 부품을 안전하게 거래하는 마켓플레이스입니다. CPU, GPU, RAM, SSD 등 다양한 부품을 합리적인 가격에 만나보세요.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "PiCom - 검증된 중고 PC 부품 마켓플레이스",
+    description:
+      "PiCom은 검증된 중고 PC 부품을 안전하게 거래하는 마켓플레이스입니다. CPU, GPU, RAM, SSD 등 다양한 부품을 합리적인 가격에 만나보세요.",
+  },
 };
 
 export default function RootLayout({

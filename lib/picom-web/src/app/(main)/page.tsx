@@ -1,9 +1,8 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
+import Image from "next/image";
 import {
-  Shield,
-  Zap,
-  TrendingUp,
   ChevronRight,
   Cpu,
   Monitor,
@@ -13,142 +12,214 @@ import {
   Plug,
   Box,
   Fan,
+  Eye,
 } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { formatPrice, formatRelativeTime, getCategoryLabel } from "@/lib/utils";
+import type { ListingWithBasePart } from "@/lib/supabase/queries";
 
+// 카테고리 목록 (아이콘 + 라벨 + 링크)
 const categories = [
-  { name: "CPU", href: "/listings?category=cpu", icon: Cpu, desc: "프로세서" },
-  { name: "GPU", href: "/listings?category=gpu", icon: Monitor, desc: "그래픽카드" },
-  { name: "RAM", href: "/listings?category=ram", icon: MemoryStick, desc: "메모리" },
-  { name: "SSD", href: "/listings?category=ssd", icon: HardDrive, desc: "저장장치" },
-  { name: "메인보드", href: "/listings?category=mainboard", icon: CircuitBoard, desc: "메인보드" },
-  { name: "파워", href: "/listings?category=power", icon: Plug, desc: "파워서플라이" },
-  { name: "케이스", href: "/listings?category=case", icon: Box, desc: "PC 케이스" },
-  { name: "쿨러", href: "/listings?category=cooler", icon: Fan, desc: "쿨링 시스템" },
+  { key: "cpu", label: "CPU", icon: Cpu },
+  { key: "gpu", label: "GPU", icon: Monitor },
+  { key: "ram", label: "RAM", icon: MemoryStick },
+  { key: "ssd", label: "SSD", icon: HardDrive },
+  { key: "mainboard", label: "메인보드", icon: CircuitBoard },
+  { key: "power", label: "파워", icon: Plug },
+  { key: "case", label: "케이스", icon: Box },
+  { key: "cooler", label: "쿨러", icon: Fan },
 ];
 
-const features = [
-  {
-    icon: Shield,
-    title: "검증된 부품",
-    desc: "AI 기반 하드웨어 검증으로 부품 상태를 확인합니다",
-  },
-  {
-    icon: Zap,
-    title: "빠른 거래",
-    desc: "간편한 등록과 안전한 결제로 빠르게 거래하세요",
-  },
-  {
-    icon: TrendingUp,
-    title: "시세 추적",
-    desc: "실시간 중고 부품 시세로 합리적인 가격에 거래하세요",
-  },
-];
+// 매물 카드 컴포넌트
+function ListingCard({ listing }: { listing: ListingWithBasePart }) {
+  const imageUrl =
+    listing.images && listing.images.length > 0
+      ? listing.images[0]
+      : null;
 
-export default function HomePage() {
+  return (
+    <Link
+      href={`/listings/${listing.id}`}
+      className="group block rounded-[10px] border bg-card overflow-hidden hover:shadow-md transition-shadow"
+    >
+      {/* 이미지 영역 */}
+      <div className="relative aspect-[4/3] bg-muted overflow-hidden">
+        {imageUrl ? (
+          <Image
+            src={imageUrl}
+            alt={listing.title}
+            fill
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full text-muted-foreground">
+            <Box className="h-10 w-10" />
+          </div>
+        )}
+      </div>
+
+      {/* 정보 영역 */}
+      <div className="p-3 space-y-1.5">
+        {/* 카테고리 배지 */}
+        <Badge variant="secondary" className="text-[11px] px-1.5 py-0">
+          {getCategoryLabel(listing.category)}
+        </Badge>
+
+        {/* 제목 */}
+        <h3 className="text-[14px] font-medium leading-snug line-clamp-2 group-hover:text-primary transition-colors">
+          {listing.title}
+        </h3>
+
+        {/* 브랜드 / 모델 */}
+        {listing.base_parts && (
+          <p className="text-[12px] text-muted-foreground truncate">
+            {listing.base_parts.brand} {listing.base_parts.model}
+          </p>
+        )}
+
+        {/* 가격 + 조회수/시간 */}
+        <div className="flex items-center justify-between pt-1">
+          <span className="text-[15px] font-bold">
+            {formatPrice(listing.price)}
+          </span>
+          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-0.5">
+              <Eye className="h-3 w-3" />
+              {listing.view_count}
+            </span>
+            <span>{formatRelativeTime(listing.created_at)}</span>
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+// 섹션 헤더 컴포넌트
+function SectionHeader({
+  title,
+  href,
+  linkText = "전체보기",
+}: {
+  title: string;
+  href: string;
+  linkText?: string;
+}) {
+  return (
+    <div className="flex items-center justify-between mb-5">
+      <h2 className="text-[20px] font-bold">{title}</h2>
+      <Link
+        href={href}
+        className="text-[13px] font-medium text-primary hover:text-primary/80 flex items-center gap-0.5"
+      >
+        {linkText}
+        <ChevronRight className="h-3.5 w-3.5" />
+      </Link>
+    </div>
+  );
+}
+
+export default async function HomePage() {
+  const supabase = await createClient();
+
+  // 인기 매물 (조회수 높은 순 6개)과 최근 매물 (최신순 6개) 병렬 조회
+  const [popularResult, recentResult] = await Promise.all([
+    supabase
+      .from("listings")
+      .select("*, base_parts (name, brand, model, category)")
+      .eq("status", "active")
+      .order("view_count", { ascending: false })
+      .limit(6),
+    supabase
+      .from("listings")
+      .select("*, base_parts (name, brand, model, category)")
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(6),
+  ]);
+
+  const popularListings = (popularResult.data as ListingWithBasePart[] | null) ?? [];
+  const recentListings = (recentResult.data as ListingWithBasePart[] | null) ?? [];
+
   return (
     <div>
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#0F172A] via-[#1E3A5F] to-[#1D4ED8]">
-        <div className="absolute top-[-60px] right-[-40px] w-[300px] h-[300px] rounded-full bg-[rgba(59,130,246,0.15)]" />
-        <div className="absolute bottom-[-30px] right-[120px] w-[180px] h-[180px] rounded-full bg-[rgba(59,130,246,0.1)]" />
-        <div className="absolute top-[40%] left-[-80px] w-[200px] h-[200px] rounded-full bg-[rgba(96,165,250,0.08)]" />
-
-        <div className="relative container mx-auto max-w-7xl px-4 py-20 md:py-28">
-          <div className="max-w-2xl space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 text-white/80 text-[13px] font-medium backdrop-blur-sm">
-              <Shield className="h-3.5 w-3.5" />
-              AI 기반 하드웨어 검증 플랫폼
-            </div>
-            <h1 className="text-4xl md:text-5xl lg:text-[56px] font-extrabold tracking-tight text-white leading-[1.15]">
-              검증된 부품,{" "}
-              <br className="hidden sm:block" />
-              합리적 거래
-            </h1>
-            <p className="text-[15px] md:text-base text-white/60 leading-relaxed max-w-lg">
-              판매자가 업로드한 벤치마크 결과를 AI가 자동 분석하여
-              부품 상태를 검증합니다. 안전한 중고 PC 부품 거래를 경험하세요.
-            </p>
-            <div className="flex gap-3 pt-2">
-              <Link href="/listings">
-                <Button
-                  size="lg"
-                  className="text-[14px] font-semibold bg-white text-[#1D4ED8] hover:bg-white/90 shadow-lg h-12 px-6 rounded-lg"
-                >
-                  매물 보기
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </Link>
-              <Link href="/sell">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="text-[14px] font-semibold border-white/30 text-white hover:bg-white/10 h-12 px-6 rounded-lg bg-transparent"
-                >
-                  판매하기
-                </Button>
-              </Link>
-            </div>
+      {/* 히어로 섹션 */}
+      <section className="bg-gradient-to-br from-blue-900 to-blue-700">
+        <div className="container mx-auto max-w-7xl px-4 py-16 md:py-24 text-center">
+          <div className="text-[72px] md:text-[96px] font-extrabold text-white leading-none select-none mb-4">
+            &pi;
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-3">
+            검증된 중고 PC 부품 마켓플레이스
+          </h1>
+          <p className="text-[15px] text-white/70 mb-8 max-w-md mx-auto">
+            PiCom에서 믿을 수 있는 중고 부품을 만나보세요
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <Link href="/listings">
+              <Button
+                size="lg"
+                className="bg-white text-blue-700 hover:bg-white/90 font-semibold h-11 px-6 rounded-[10px]"
+              >
+                매물 둘러보기
+              </Button>
+            </Link>
+            <Link href="/parts">
+              <Button
+                variant="outline"
+                size="lg"
+                className="border-white/40 text-white hover:bg-white/10 font-semibold h-11 px-6 rounded-[10px] bg-transparent"
+              >
+                시세 확인
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="container mx-auto max-w-7xl px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {features.map((f) => (
-            <div
-              key={f.title}
-              className="flex items-start gap-4 p-6 rounded-xl border bg-card hover:shadow-md transition-shadow"
-            >
-              <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <f.icon className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-[15px] mb-1">{f.title}</h3>
-                <p className="text-[13px] text-muted-foreground leading-relaxed">
-                  {f.desc}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Categories */}
-      <section className="container mx-auto max-w-7xl px-4 pb-20">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-[22px] font-bold">카테고리</h2>
-            <p className="text-[13px] text-muted-foreground mt-1">
-              원하는 부품을 카테고리별로 찾아보세요
-            </p>
-          </div>
-          <Link
-            href="/listings"
-            className="text-[13px] font-medium text-primary hover:text-primary/80 flex items-center gap-1"
-          >
-            전체보기
-            <ChevronRight className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {/* 카테고리 바로가기 */}
+      <section className="container mx-auto max-w-7xl px-4 py-12">
+        <h2 className="text-[20px] font-bold mb-5">카테고리</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {categories.map((cat) => (
             <Link
-              key={cat.name}
-              href={cat.href}
-              className="group flex flex-col items-center gap-3 p-5 rounded-xl border bg-card hover:border-primary/30 hover:shadow-md transition-all"
+              key={cat.key}
+              href={`/listings?category=${cat.key}`}
+              className="group flex flex-col items-center gap-2.5 p-5 rounded-[10px] border bg-card hover:border-primary/30 hover:shadow-md transition-all"
             >
-              <div className="w-12 h-12 rounded-xl bg-primary/5 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
-                <cat.icon className="h-6 w-6 text-primary/70 group-hover:text-primary transition-colors" />
+              <div className="w-11 h-11 rounded-[10px] bg-primary/5 group-hover:bg-primary/10 flex items-center justify-center transition-colors">
+                <cat.icon className="h-5 w-5 text-primary/70 group-hover:text-primary transition-colors" />
               </div>
-              <div className="text-center">
-                <span className="font-semibold text-[14px] block">{cat.name}</span>
-                <span className="text-[12px] text-muted-foreground">{cat.desc}</span>
-              </div>
+              <span className="font-semibold text-[14px]">{cat.label}</span>
             </Link>
           ))}
         </div>
       </section>
+
+      {/* 인기 매물 */}
+      {popularListings.length > 0 && (
+        <section className="container mx-auto max-w-7xl px-4 pb-12">
+          <SectionHeader title="인기 매물" href="/listings?sort=popular" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {popularListings.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 최근 등록 매물 */}
+      {recentListings.length > 0 && (
+        <section className="container mx-auto max-w-7xl px-4 pb-16">
+          <SectionHeader title="최근 등록" href="/listings" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {recentListings.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
