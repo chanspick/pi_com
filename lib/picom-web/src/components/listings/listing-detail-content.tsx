@@ -171,15 +171,25 @@ export function ListingDetailContent({ listing }: ListingDetailContentProps) {
             <Button
               size="lg"
               className="flex-1 h-12 text-[15px] font-semibold bg-gradient-to-r from-[#2563EB] to-[#3B82F6] hover:from-[#1D4ED8] hover:to-[#2563EB] shadow-[0_1px_3px_rgba(37,99,235,0.3)]"
+              onClick={() => {
+                if (!user) { alert("로그인이 필요합니다."); router.push("/login"); return; }
+                router.push(`/checkout?listing_id=${listing.id}`);
+              }}
+            >
+              바로 구매
+            </Button>
+            <Button
+              variant="outline"
+              size="lg"
+              className="h-12 px-4"
               onClick={handleAddToCart}
               disabled={addToCart.isPending}
             >
               {addToCart.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <ShoppingCart className="h-4 w-4 mr-2" />
+                <ShoppingCart className="h-4 w-4" />
               )}
-              장바구니에 담기
             </Button>
             <Button
               variant="outline"
